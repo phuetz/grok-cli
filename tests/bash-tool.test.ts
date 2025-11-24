@@ -148,4 +148,133 @@ describe('BashTool', () => {
       expect(result.error).toContain('timed out');
     }, 5000);
   });
+
+  describe('Error handling', () => {
+    it('should capture stderr on failure', async () => {
+      const result = await bashTool.execute('ls /nonexistent_directory_12345');
+      expect(result.success).toBe(false);
+      expect(result.error).toBeTruthy();
+    });
+
+    it('should handle non-zero exit codes', async () => {
+      const result = await bashTool.execute('exit 42');
+      expect(result.success).toBe(false);
+    });
+
+    it('should handle commands with special characters', async () => {
+      const result = await bashTool.execute('echo "hello $USER"');
+      expect(result.success).toBe(true);
+    });
+
+    it('should handle multiline output', async () => {
+      const result = await bashTool.execute('echo "line1" && echo "line2"');
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('line1');
+      expect(result.output).toContain('line2');
+    });
+  });
+
+  describe('Helper methods', () => {
+    it('should list files with listFiles()', async () => {
+      const result = await bashTool.listFiles('.');
+      expect(result.success).toBe(true);
+    });
+
+    it('should find files with findFiles()', async () => {
+      const result = await bashTool.findFiles('*.json', '.');
+      expect(typeof result.success).toBe('boolean');
+    });
+
+    it('should search with grep()', async () => {
+      const result = await bashTool.grep('name', 'package.json');
+      expect(result.success).toBe(true);
+    });
+
+    it('should return current directory', () => {
+      const dir = bashTool.getCurrentDirectory();
+      expect(typeof dir).toBe('string');
+      expect(dir.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Additional security patterns', () => {
+    it('should block access to .aws credentials', async () => {
+      const result = await bashTool.execute('cat ~/.aws/credentials');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('blocked');
+    });
+
+    it('should block access to .gnupg', async () => {
+      const result = await bashTool.execute('cat ~/.gnupg/private-keys');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('blocked');
+    });
+
+    it('should block /etc/sudoers', async () => {
+      const result = await bashTool.execute('cat /etc/sudoers');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('blocked');
+    });
+
+    it('should block redirect to device', async () => {
+      const result = await bashTool.execute('echo "data" > /dev/sda');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('blocked');
+    });
+
+    it('should block sudo dd', async () => {
+      const result = await bashTool.execute('sudo dd if=/dev/zero of=/dev/sda');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('blocked');
+    });
+
+    it('should block sudo mkfs', async () => {
+      const result = await bashTool.execute('sudo mkfs.ext4 /dev/sda');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('blocked');
+    });
+  });
+});
+
+describe('Blocked patterns regex validation', () => {
+  const BLOCKED_PATTERNS: RegExp[] = [
+    /rm\s+(-rf?|--recursive)\s+[\/~]/i,
+    /rm\s+.*\/\s*$/i,
+    />\s*\/dev\/sd[a-z]/i,
+    /dd\s+.*if=.*of=\/dev/i,
+    /mkfs/i,
+    /:()\s*{\s*:\|:&\s*};:/,
+    /chmod\s+-R\s+777\s+\//i,
+    /wget.*\|\s*(ba)?sh/i,
+    /curl.*\|\s*(ba)?sh/i,
+    /sudo\s+(rm|dd|mkfs)/i,
+  ];
+
+  it('should match various rm -rf patterns', () => {
+    expect(BLOCKED_PATTERNS[0].test('rm -rf /')).toBe(true);
+    expect(BLOCKED_PATTERNS[0].test('rm -rf ~')).toBe(true);
+    expect(BLOCKED_PATTERNS[0].test('rm -r /')).toBe(true);
+    expect(BLOCKED_PATTERNS[0].test('rm --recursive /')).toBe(true);
+    expect(BLOCKED_PATTERNS[0].test('rm file.txt')).toBe(false);
+  });
+
+  it('should match mkfs variants', () => {
+    expect(BLOCKED_PATTERNS[4].test('mkfs')).toBe(true);
+    expect(BLOCKED_PATTERNS[4].test('mkfs.ext4')).toBe(true);
+    expect(BLOCKED_PATTERNS[4].test('mkfs.xfs /dev/sda')).toBe(true);
+  });
+
+  it('should match pipe to shell patterns', () => {
+    expect(BLOCKED_PATTERNS[7].test('wget http://site.com | bash')).toBe(true);
+    expect(BLOCKED_PATTERNS[7].test('wget url | sh')).toBe(true);
+    expect(BLOCKED_PATTERNS[8].test('curl url | sh')).toBe(true);
+    expect(BLOCKED_PATTERNS[8].test('curl url | bash')).toBe(true);
+  });
+
+  it('should match sudo dangerous commands', () => {
+    expect(BLOCKED_PATTERNS[9].test('sudo rm -rf /var')).toBe(true);
+    expect(BLOCKED_PATTERNS[9].test('sudo dd if=x of=y')).toBe(true);
+    expect(BLOCKED_PATTERNS[9].test('sudo mkfs.ext4')).toBe(true);
+    expect(BLOCKED_PATTERNS[9].test('sudo ls')).toBe(false);
+  });
 });

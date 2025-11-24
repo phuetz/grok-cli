@@ -222,3 +222,156 @@ export async function withRetry<T>(
 
   throw lastError;
 }
+
+/**
+ * Error thrown when search operation fails
+ */
+export class SearchError extends GrokError {
+  constructor(
+    message: string,
+    public query: string,
+    public searchType?: string
+  ) {
+    super(message, 'SEARCH_ERROR', { query, searchType });
+  }
+}
+
+/**
+ * Error thrown when rate limit is exceeded
+ */
+export class RateLimitError extends GrokError {
+  constructor(
+    message: string,
+    public retryAfterMs?: number
+  ) {
+    super(message, 'RATE_LIMIT_ERROR', { retryAfterMs });
+  }
+}
+
+/**
+ * Error thrown when permission is denied
+ */
+export class PermissionError extends GrokError {
+  constructor(
+    message: string,
+    public resource: string,
+    public requiredPermission?: string
+  ) {
+    super(message, 'PERMISSION_ERROR', { resource, requiredPermission });
+  }
+}
+
+/**
+ * Error thrown when resource is not found
+ */
+export class NotFoundError extends GrokError {
+  constructor(
+    message: string,
+    public resourceType: string,
+    public resourceId?: string
+  ) {
+    super(message, 'NOT_FOUND_ERROR', { resourceType, resourceId });
+  }
+}
+
+/**
+ * Error thrown when input/output operation fails
+ */
+export class IOError extends GrokError {
+  constructor(
+    message: string,
+    public operation: string,
+    public path?: string
+  ) {
+    super(message, 'IO_ERROR', { operation, path });
+  }
+}
+
+/**
+ * Error thrown when parser fails
+ */
+export class ParseError extends GrokError {
+  constructor(
+    message: string,
+    public input: string,
+    public position?: number
+  ) {
+    super(message, 'PARSE_ERROR', { input: input.substring(0, 100), position });
+  }
+}
+
+/**
+ * Error thrown when agent exceeds maximum iterations
+ */
+export class MaxIterationsError extends GrokError {
+  constructor(
+    message: string,
+    public maxIterations: number,
+    public currentIteration: number
+  ) {
+    super(message, 'MAX_ITERATIONS_ERROR', { maxIterations, currentIteration });
+  }
+}
+
+/**
+ * Error thrown when MCP operation fails
+ */
+export class MCPError extends GrokError {
+  constructor(
+    message: string,
+    public serverName?: string,
+    public operation?: string
+  ) {
+    super(message, 'MCP_ERROR', { serverName, operation });
+  }
+}
+
+/**
+ * Error codes enum for easy reference
+ */
+export enum ErrorCode {
+  API_KEY_ERROR = 'API_KEY_ERROR',
+  API_ERROR = 'API_ERROR',
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  TIMEOUT_ERROR = 'TIMEOUT_ERROR',
+  FILE_ERROR = 'FILE_ERROR',
+  FILE_NOT_FOUND = 'FILE_NOT_FOUND',
+  TOOL_EXECUTION_ERROR = 'TOOL_EXECUTION_ERROR',
+  INVALID_COMMAND = 'INVALID_COMMAND',
+  COMMAND_EXECUTION_ERROR = 'COMMAND_EXECUTION_ERROR',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
+  SEARCH_ERROR = 'SEARCH_ERROR',
+  RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
+  PERMISSION_ERROR = 'PERMISSION_ERROR',
+  NOT_FOUND_ERROR = 'NOT_FOUND_ERROR',
+  IO_ERROR = 'IO_ERROR',
+  PARSE_ERROR = 'PARSE_ERROR',
+  MAX_ITERATIONS_ERROR = 'MAX_ITERATIONS_ERROR',
+  MCP_ERROR = 'MCP_ERROR',
+}
+
+/**
+ * Create an error from an error code
+ */
+export function createError(code: ErrorCode, message: string, details?: unknown): GrokError {
+  return new GrokError(message, code, details);
+}
+
+/**
+ * Type guard to check if error has a specific code
+ */
+export function hasErrorCode(error: unknown, code: ErrorCode): boolean {
+  return isGrokError(error) && error.code === code;
+}
+
+/**
+ * Wrap an error with additional context
+ */
+export function wrapError(error: unknown, context: string): GrokError {
+  const message = getErrorMessage(error);
+  const wrappedError = new GrokError(`${context}: ${message}`, 'WRAPPED_ERROR', {
+    originalError: error instanceof Error ? error.stack : error,
+  });
+  return wrappedError;
+}

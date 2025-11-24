@@ -135,10 +135,11 @@ export class SearchTool {
         success: true,
         output: formattedOutput,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        error: `Search error: ${error.message}`,
+        error: `Search error: ${errorMessage}`,
       };
     }
   }

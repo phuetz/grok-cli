@@ -60,10 +60,11 @@ export class TextEditorTool {
           error: `File or directory not found: ${filePath}`,
         };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        error: `Error viewing ${filePath}: ${error.message}`,
+        error: `Error viewing ${filePath}: ${errorMessage}`,
       };
     }
   }
@@ -155,10 +156,11 @@ export class TextEditorTool {
         success: true,
         output: diff,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        error: `Error replacing text in ${filePath}: ${error.message}`,
+        error: `Error replacing text in ${filePath}: ${errorMessage}`,
       };
     }
   }
@@ -219,10 +221,11 @@ export class TextEditorTool {
         success: true,
         output: diff,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        error: `Error creating ${filePath}: ${error.message}`,
+        error: `Error creating ${filePath}: ${errorMessage}`,
       };
     }
   }
@@ -307,10 +310,11 @@ export class TextEditorTool {
         success: true,
         output: diff,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        error: `Error replacing lines in ${filePath}: ${error.message}`,
+        error: `Error replacing lines in ${filePath}: ${errorMessage}`,
       };
     }
   }
@@ -349,10 +353,11 @@ export class TextEditorTool {
         success: true,
         output: `Successfully inserted content at line ${insertLine} in ${filePath}`,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        error: `Error inserting content in ${filePath}: ${error.message}`,
+        error: `Error inserting content in ${filePath}: ${errorMessage}`,
       };
     }
   }
@@ -400,10 +405,11 @@ export class TextEditorTool {
         success: true,
         output: `Successfully undid ${lastEdit.command} operation`,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        error: `Error undoing edit: ${error.message}`,
+        error: `Error undoing edit: ${errorMessage}`,
       };
     }
   }
