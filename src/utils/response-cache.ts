@@ -75,7 +75,8 @@ export class ResponseCache {
         stats: this.stats,
         savedAt: Date.now(),
       };
-      fs.writeFileSync(this.cacheFile, JSON.stringify(data, null, 2));
+      // Use compact JSON without pretty-printing for better performance
+      fs.writeFileSync(this.cacheFile, JSON.stringify(data));
     } catch (error) {
       // Silently fail on save errors
     }

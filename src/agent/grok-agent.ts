@@ -100,6 +100,10 @@ export class GrokAgent extends EventEmitter {
   private chatHistory: ChatEntry[] = [];
   private messages: GrokMessage[] = [];
   private tokenCounter: TokenCounter;
+  // Maximum history entries to prevent memory bloat (keep last N entries)
+  private static readonly MAX_HISTORY_SIZE = 1000;
+  // Cached tools from first round of tool selection
+  private cachedSelectedTools: import("../grok/client.js").GrokTool[] | null = null;
   private abortController: AbortController | null = null;
   private checkpointManager: CheckpointManager;
   private sessionStore: SessionStore;
@@ -374,6 +378,9 @@ export class GrokAgent extends EventEmitter {
   }
 
   async processUserMessage(message: string): Promise<ChatEntry[]> {
+    // Reset cached tools for new conversation turn
+    this.cachedSelectedTools = null;
+
     // Add user message to conversation
     const userEntry: ChatEntry = {
       type: "user",
@@ -382,6 +389,9 @@ export class GrokAgent extends EventEmitter {
     };
     this.chatHistory.push(userEntry);
     this.messages.push({ role: "user", content: message });
+
+    // Trim history to prevent memory bloat
+    this.trimHistory();
 
     const newEntries: ChatEntry[] = [userEntry];
     const maxToolRounds = this.maxToolRounds; // Prevent infinite loops
@@ -599,6 +609,9 @@ export class GrokAgent extends EventEmitter {
     // Create new abort controller for this request
     this.abortController = new AbortController();
 
+    // Reset cached tools for new conversation turn
+    this.cachedSelectedTools = null;
+
     // Add user message to conversation
     const userEntry: ChatEntry = {
       type: "user",
@@ -607,6 +620,9 @@ export class GrokAgent extends EventEmitter {
     };
     this.chatHistory.push(userEntry);
     this.messages.push({ role: "user", content: message });
+
+    // Trim history to prevent memory bloat
+    this.trimHistory();
 
     // Calculate input tokens
     let inputTokens = this.tokenCounter.countMessageTokens(
@@ -636,10 +652,17 @@ export class GrokAgent extends EventEmitter {
         }
 
         // Stream response and accumulate
-        // Use RAG-based tool selection on first round, then use same tools for consistency
-        const { tools } = toolRounds === 0
-          ? await this.getToolsForQuery(message)
-          : { tools: await getAllGrokTools() };
+        // Use RAG-based tool selection on first round, then cache and reuse tools for consistency
+        // This saves ~9000 tokens on multi-round queries
+        let tools: import("../grok/client.js").GrokTool[];
+        if (toolRounds === 0) {
+          const selection = await this.getToolsForQuery(message);
+          tools = selection.tools;
+          this.cachedSelectedTools = tools; // Cache for subsequent rounds
+        } else {
+          // Use cached tools from first round instead of ALL tools
+          tools = this.cachedSelectedTools || await getAllGrokTools();
+        }
         const stream = this.grokClient.chatStream(
           this.messages,
           tools,
@@ -704,7 +727,7 @@ export class GrokAgent extends EventEmitter {
 
             // Emit token count update
             const now = Date.now();
-            if (now - lastTokenUpdate > 250) {
+            if (now - lastTokenUpdate > 500) {
               lastTokenUpdate = now;
               yield {
                 type: "token_count",
@@ -1104,6 +1127,27 @@ export class GrokAgent extends EventEmitter {
 
   getMCPClient(): MCPClient {
     return this.mcpClient;
+  }
+
+  // History management methods
+
+  /**
+   * Trim chat history and messages to prevent unbounded memory growth
+   * Keeps the most recent entries up to MAX_HISTORY_SIZE
+   */
+  private trimHistory(): void {
+    if (this.chatHistory.length > GrokAgent.MAX_HISTORY_SIZE) {
+      // Keep the last MAX_HISTORY_SIZE entries
+      this.chatHistory = this.chatHistory.slice(-GrokAgent.MAX_HISTORY_SIZE);
+    }
+
+    // Also trim messages, keeping system message (first) and last N messages
+    const maxMessages = GrokAgent.MAX_HISTORY_SIZE + 1; // +1 for system message
+    if (this.messages.length > maxMessages) {
+      const systemMessage = this.messages[0];
+      const recentMessages = this.messages.slice(-GrokAgent.MAX_HISTORY_SIZE);
+      this.messages = [systemMessage, ...recentMessages];
+    }
   }
 
   // Image methods

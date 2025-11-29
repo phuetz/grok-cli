@@ -1,7 +1,16 @@
 import fs from 'fs';
 import path from 'path';
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, spawnSync } from 'child_process';
 import { ToolResult } from '../types';
+
+/**
+ * Escape a string for safe use in shell commands
+ * Only used where spawn with array args isn't possible
+ */
+function escapeShellArg(arg: string): string {
+  // Replace single quotes with escaped version
+  return `'${arg.replace(/'/g, "'\\''")}'`;
+}
 
 export interface ClipboardContent {
   type: 'text' | 'image' | 'html' | 'files' | 'empty';
@@ -127,24 +136,28 @@ export class ClipboardTool {
         // macOS: Use osascript to check for image and pngpaste to save
         try {
           execSync('which pngpaste', { stdio: 'ignore' });
-          execSync(`pngpaste "${imagePath}"`, { stdio: 'ignore' });
+          // Use spawnSync with array args to prevent command injection
+          const result = spawnSync('pngpaste', [imagePath], { stdio: 'ignore' });
+          if (result.status !== 0) throw new Error('pngpaste failed');
         } catch {
-          // Fallback: Use screencapture to capture from clipboard
-          const script = `
-            set theFile to POSIX file "${imagePath}"
-            try
-              set theImage to the clipboard as «class PNGf»
-              set theRef to open for access theFile with write permission
-              write theImage to theRef
-              close access theRef
-            end try
-          `;
-          execSync(`osascript -e '${script}'`, { stdio: 'ignore' });
+          // Fallback: Use AppleScript with proper escaping
+          const script = `set theFile to POSIX file ${escapeShellArg(imagePath)}
+try
+  set theImage to the clipboard as «class PNGf»
+  set theRef to open for access theFile with write permission
+  write theImage to theRef
+  close access theRef
+end try`;
+          // Use spawnSync with array to avoid shell injection
+          spawnSync('osascript', ['-e', script], { stdio: 'ignore' });
         }
       } else if (platform === 'linux') {
-        // Linux: Use xclip to get image
+        // Linux: Use xclip to get image - pipe output to file safely
         try {
-          execSync(`xclip -selection clipboard -t image/png -o > "${imagePath}"`, { shell: '/bin/bash' });
+          const result = spawnSync('xclip', ['-selection', 'clipboard', '-t', 'image/png', '-o'], {
+            stdio: ['ignore', fs.openSync(imagePath, 'w'), 'ignore']
+          });
+          if (result.status !== 0) throw new Error('xclip failed');
         } catch {
           return {
             success: false,
@@ -152,14 +165,9 @@ export class ClipboardTool {
           };
         }
       } else if (platform === 'win32') {
-        // Windows: Use PowerShell
-        const script = `
-$img = Get-Clipboard -Format Image
-if ($img) {
-  $img.Save('${imagePath.replace(/\\/g, '\\\\')}')
-}
-        `;
-        execSync(`powershell -command "${script}"`, { stdio: 'ignore' });
+        // Windows: Use PowerShell with proper argument escaping
+        const script = `$img = Get-Clipboard -Format Image; if ($img) { $img.Save($args[0]) }`;
+        spawnSync('powershell', ['-command', script, imagePath], { stdio: 'ignore' });
       } else {
         return {
           success: false,
@@ -210,17 +218,16 @@ if ($img) {
       const platform = process.platform;
 
       if (platform === 'darwin') {
-        const script = `set the clipboard to (read (POSIX file "${resolvedPath}") as «class PNGf»)`;
-        execSync(`osascript -e '${script}'`);
+        // Use spawnSync with array args to prevent command injection
+        const script = `set the clipboard to (read (POSIX file ${escapeShellArg(resolvedPath)}) as «class PNGf»)`;
+        spawnSync('osascript', ['-e', script]);
       } else if (platform === 'linux') {
-        execSync(`xclip -selection clipboard -t image/png -i "${resolvedPath}"`);
+        // Use spawnSync with array args to prevent command injection
+        spawnSync('xclip', ['-selection', 'clipboard', '-t', 'image/png', '-i', resolvedPath]);
       } else if (platform === 'win32') {
-        const script = `
-Add-Type -AssemblyName System.Windows.Forms
-$image = [System.Drawing.Image]::FromFile('${resolvedPath.replace(/\\/g, '\\\\')}')
-[System.Windows.Forms.Clipboard]::SetImage($image)
-        `;
-        execSync(`powershell -command "${script}"`);
+        // Use PowerShell with $args to safely pass the path
+        const script = `Add-Type -AssemblyName System.Windows.Forms; $image = [System.Drawing.Image]::FromFile($args[0]); [System.Windows.Forms.Clipboard]::SetImage($image)`;
+        spawnSync('powershell', ['-command', script, resolvedPath]);
       } else {
         return {
           success: false,

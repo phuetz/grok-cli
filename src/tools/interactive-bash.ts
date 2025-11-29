@@ -12,6 +12,33 @@ try {
   // node-pty not available
 }
 
+// Dangerous command patterns that should be blocked
+const BLOCKED_PATTERNS = [
+  /rm\s+(-rf?|--recursive)\s+[\/~]/i,  // rm -rf on root or home
+  /mkfs\./i,                            // Format filesystem
+  /dd\s+.*of=\/dev\//i,                 // dd to device
+  />\s*\/dev\/sd[a-z]/i,                // Redirect to disk
+  /chmod\s+-R\s+777\s+\//i,             // chmod 777 on root
+  /chown\s+-R\s+.*\s+\//i,              // chown on root
+  /:(){ :|:& };:/,                       // Fork bomb
+  /\|\s*sh\s*$/i,                        // Piping to shell
+  /curl.*\|\s*(ba)?sh/i,                 // curl | bash
+  /wget.*\|\s*(ba)?sh/i,                 // wget | bash
+];
+
+/**
+ * Validate command for dangerous patterns
+ * @returns null if safe, error message if dangerous
+ */
+function validateCommand(command: string): string | null {
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(command)) {
+      return `Blocked potentially dangerous command pattern: ${pattern.source}`;
+    }
+  }
+  return null;
+}
+
 export interface InteractiveSession {
   id: string;
   command: string;
@@ -44,6 +71,12 @@ export class InteractiveBashTool extends EventEmitter {
     command: string,
     options: PTYOptions = {}
   ): Promise<{ sessionId: string; output: string }> {
+    // Validate command for dangerous patterns before execution
+    const validationError = validateCommand(command);
+    if (validationError) {
+      return { sessionId: '', output: `Error: ${validationError}` };
+    }
+
     if (!this.isPTYAvailable) {
       return this.fallbackExecute(command);
     }

@@ -1,10 +1,32 @@
-import { exec } from "child_process";
-import { promisify } from "util";
+import { spawn } from "child_process";
 import * as path from "path";
 import { ToolResult } from "../types/index.js";
 import { ConfirmationService } from "../utils/confirmation-service.js";
 
-const execAsync = promisify(exec);
+/**
+ * Execute a command safely using spawn with array arguments
+ * This prevents command injection attacks
+ */
+function execGitSafe(args: string[], cwd: string): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn('git', args, { cwd });
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (data) => { stdout += data.toString(); });
+    proc.stderr.on('data', (data) => { stderr += data.toString(); });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        reject(new Error(stderr || `git ${args[0]} failed with code ${code}`));
+      }
+    });
+
+    proc.on('error', (err) => reject(err));
+  });
+}
 
 export interface GitStatus {
   staged: string[];
@@ -30,17 +52,21 @@ export class GitTool {
     this.cwd = cwd || process.cwd();
   }
 
-  private async execGit(command: string): Promise<{ stdout: string; stderr: string }> {
+  /**
+   * Execute git command safely with array arguments
+   * @param args - Array of command arguments (NOT a single string)
+   */
+  private async execGit(args: string[]): Promise<{ stdout: string; stderr: string }> {
     try {
-      return await execAsync(`git ${command}`, { cwd: this.cwd });
+      return await execGitSafe(args, this.cwd);
     } catch (error: any) {
-      throw new Error(error.stderr || error.message);
+      throw new Error(error.message);
     }
   }
 
   async isGitRepo(): Promise<boolean> {
     try {
-      await this.execGit("rev-parse --git-dir");
+      await this.execGit(['rev-parse', '--git-dir']);
       return true;
     } catch {
       return false;
@@ -48,8 +74,8 @@ export class GitTool {
   }
 
   async getStatus(): Promise<GitStatus> {
-    const { stdout: porcelain } = await this.execGit("status --porcelain=v1");
-    const { stdout: branchInfo } = await this.execGit("status --branch --porcelain=v2");
+    const { stdout: porcelain } = await this.execGit(['status', '--porcelain=v1']);
+    const { stdout: branchInfo } = await this.execGit(['status', '--branch', '--porcelain=v2']);
 
     const staged: string[] = [];
     const unstaged: string[] = [];
@@ -93,23 +119,24 @@ export class GitTool {
   }
 
   async getDiff(staged: boolean = false): Promise<string> {
-    const flag = staged ? "--cached" : "";
-    const { stdout } = await this.execGit(`diff ${flag}`);
+    const args = staged ? ['diff', '--cached'] : ['diff'];
+    const { stdout } = await this.execGit(args);
     return stdout;
   }
 
   async getLog(count: number = 5): Promise<string> {
     const { stdout } = await this.execGit(
-      `log --oneline -${count} --format="%h %s"`
+      ['log', '--oneline', `-${count}`, '--format=%h %s']
     );
     return stdout;
   }
 
   async add(files: string[] | "all"): Promise<ToolResult> {
-    const target = files === "all" ? "." : files.join(" ");
+    // Use array args to prevent command injection
+    const args = files === "all" ? ['add', '.'] : ['add', ...files];
 
     try {
-      await this.execGit(`add ${target}`);
+      await this.execGit(args);
       return {
         success: true,
         output: `Staged: ${files === "all" ? "all changes" : files.join(", ")}`,
@@ -145,9 +172,8 @@ export class GitTool {
     }
 
     try {
-      // Escape message for shell
-      const escapedMessage = message.replace(/"/g, '\\"');
-      const { stdout } = await this.execGit(`commit -m "${escapedMessage}"`);
+      // Use array args - message is safely passed as a single argument
+      const { stdout } = await this.execGit(['commit', '-m', message]);
       return {
         success: true,
         output: stdout.trim(),
@@ -162,8 +188,9 @@ export class GitTool {
 
   async push(setUpstream: boolean = false): Promise<ToolResult> {
     try {
-      const flag = setUpstream ? "-u origin HEAD" : "";
-      const { stdout, stderr } = await this.execGit(`push ${flag}`);
+      // Use array args to prevent command injection
+      const args = setUpstream ? ['push', '-u', 'origin', 'HEAD'] : ['push'];
+      const { stdout, stderr } = await this.execGit(args);
       return {
         success: true,
         output: stdout.trim() || stderr.trim() || "Push successful",
@@ -182,7 +209,7 @@ export class GitTool {
 
   async pull(): Promise<ToolResult> {
     try {
-      const { stdout } = await this.execGit("pull");
+      const { stdout } = await this.execGit(['pull']);
       return {
         success: true,
         output: stdout.trim() || "Already up to date",
@@ -310,8 +337,9 @@ export class GitTool {
 
   async stash(message?: string): Promise<ToolResult> {
     try {
-      const msgArg = message ? ` -m "${message}"` : "";
-      const { stdout } = await this.execGit(`stash${msgArg}`);
+      // Use array args to prevent command injection
+      const args = message ? ['stash', '-m', message] : ['stash'];
+      const { stdout } = await this.execGit(args);
       return {
         success: true,
         output: stdout.trim() || "Stashed changes",
@@ -326,7 +354,7 @@ export class GitTool {
 
   async stashPop(): Promise<ToolResult> {
     try {
-      const { stdout } = await this.execGit("stash pop");
+      const { stdout } = await this.execGit(['stash', 'pop']);
       return {
         success: true,
         output: stdout.trim(),
@@ -341,8 +369,9 @@ export class GitTool {
 
   async checkout(branchOrFile: string, create: boolean = false): Promise<ToolResult> {
     try {
-      const flag = create ? "-b" : "";
-      const { stdout } = await this.execGit(`checkout ${flag} ${branchOrFile}`);
+      // Use array args to prevent command injection
+      const args = create ? ['checkout', '-b', branchOrFile] : ['checkout', branchOrFile];
+      const { stdout } = await this.execGit(args);
       return {
         success: true,
         output: stdout.trim() || `Switched to ${branchOrFile}`,
@@ -357,14 +386,15 @@ export class GitTool {
 
   async branch(name?: string, delete_: boolean = false): Promise<ToolResult> {
     try {
+      // Use array args to prevent command injection
       if (delete_ && name) {
-        const { stdout } = await this.execGit(`branch -d ${name}`);
+        const { stdout } = await this.execGit(['branch', '-d', name]);
         return { success: true, output: stdout.trim() };
       } else if (name) {
-        const { stdout } = await this.execGit(`branch ${name}`);
+        const { stdout } = await this.execGit(['branch', name]);
         return { success: true, output: stdout.trim() || `Created branch ${name}` };
       } else {
-        const { stdout } = await this.execGit("branch -a");
+        const { stdout } = await this.execGit(['branch', '-a']);
         return { success: true, output: stdout.trim() };
       }
     } catch (error: any) {

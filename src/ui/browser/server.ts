@@ -453,7 +453,10 @@ export class BrowserServer {
                   const toolContent = chunk.toolResult?.output || chunk.toolResult?.error || '';
                   addMessage('Tool: ' + (chunk.toolCall?.function?.name || 'unknown') + '\\n' + toolContent, 'tool');
                 }
-              } catch (e) {}
+              } catch (e) {
+                // Silently ignore JSON parse errors from incomplete chunks
+                // This is expected during streaming when chunks are split mid-JSON
+              }
             }
           }
         }

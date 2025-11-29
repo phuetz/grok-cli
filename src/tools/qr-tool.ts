@@ -266,11 +266,14 @@ export class QRTool {
         };
       }
 
-      // Try using zbarimg (common QR reader tool)
-      const { execSync } = await import('child_process');
+      // Try using zbarimg (common QR reader tool) - use spawnSync for safety
+      const { spawnSync } = await import('child_process');
 
       try {
-        const output = execSync(`zbarimg -q "${resolvedPath}"`, { encoding: 'utf8' });
+        // Use spawnSync with array args to prevent command injection
+        const result = spawnSync('zbarimg', ['-q', resolvedPath], { encoding: 'utf8' });
+        if (result.status !== 0) throw new Error('zbarimg failed');
+        const output = result.stdout;
         const match = output.match(/QR-Code:(.+)/);
 
         if (match) {
