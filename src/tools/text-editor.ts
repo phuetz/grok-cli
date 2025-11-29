@@ -167,6 +167,17 @@ export class TextEditorTool {
     try {
       const resolvedPath = path.resolve(filePath);
 
+      // Check if file already exists - prevent accidental overwrite
+      if (await fs.pathExists(resolvedPath)) {
+        const stats = await fs.stat(resolvedPath);
+        if (stats.isFile()) {
+          return {
+            success: false,
+            error: `File already exists: ${filePath}. Use str_replace_editor to modify existing files instead of create_file.`,
+          };
+        }
+      }
+
       // Check if user has already accepted file operations for this session
       const sessionFlags = this.confirmationService.getSessionFlags();
       if (!sessionFlags.fileOperations && !sessionFlags.allOperations) {

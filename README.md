@@ -434,10 +434,32 @@ Implements intelligent tool selection based on [RAG-MCP research](https://arxiv.
 | **view_file** | View files and directories with line ranges |
 | **create_file** | Create files with automatic parent directory creation |
 | **str_replace_editor** | Intelligent text editing with fuzzy matching and visual diffs |
+| **edit_file** | Morph Fast Apply (4,500+ tokens/sec with 98% accuracy) - optimal for large files |
 | **bash** | Execute shell commands with persistent cd and timeout |
 | **search** | Ultra-fast search with ripgrep backend |
 | **todo_list** | Task management with priorities and status tracking |
 | **multi_edit** | Edit multiple files in a single atomic operation |
+
+### Morph Fast Apply (High-Speed Editing)
+
+For ultra-fast file editing, Grok CLI integrates with [Morph Fast Apply](https://morphllm.com):
+
+```bash
+# Enable Morph Fast Apply
+export MORPH_API_KEY=sk-...
+
+# Now the edit_file tool is available with:
+# - 4,500+ tokens/sec processing speed
+# - 98% accuracy on complex edits
+# - Perfect for files over 2000 lines
+```
+
+**When to use Morph:**
+- Large files (>2000 lines) where str_replace_editor would be slow
+- Complex multi-point edits in a single operation
+- High-throughput batch editing scenarios
+
+The agent automatically prefers `edit_file` when Morph is configured and the file is large.
 
 ### Agent Modes
 
@@ -458,6 +480,36 @@ Configurable autonomy inspired by [Cursor's YOLO mode](https://docs.cursor.com/a
 | `confirm` | Standard confirmation for all operations |
 | `auto` | Auto-execute safe operations, confirm dangerous ones |
 | `full` | Full autonomy (use with caution) |
+
+### YOLO Mode & Cost Protection
+
+**YOLO Mode** enables full autonomous operation:
+
+```bash
+# Enable YOLO mode (full autonomy, 400 tool rounds, no cost limit)
+YOLO_MODE=true grok
+
+# Or toggle in session
+/yolo on
+```
+
+**Cost Protection** prevents runaway API costs:
+
+```bash
+# Default: $10 session limit (disabled in YOLO mode)
+# Set custom limit:
+MAX_COST=25 grok
+
+# Unlimited (use with caution):
+MAX_COST=Infinity grok
+```
+
+| Mode | Max Tool Rounds | Session Cost Limit |
+|------|-----------------|-------------------|
+| Normal | 50 | $10 |
+| YOLO | 400 | Unlimited |
+
+The agent will stop and warn you when the cost limit is reached.
 
 ### Hooks System
 
