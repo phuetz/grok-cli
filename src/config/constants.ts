@@ -79,6 +79,8 @@ export const API_CONFIG = {
   MAX_RETRIES: 3,
   /** Retry delay (ms) */
   RETRY_DELAY: 1000,
+  /** LM Studio default base URL */
+  LMSTUDIO_BASE_URL: 'http://localhost:1234/v1',
 } as const;
 
 export const PATHS = {
@@ -106,6 +108,19 @@ export const SUPPORTED_MODELS = {
   // Gemini models (when using custom base URL)
   'gemini-2.5-pro': { maxTokens: 1000000, provider: 'google' },
   'gemini-2.5-flash': { maxTokens: 1000000, provider: 'google' },
+  // LM Studio models (local inference via OpenAI-compatible API)
+  'lmstudio': { maxTokens: 8192, provider: 'lmstudio' },
+  'local-model': { maxTokens: 8192, provider: 'lmstudio' },
+  // Common open-source models used with LM Studio
+  'llama-3.1-8b': { maxTokens: 131072, provider: 'lmstudio' },
+  'llama-3.1-70b': { maxTokens: 131072, provider: 'lmstudio' },
+  'llama-3.2-3b': { maxTokens: 131072, provider: 'lmstudio' },
+  'mistral-7b': { maxTokens: 32768, provider: 'lmstudio' },
+  'mixtral-8x7b': { maxTokens: 32768, provider: 'lmstudio' },
+  'codellama-34b': { maxTokens: 16384, provider: 'lmstudio' },
+  'deepseek-coder': { maxTokens: 16384, provider: 'lmstudio' },
+  'qwen2.5-coder': { maxTokens: 32768, provider: 'lmstudio' },
+  'phi-3': { maxTokens: 4096, provider: 'lmstudio' },
 } as const;
 
 export const TOKEN_LIMITS = {

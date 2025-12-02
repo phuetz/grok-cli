@@ -68,6 +68,7 @@ describe('Model Utilities', () => {
       expect(getDefaultModel('xai')).toBe('grok-beta');
       expect(getDefaultModel('anthropic')).toBe('claude-sonnet-4-20250514');
       expect(getDefaultModel('google')).toBe('gemini-2.5-pro');
+      expect(getDefaultModel('lmstudio')).toBe('local-model');
       expect(getDefaultModel('unknown')).toBe('grok-beta');
     });
   });
@@ -100,6 +101,13 @@ describe('Model Utilities', () => {
       const models = getModelsByProvider('google');
       expect(models).toContain('gemini-2.5-pro');
       expect(models.every((m) => m.startsWith('gemini'))).toBe(true);
+    });
+
+    it('should return models for lmstudio provider', () => {
+      const models = getModelsByProvider('lmstudio');
+      expect(models).toContain('local-model');
+      expect(models).toContain('llama-3.1-8b');
+      expect(models.length).toBeGreaterThan(0);
     });
 
     it('should return empty array for unknown provider', () => {
