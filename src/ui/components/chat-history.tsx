@@ -79,7 +79,8 @@ const MemoizedChatEntry = React.memo(
                   <Text color={colors.assistantMessage}>{entry.content.trim()}</Text>
                 ) : (
                   // If no tool calls, render as markdown
-                  <MarkdownRenderer content={entry.content.trim()} />
+                  // Pass isStreaming to handle incomplete tables properly
+                  <MarkdownRenderer content={entry.content.trim()} isStreaming={entry.isStreaming} />
                 )}
                 {entry.isStreaming && <Text color={colors.info}>█</Text>}
               </Box>
