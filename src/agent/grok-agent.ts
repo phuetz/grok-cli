@@ -542,6 +542,11 @@ export class GrokAgent extends EventEmitter {
         timestamp: new Date(),
       };
       this.chatHistory.push(errorEntry);
+      // Add error response to messages to maintain valid conversation structure
+      this.messages.push({
+        role: "assistant",
+        content: errorEntry.content,
+      });
       return [userEntry, errorEntry];
     }
   }
@@ -860,6 +865,11 @@ export class GrokAgent extends EventEmitter {
         timestamp: new Date(),
       };
       this.chatHistory.push(errorEntry);
+      // Add error response to messages to maintain valid conversation structure
+      this.messages.push({
+        role: "assistant",
+        content: errorEntry.content,
+      });
       yield {
         type: "content",
         content: errorEntry.content,
