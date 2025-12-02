@@ -112,8 +112,14 @@ export class GrokClient {
 
   /**
    * Check if using LM Studio or other local inference server
+   * Can be overridden with GROK_FORCE_TOOLS=true for models that support function calling
    */
   private isLocalInference(): boolean {
+    // Allow forcing tools for local models that support function calling
+    if (process.env.GROK_FORCE_TOOLS === 'true') {
+      return false;
+    }
+
     const modelInfo = getModelInfo(this.currentModel);
     // Check if provider is lmstudio or if baseURL points to common local servers
     if (modelInfo.provider === 'lmstudio') return true;
