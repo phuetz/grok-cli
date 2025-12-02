@@ -111,13 +111,51 @@ export class GrokClient {
   }
 
   /**
+   * Models known to support function calling / tool use
+   */
+  private static readonly FUNCTION_CALLING_MODELS = [
+    'hermes',        // Hermes 2 Pro, Hermes 3, Hermes 4
+    'functionary',   // MeetKai Functionary
+    'gorilla',       // Gorilla OpenFunctions
+    'nexusraven',    // NexusRaven
+    'firefunction',  // FireFunction
+    'toolllama',     // ToolLLaMA
+    'glaive',        // Glaive function calling
+    'llama-3.1',     // Llama 3.1 has native tool support
+    'llama-3.2',     // Llama 3.2 has native tool support
+    'llama3.1',      // Alternative naming
+    'llama3.2',      // Alternative naming
+    'qwen2.5',       // Qwen 2.5 supports tools
+    'qwen-2.5',      // Alternative naming
+    'mistral',       // Mistral models support function calling
+    'mixtral',       // Mixtral supports function calling
+    'command-r',     // Cohere Command-R
+  ];
+
+  /**
+   * Check if the current model supports function calling based on its name
+   */
+  private modelSupportsFunctionCalling(): boolean {
+    const modelLower = this.currentModel.toLowerCase();
+    return GrokClient.FUNCTION_CALLING_MODELS.some(pattern =>
+      modelLower.includes(pattern)
+    );
+  }
+
+  /**
    * Check if using LM Studio or other local inference server
    * Can be overridden with GROK_FORCE_TOOLS=true for models that support function calling
+   * Auto-enables tools for models known to support function calling
    */
   private isLocalInference(): boolean {
     // Allow forcing tools for local models that support function calling
     if (process.env.GROK_FORCE_TOOLS === 'true') {
       return false;
+    }
+
+    // Auto-detect function calling support based on model name
+    if (this.modelSupportsFunctionCalling()) {
+      return false; // Enable tools for this model
     }
 
     const modelInfo = getModelInfo(this.currentModel);
