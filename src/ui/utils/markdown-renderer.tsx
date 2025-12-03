@@ -2,10 +2,36 @@ import React from 'react';
 import { Text } from 'ink';
 import { marked } from 'marked';
 import TerminalRenderer from 'marked-terminal';
+import { highlight } from 'cli-highlight';
 
-// Configure marked to use the terminal renderer with default settings
+// Configure marked to use the terminal renderer with syntax highlighting
 marked.setOptions({
-  renderer: new (TerminalRenderer as any)()
+  renderer: new (TerminalRenderer as any)({
+    // Enable syntax highlighting for code blocks
+    code: (code: string, lang?: string) => {
+      try {
+        if (lang) {
+          return highlight(code, { language: lang, ignoreIllegals: true });
+        }
+        // Auto-detect language if not specified
+        return highlight(code, { ignoreIllegals: true });
+      } catch {
+        // Fallback to plain code if highlighting fails
+        return code;
+      }
+    },
+    // Style inline code
+    codespan: (text: string) => `\x1b[36m${text}\x1b[0m`, // Cyan for inline code
+    // Better heading styles
+    heading: (text: string, level: number) => {
+      const colors = ['\x1b[1;35m', '\x1b[1;34m', '\x1b[1;33m', '\x1b[34m', '\x1b[33m', '\x1b[37m'];
+      const color = colors[Math.min(level - 1, colors.length - 1)];
+      return `\n${color}${'#'.repeat(level)} ${text}\x1b[0m\n`;
+    },
+    // Bold and italic
+    strong: (text: string) => `\x1b[1m${text}\x1b[0m`,
+    em: (text: string) => `\x1b[3m${text}\x1b[0m`,
+  })
 });
 
 /**
