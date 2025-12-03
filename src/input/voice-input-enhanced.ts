@@ -184,6 +184,15 @@ export class VoiceInputManager extends EventEmitter {
 
     const audioFile = path.join(this.tempDir, `recording_${Date.now()}.wav`);
 
+    // Visual feedback: emit audio levels periodically
+    const levelInterval = setInterval(() => {
+      if (this.state.isRecording) {
+        // Emit a synthetic level to show recording is active
+        // Real level would require reading from sox stats
+        this.emit('audio-level', { level: Math.random() * 0.5 + 0.1, active: true });
+      }
+    }, 200);
+
     // Use sox for recording (cross-platform)
     this.recordingProcess = spawn('sox', [
       '-d',  // Default audio device
@@ -195,8 +204,22 @@ export class VoiceInputManager extends EventEmitter {
       '1', `${(this.config.silenceDuration ?? 1500) / 1000}`, `${this.config.silenceThreshold ?? 0.01}%`  // Stop on silence
     ]);
 
+    // Capture stderr for sox status messages
+    if (this.recordingProcess.stderr) {
+      this.recordingProcess.stderr.on('data', (data: Buffer) => {
+        const output = data.toString();
+        // sox outputs recording info to stderr
+        if (output.includes('In:') || output.includes('Time:')) {
+          this.emit('recording-progress', output.trim());
+        }
+      });
+    }
+
     this.recordingProcess.on('close', async () => {
+      clearInterval(levelInterval);
       this.state.isRecording = false;
+      this.emit('audio-level', { level: 0, active: false });
+      this.emit('recording-stopped');
 
       if (fs.existsSync(audioFile)) {
         await this.processAudio(audioFile);
@@ -204,6 +227,7 @@ export class VoiceInputManager extends EventEmitter {
     });
 
     this.recordingProcess.on('error', (error) => {
+      clearInterval(levelInterval);
       this.state.isRecording = false;
       this.state.errorCount++;
       this.emit('error', error);

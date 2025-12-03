@@ -1394,15 +1394,22 @@ Voice recording has been turned off.`;
           voiceManager.stopRecording();
           content = `🎤 Recording stopped.
 
-Processing audio...`;
+⏳ Processing audio with Whisper...`;
         } else {
           const avail = await voiceManager.isAvailable();
           if (avail.available) {
             await voiceManager.startRecording();
-            content = `🔴 Recording started...
+            const silenceSec = ((voiceManager.getConfig().silenceDuration || 1500) / 1000).toFixed(1);
+            content = `🔴 RECORDING IN PROGRESS
 
-Speak now. Recording will stop automatically after silence.
-Or use /voice toggle to stop manually.`;
+┌─────────────────────────────────────┐
+│  🎙️  Speak now - I'm listening!    │
+│                                     │
+│  Language: ${(voiceManager.getConfig().language || 'auto').padEnd(23)}│
+│  Auto-stop after ${silenceSec}s silence       │
+└─────────────────────────────────────┘
+
+💡 Use /voice toggle to stop manually`;
           } else {
             content = `❌ Cannot start recording: ${avail.reason}`;
           }
