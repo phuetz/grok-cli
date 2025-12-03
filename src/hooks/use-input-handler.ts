@@ -15,6 +15,7 @@ import { getSecurityModeManager, SecurityMode } from "../security/security-modes
 import { initGrokProject, formatInitResult } from "../utils/init-project.js";
 import { getBackgroundTaskManager } from "../tasks/background-tasks.js";
 import { getEnhancedCommandHandler } from "../commands/enhanced-command-handler.js";
+import { getTTSManager } from "../input/text-to-speech.js";
 
 interface UseInputHandlerProps {
   agent: GrokAgent;
@@ -781,11 +782,13 @@ Respond with ONLY the commit message, no additional text.`;
     try {
       setIsStreaming(true);
       let streamingEntry: ChatEntry | null = null;
+      let fullResponseContent = "";
 
       for await (const chunk of agent.processUserMessageStream(userInput)) {
         switch (chunk.type) {
           case "content":
             if (chunk.content) {
+              fullResponseContent += chunk.content;
               if (!streamingEntry) {
                 const newStreamingEntry = {
                   type: "assistant" as const,
@@ -879,6 +882,24 @@ Respond with ONLY the commit message, no additional text.`;
               );
             }
             setIsStreaming(false);
+
+            // Auto-speak the response if enabled
+            const ttsManager = getTTSManager();
+            if (ttsManager.getConfig().autoSpeak && fullResponseContent.trim()) {
+              // Strip markdown formatting for cleaner speech
+              const textToSpeak = fullResponseContent
+                .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+                .replace(/`[^`]+`/g, '') // Remove inline code
+                .replace(/\*\*([^*]+)\*\*/g, '$1') // Bold to plain
+                .replace(/\*([^*]+)\*/g, '$1') // Italic to plain
+                .replace(/#+\s/g, '') // Remove headers
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Links to text
+                .replace(/\n+/g, '. ') // Newlines to pauses
+                .trim();
+              if (textToSpeak) {
+                ttsManager.speak(textToSpeak, 'fr');
+              }
+            }
             break;
         }
       }
