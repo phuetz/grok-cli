@@ -319,6 +319,16 @@ Be systematic and thorough in your analysis.`,
         ]
       },
       {
+        name: 'stats',
+        description: 'Show performance statistics',
+        prompt: '__STATS__',
+        filePath: '',
+        isBuiltin: true,
+        arguments: [
+          { name: 'action', description: 'summary, cache, requests, reset', required: false }
+        ]
+      },
+      {
         name: 'fork',
         description: 'Fork conversation into a new branch',
         prompt: '__FORK__',

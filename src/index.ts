@@ -15,6 +15,7 @@ import { initGrokProject, formatInitResult } from "./utils/init-project.js";
 import { getSecurityModeManager, SecurityMode } from "./security/security-modes.js";
 import { getContextLoader, ContextLoader } from "./context/context-loader.js";
 import { initializeRenderers, configureRenderContext } from "./renderers/index.js";
+import { initializePerformanceManager, getPerformanceManager } from "./performance/index.js";
 // Headless output utilities available for future use
 // import { createHeadlessResult, formatOutput, OutputFormat } from "./utils/headless-output.js";
 
@@ -511,9 +512,14 @@ program
         }
       }
 
-      // Configure caching
+      // Configure caching and performance
       if (options.cache === false) {
         console.log("📦 Response cache: DISABLED");
+        // Disable performance caching when cache is disabled
+        const perfManager = getPerformanceManager({ enabled: false });
+      } else {
+        // Initialize performance optimizations (lazy loading, tool caching, request optimization)
+        await initializePerformanceManager();
       }
 
       // Configure self-healing

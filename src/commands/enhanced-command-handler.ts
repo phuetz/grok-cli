@@ -18,6 +18,7 @@ import { ConfirmationService } from "../utils/confirmation-service.js";
 import { getThemeManager } from "../themes/theme-manager.js";
 import { getVoiceInputManager } from "../input/voice-input-enhanced.js";
 import { getTTSManager } from "../input/text-to-speech.js";
+import { getPerformanceManager } from "../performance/index.js";
 
 /**
  * Enhanced Command Handler - Processes special command tokens
@@ -62,6 +63,9 @@ export class EnhancedCommandHandler {
 
       case "__COST__":
         return this.handleCost(args);
+
+      case "__STATS__":
+        return this.handleStats(args);
 
       case "__FORK__":
         return this.handleFork(args);
@@ -489,6 +493,93 @@ Commands:
       case "status":
       default:
         content = costTracker.formatDashboard();
+        break;
+    }
+
+    return {
+      handled: true,
+      entry: {
+        type: "assistant",
+        content,
+        timestamp: new Date(),
+      },
+    };
+  }
+
+  /**
+   * Stats - Show performance statistics
+   */
+  private handleStats(args: string[]): CommandHandlerResult {
+    const perfManager = getPerformanceManager();
+    const action = args[0]?.toLowerCase();
+
+    let content: string;
+
+    switch (action) {
+      case "cache":
+        const toolCache = perfManager.getToolCache();
+        if (toolCache) {
+          const stats = toolCache.getStats();
+          content = `🗃️ Tool Cache Statistics
+
+Hits: ${stats.hits}
+Misses: ${stats.misses}
+Hit Rate: ${(stats.hitRate * 100).toFixed(1)}%
+Saved Calls: ${stats.savedCalls}
+Estimated Time Saved: ${(stats.savedTime / 1000).toFixed(1)}s`;
+        } else {
+          content = `⚠️ Tool cache not initialized`;
+        }
+        break;
+
+      case "requests":
+        const reqOptimizer = perfManager.getRequestOptimizer();
+        if (reqOptimizer) {
+          const stats = reqOptimizer.getStats();
+          content = `📡 Request Optimizer Statistics
+
+Total Requests: ${stats.totalRequests}
+Successful: ${stats.successfulRequests}
+Failed: ${stats.failedRequests}
+Retried: ${stats.retriedRequests}
+Deduplicated: ${stats.deduplicatedRequests}
+Average Latency: ${stats.averageLatency.toFixed(0)}ms
+Current Concurrency: ${stats.currentConcurrency}`;
+        } else {
+          content = `⚠️ Request optimizer not initialized`;
+        }
+        break;
+
+      case "reset":
+        perfManager.resetStats();
+        content = `🔄 Performance statistics reset`;
+        break;
+
+      case "summary":
+      default:
+        const summary = perfManager.getSummary();
+        content = `📊 Performance Summary
+
+🧩 Lazy Loader
+  Loaded: ${summary.lazyLoader.loadedModules}/${summary.lazyLoader.totalModules} modules
+  Avg Load Time: ${summary.lazyLoader.averageLoadTime.toFixed(0)}ms
+
+🗃️ Tool Cache
+  Hit Rate: ${(summary.toolCache.hitRate * 100).toFixed(1)}%
+  Saved Calls: ${summary.toolCache.savedCalls}
+
+📡 Requests
+  Total: ${summary.requestOptimizer.totalRequests}
+  Deduplicated: ${summary.requestOptimizer.deduplicatedRequests}
+
+🌐 API Cache
+  Entries: ${summary.apiCache.entries}
+  Hit Rate: ${(summary.apiCache.hitRate * 100).toFixed(1)}%
+
+📈 Overall
+  Operations: ${summary.overall.totalOperations}
+  Cache Hit Rate: ${(summary.overall.cacheHitRate * 100).toFixed(1)}%
+  Time Saved: ${(summary.overall.estimatedTimeSaved / 1000).toFixed(1)}s`;
         break;
     }
 
