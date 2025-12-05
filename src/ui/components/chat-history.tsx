@@ -5,6 +5,7 @@ import { DiffRenderer } from "./diff-renderer.js";
 import { MarkdownRenderer } from "../utils/markdown-renderer.js";
 import { useTheme } from "../context/theme-context.js";
 import { ThemeColors, AvatarConfig } from "../../themes/theme.js";
+import { getRenderManager, isTestResultsData, isWeatherData, isCodeStructureData } from "../../renderers/index.js";
 
 interface ChatHistoryProps {
   entries: ChatEntry[];
@@ -16,6 +17,48 @@ interface MemoizedChatEntryProps {
   index: number;
   colors: ThemeColors;
   avatars: AvatarConfig;
+}
+
+// ============================================================================
+// Structured Data Detection & Rendering
+// ============================================================================
+
+/**
+ * Try to parse content as structured data and render it appropriately
+ * Returns null if content is not recognized structured data
+ */
+function tryRenderStructuredData(content: string): string | null {
+  try {
+    const parsed = JSON.parse(content);
+    const manager = getRenderManager();
+
+    // Check if it's a known structured data type
+    if (isTestResultsData(parsed) || isWeatherData(parsed) || isCodeStructureData(parsed)) {
+      return manager.render(parsed);
+    }
+
+    // Check if manager can render it (generic check)
+    if (manager.canRender(parsed)) {
+      return manager.render(parsed);
+    }
+  } catch {
+    // Not JSON, not structured data
+  }
+  return null;
+}
+
+/**
+ * Component to render structured output with proper line handling
+ */
+function StructuredContent({ content, color }: { content: string; color?: string }) {
+  const lines = content.split('\n');
+  return (
+    <Box flexDirection="column">
+      {lines.map((line, idx) => (
+        <Text key={idx} color={color}>{line}</Text>
+      ))}
+    </Box>
+  );
 }
 
 // Memoized ChatEntry component to prevent unnecessary re-renders
@@ -143,24 +186,30 @@ const MemoizedChatEntry = React.memo(
         const isExecuting = entry.type === "tool_call" || !entry.toolResult;
         
         // Format JSON content for better readability
-        const formatToolContent = (content: string, toolName: string) => {
+        const formatToolContent = (content: string, toolName: string): { text: string; isStructured: boolean } => {
+          // First, try to render as structured data
+          const structuredOutput = tryRenderStructuredData(content);
+          if (structuredOutput) {
+            return { text: structuredOutput, isStructured: true };
+          }
+
           if (toolName.startsWith("mcp__")) {
             try {
               // Try to parse as JSON and format it
               const parsed = JSON.parse(content);
               if (Array.isArray(parsed)) {
                 // For arrays, show a summary instead of full JSON
-                return `Found ${parsed.length} items`;
+                return { text: `Found ${parsed.length} items`, isStructured: false };
               } else if (typeof parsed === 'object') {
                 // For objects, show a formatted version
-                return JSON.stringify(parsed, null, 2);
+                return { text: JSON.stringify(parsed, null, 2), isStructured: false };
               }
             } catch {
               // If not JSON, return as is
-              return content;
+              return { text: content, isStructured: false };
             }
           }
-          return content;
+          return { text: content, isStructured: false };
         };
         const shouldShowDiff =
           entry.toolCall?.function?.name === "str_replace_editor" &&
@@ -197,9 +246,20 @@ const MemoizedChatEntry = React.memo(
               ) : shouldShowDiff ? (
                 // For diff results, show only the summary line, not the raw content
                 <Text color={colors.toolResult}>⎿ {entry.content.split("\n")[0]}</Text>
-              ) : (
-                <Text color={colors.toolResult}>⎿ {formatToolContent(entry.content, toolName)}</Text>
-              )}
+              ) : (() => {
+                const formatted = formatToolContent(entry.content, toolName);
+                if (formatted.isStructured) {
+                  return (
+                    <Box flexDirection="column">
+                      <Text color={colors.toolResult}>⎿ Structured output:</Text>
+                      <Box marginLeft={2}>
+                        <StructuredContent content={formatted.text} />
+                      </Box>
+                    </Box>
+                  );
+                }
+                return <Text color={colors.toolResult}>⎿ {formatted.text}</Text>;
+              })()}
             </Box>
             {shouldShowDiff && !isExecuting && (
               <Box marginLeft={4} flexDirection="column">

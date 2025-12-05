@@ -3,6 +3,7 @@ import { ToolResult } from '../types/index.js';
 import { ConfirmationService } from '../utils/confirmation-service.js';
 import { getSandboxManager } from '../security/sandbox.js';
 import { getSelfHealingEngine, SelfHealingEngine } from '../utils/self-healing.js';
+import { parseTestOutput, isLikelyTestOutput } from '../utils/test-output-parser.js';
 import path from 'path';
 import os from 'os';
 
@@ -269,10 +270,24 @@ export class BashTool {
       }
 
       const output = result.stdout + (result.stderr ? `\nSTDERR: ${result.stderr}` : '');
+      const trimmedOutput = output.trim() || 'Command executed successfully (no output)';
+
+      // Check if this looks like test output and enrich it
+      if (isLikelyTestOutput(trimmedOutput)) {
+        const parsed = parseTestOutput(trimmedOutput);
+        if (parsed.isTestOutput && parsed.data) {
+          // Return structured test data as JSON for the renderer
+          return {
+            success: true,
+            output: JSON.stringify(parsed.data),
+            data: { type: 'test-results', framework: parsed.data.framework },
+          };
+        }
+      }
 
       return {
         success: true,
-        output: output.trim() || 'Command executed successfully (no output)',
+        output: trimmedOutput,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

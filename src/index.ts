@@ -14,6 +14,7 @@ import type { ChatCompletionMessageParam } from "openai/resources/chat";
 import { initGrokProject, formatInitResult } from "./utils/init-project.js";
 import { getSecurityModeManager, SecurityMode } from "./security/security-modes.js";
 import { getContextLoader, ContextLoader } from "./context/context-loader.js";
+import { initializeRenderers, configureRenderContext } from "./renderers/index.js";
 // Headless output utilities available for future use
 // import { createHeadlessResult, formatOutput, OutputFormat } from "./utils/headless-output.js";
 
@@ -387,6 +388,18 @@ program
     "--probe-tools",
     "auto-detect tool support by testing the model at startup"
   )
+  .option(
+    "--plain",
+    "use plain text output (minimal formatting)"
+  )
+  .option(
+    "--no-color",
+    "disable colored output"
+  )
+  .option(
+    "--no-emoji",
+    "disable emoji in output"
+  )
   .action(async (message, options) => {
     // Handle --init flag
     if (options.init) {
@@ -408,6 +421,14 @@ program
     }
 
     try {
+      // Initialize rendering system
+      initializeRenderers();
+      configureRenderContext({
+        plain: options.plain,
+        noColor: options.color === false,
+        noEmoji: options.emoji === false,
+      });
+
       // Get API key from options, environment, or user settings
       const apiKey = options.apiKey || loadApiKey();
       const baseURL = options.baseUrl || loadBaseURL();
