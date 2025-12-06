@@ -76,6 +76,11 @@ User Input → ChatInterface (Ink/React) → GrokAgent → Grok API
   - **src/security/index.ts** - Unified security manager
   - **src/security/approval-modes.ts** - Three-tier approval system (read-only/auto/full-access)
   - **src/security/data-redaction.ts** - Automatic sensitive data masking
+- **src/optimization/** - Research-based LLM optimizations
+  - **src/optimization/tool-filtering.ts** - Dynamic tool filtering (Less-is-More research)
+  - **src/optimization/model-routing.ts** - Tiered model routing (FrugalGPT)
+  - **src/optimization/parallel-executor.ts** - Parallel tool execution (LLMCompiler)
+  - **src/optimization/latency-optimizer.ts** - Latency optimization for flow state
 - **src/mcp/** - Model Context Protocol integration
 - **src/hooks/** - Event hooks system (PreToolUse, PostToolUse, etc.)
 - **src/memory/** - Persistent memory system
@@ -110,6 +115,9 @@ User Input → ChatInterface (Ink/React) → GrokAgent → Grok API
 - `PerformanceManager` (src/performance/performance-manager.ts) - Central performance optimization
 - `SecurityManager` (src/security/index.ts) - Unified security layer with approval, sandbox, redaction
 - `AgentRegistry` (src/agent/specialized/agent-registry.ts) - Registry for specialized file processing agents
+- `ModelRouter` (src/optimization/model-routing.ts) - Tiered model routing for cost optimization (FrugalGPT)
+- `ParallelExecutor` (src/optimization/parallel-executor.ts) - Parallel tool execution with dependency analysis
+- `LatencyOptimizer` (src/optimization/latency-optimizer.ts) - Latency tracking and caching for flow state
 
 ### Research-Based Improvements
 
@@ -128,6 +136,10 @@ Based on recent scientific publications in AI-assisted software development:
 | Specialized Renderers | Output formatting | Structured display for test/weather/code |
 | Lazy Loading | Performance optimization | On-demand heavy module loading |
 | Request Batching | API optimization | Deduplication and retry logic |
+| Dynamic Tool Filtering | Less-is-More (arXiv 2024) | 70% execution time reduction |
+| Model Tier Routing | FrugalGPT (Stanford) | 30-70% cost reduction |
+| Parallel Tool Execution | LLMCompiler/AsyncLM | 2.5-4.6x speedup |
+| Latency Optimization | Replit/Human-AI research | Sub-500ms for flow state |
 
 ### Slash Commands
 

@@ -461,6 +461,34 @@ Built-in performance features for efficient operation:
 | **Request Batching** | Deduplication and batching | Lower API costs |
 | **API Caching** | Semantic similarity matching | 68% API reduction |
 
+### LLM Optimization Module
+
+Research-based optimizations for maximum efficiency:
+
+| Feature | Research Basis | Impact |
+|---------|---------------|--------|
+| **Dynamic Tool Filtering** | Less-is-More (arXiv 2024) | 70% execution time reduction |
+| **Model Tier Routing** | FrugalGPT (Stanford) | 30-70% cost reduction |
+| **Parallel Tool Execution** | LLMCompiler/AsyncLM | 2.5-4.6x speedup |
+| **Latency Optimization** | Replit research | Sub-500ms for flow state |
+
+**Tool Filtering:**
+- Scores tools by relevance to current task context
+- Reduces cognitive load on LLM with fewer, more relevant tools
+- Automatic task classification (file_read, code_execution, debugging, etc.)
+
+**Model Routing:**
+- Automatic model selection based on task complexity
+- Routes simple tasks to mini models (grok-3-mini)
+- Routes complex reasoning to advanced models (grok-3-reasoning)
+- Cost tracking and savings estimation
+
+**Parallel Execution:**
+- Dependency analysis for tool calls
+- Groups independent calls for parallel execution
+- Automatic retry with configurable backoff
+- Timeout and error handling per call
+
 ### Security Features
 
 Comprehensive security layer with multiple modes:
@@ -1712,6 +1740,12 @@ grok-cli/
 │   ├── security/               # Security & permissions
 │   │   └── approval-modes.ts   # Three-tier permission system
 │   │
+│   ├── optimization/           # Research-based LLM optimizations
+│   │   ├── tool-filtering.ts   # Dynamic tool filtering (Less-is-More)
+│   │   ├── model-routing.ts    # Tiered model routing (FrugalGPT)
+│   │   ├── parallel-executor.ts # Parallel tool execution (LLMCompiler)
+│   │   └── latency-optimizer.ts # Latency optimization for flow state
+│   │
 │   ├── ui/                     # Terminal UI (Ink/React)
 │   │   └── components/
 │   │       └── error-boundary.tsx  # React error boundaries
@@ -1810,6 +1844,9 @@ Grok CLI is built on cutting-edge research in AI-assisted software development:
 | [AgentCoder 2024](https://arxiv.org/abs/2312.13010) | Multi-agent code generation with test feedback |
 | [RepairAgent 2024](https://arxiv.org/abs/2403.17134) | Autonomous LLM-based program repair |
 | Semantic Caching Research | 68% API call reduction with similarity matching |
+| [Less-is-More 2024](https://arxiv.org/abs/2402.10329) | Dynamic tool filtering for 70% speedup |
+| [FrugalGPT (Stanford)](https://arxiv.org/abs/2305.05176) | Tiered model routing for 30-70% cost reduction |
+| [LLMCompiler 2024](https://arxiv.org/abs/2312.04511) | Parallel tool execution for 2.5-4.6x speedup |
 
 ### Benchmarks
 
