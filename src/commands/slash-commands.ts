@@ -275,6 +275,13 @@ Be systematic and thorough in your analysis.`,
         filePath: '',
         isBuiltin: true
       },
+      {
+        name: 'features',
+        description: 'Display research-based features implemented in Grok CLI',
+        prompt: '__FEATURES__',
+        filePath: '',
+        isBuiltin: true
+      },
       // ==========================================
       // New Enhanced Commands (Competitor Features)
       // ==========================================

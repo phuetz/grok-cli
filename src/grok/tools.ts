@@ -1,4 +1,4 @@
-import { GrokTool } from "./client.js";
+import { GrokTool, JsonSchemaProperty } from "./client.js";
 import { MCPManager, MCPTool } from "../mcp/client.js";
 import { loadMCPConfig } from "../mcp/config.js";
 import {
@@ -1081,10 +1081,14 @@ export async function initializeMCPServers(): Promise<void> {
   const config = loadMCPConfig();
   
   // Store original stderr.write
-  const originalStderrWrite = process.stderr.write;
-  
+  const originalStderrWrite = process.stderr.write.bind(process.stderr);
+
   // Temporarily suppress stderr to hide verbose MCP connection logs
-  process.stderr.write = function(chunk: any, encoding?: any, callback?: any): boolean {
+  process.stderr.write = ((chunk: string | Uint8Array, encoding?: BufferEncoding | ((err?: Error | null) => void), callback?: (err?: Error | null) => void): boolean => {
+    // Handle overloaded signature
+    const enc = typeof encoding === 'function' ? undefined : encoding;
+    const cb = typeof encoding === 'function' ? encoding : callback;
+
     // Filter out mcp-remote verbose logs
     const chunkStr = chunk.toString();
     if (chunkStr.includes('[') && (
@@ -1098,13 +1102,17 @@ export async function initializeMCPServers(): Promise<void> {
         chunkStr.includes('Remote→Local')
       )) {
       // Suppress these verbose logs
-      if (callback) callback();
+      if (cb) cb();
       return true;
     }
-    
+
     // Allow other stderr output
-    return originalStderrWrite.call(this, chunk, encoding, callback);
-  };
+    if (enc) {
+      return originalStderrWrite(chunk, enc, cb);
+    } else {
+      return originalStderrWrite(chunk, cb);
+    }
+  }) as typeof process.stderr.write;
   
   try {
     for (const serverConfig of config.servers) {
@@ -1126,7 +1134,7 @@ export function convertMCPToolToGrokTool(mcpTool: MCPTool): GrokTool {
     function: {
       name: mcpTool.name,
       description: mcpTool.description,
-      parameters: mcpTool.inputSchema || {
+      parameters: (mcpTool.inputSchema as { type: "object"; properties: Record<string, JsonSchemaProperty>; required: string[] }) || {
         type: "object",
         properties: {},
         required: []

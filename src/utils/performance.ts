@@ -7,7 +7,7 @@ export interface PerformanceMetric {
   startTime: number;
   endTime?: number;
   duration?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PerformanceReport {
@@ -46,7 +46,7 @@ export class PerformanceMonitor {
    * @param metadata - Optional metadata to attach
    * @returns The metric object
    */
-  start(name: string, metadata?: Record<string, any>): PerformanceMetric {
+  start(name: string, metadata?: Record<string, unknown>): PerformanceMetric {
     if (!this.enabled) {
       return { name, startTime: 0 };
     }
@@ -96,7 +96,7 @@ export class PerformanceMonitor {
   async measure<T>(
     name: string,
     fn: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<T> {
     if (!this.enabled) {
       return fn();
@@ -123,7 +123,7 @@ export class PerformanceMonitor {
   measureSync<T>(
     name: string,
     fn: () => T,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): T {
     if (!this.enabled) {
       return fn();
@@ -205,7 +205,13 @@ export class PerformanceMonitor {
       maxDuration: number;
     }
   > {
-    const summary: Record<string, any> = {};
+    const summary: Record<string, {
+      count: number;
+      totalDuration: number;
+      minDuration: number;
+      maxDuration: number;
+      averageDuration: number;
+    }> = {};
 
     for (const metric of this.completed) {
       if (!summary[metric.name]) {
@@ -214,6 +220,7 @@ export class PerformanceMonitor {
           totalDuration: 0,
           minDuration: Infinity,
           maxDuration: 0,
+          averageDuration: 0,
         };
       }
 
@@ -341,14 +348,14 @@ export const globalMonitor = new PerformanceMonitor();
  * @param descriptor - Property descriptor
  */
 export function Measure(
-  target: any,
+  target: unknown,
   propertyKey: string,
   descriptor: PropertyDescriptor
 ) {
   const originalMethod = descriptor.value;
 
-  descriptor.value = async function (...args: any[]) {
-    const name = `${target.constructor.name}.${propertyKey}`;
+  descriptor.value = async function (this: unknown, ...args: unknown[]) {
+    const name = `${(target as { constructor: { name: string } }).constructor.name}.${propertyKey}`;
     return globalMonitor.measure(name, () => originalMethod.apply(this, args));
   };
 

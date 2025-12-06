@@ -115,7 +115,7 @@ export class CostTracker extends EventEmitter {
     try {
       if (fs.existsSync(this.historyPath)) {
         const saved = fs.readJsonSync(this.historyPath);
-        this.history = saved.map((u: any) => ({
+        this.history = saved.map((u: { timestamp: string | Date; inputTokens: number; outputTokens: number; model: string; cost: number }) => ({
           ...u,
           timestamp: new Date(u.timestamp),
         }));

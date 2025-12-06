@@ -737,17 +737,24 @@ export class EnhancedSearch extends EventEmitter {
     return args;
   }
 
-  private parseMatchData(data: any, contextLines?: number): SearchMatch {
+  private parseMatchData(data: unknown, contextLines?: number): SearchMatch {
+    const matchData = data as {
+      path?: { text: string };
+      line_number?: number;
+      submatches?: Array<{ start: number; match?: { text: string } }>;
+      lines?: { text: string };
+      context?: unknown;
+    };
     const match: SearchMatch = {
-      file: data.path?.text || '',
-      line: data.line_number || 0,
-      column: data.submatches?.[0]?.start || 0,
-      text: data.lines?.text?.trim() || '',
-      match: data.submatches?.[0]?.match?.text || '',
+      file: matchData.path?.text || '',
+      line: matchData.line_number || 0,
+      column: matchData.submatches?.[0]?.start || 0,
+      text: matchData.lines?.text?.trim() || '',
+      match: matchData.submatches?.[0]?.match?.text || '',
     };
 
     // Parse context if available
-    if (contextLines && data.context) {
+    if (contextLines && matchData.context) {
       match.contextBefore = [];
       match.contextAfter = [];
       // Context parsing would go here

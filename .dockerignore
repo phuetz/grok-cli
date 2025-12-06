@@ -1,0 +1,50 @@
+# Dependencies
+node_modules
+.npm
+
+# Build output
+dist
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Test and coverage
+coverage
+.nyc_output
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in image)
+docs/
+*.md
+!README.md
+
+# Tests (not needed in production)
+tests/
+__tests__/
+*.test.ts
+*.spec.ts
+jest.config.*
+
+# Development files
+.eslintrc*
+.prettierrc*
+tsconfig.json

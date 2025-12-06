@@ -167,7 +167,7 @@ const MemoizedChatEntry = React.memo(
         const toolName = entry.toolCall?.function?.name || "unknown";
         const actionName = getToolActionName(toolName);
 
-        const getFilePath = (toolCall: any) => {
+        const getFilePath = (toolCall: { function?: { name?: string; arguments?: string } } | undefined) => {
           if (toolCall?.function?.arguments) {
             try {
               const args = JSON.parse(toolCall.function.arguments);

@@ -39,7 +39,9 @@ const ARCHIVE_AGENT_CONFIG: SpecializedAgentConfig = {
 // ============================================================================
 
 export class ArchiveAgent extends SpecializedAgent {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private jszip: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private tar: any = null;
 
   constructor() {
@@ -406,6 +408,7 @@ export class ArchiveAgent extends SpecializedAgent {
     const zip = await this.jszip.loadAsync(buffer);
 
     const entries: ArchiveEntry[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     zip.forEach((path: string, file: any) => {
       entries.push({
         path,
@@ -437,6 +440,7 @@ export class ArchiveAgent extends SpecializedAgent {
       ? new RegExp(options.filterPatterns.map(p => p.replace(/\*/g, '.*')).join('|'))
       : null;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const [path, file] of Object.entries(zip.files) as [string, any][]) {
       if (file.dir) continue;
 
@@ -506,6 +510,7 @@ export class ArchiveAgent extends SpecializedAgent {
     await this.tar.list({
       file: archivePath,
       gzip: gzipped,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onentry: (entry: any) => {
         entries.push({
           path: entry.path,

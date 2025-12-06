@@ -1,5 +1,6 @@
-import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { Transport, TransportSendOptions } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 import { ChildProcess } from "child_process";
 import { EventEmitter } from "events";
 import axios, { AxiosInstance } from "axios";
@@ -145,6 +146,11 @@ export class SSETransport extends EventEmitter implements MCPTransport {
 
 // Custom HTTP Transport implementation
 class HttpClientTransport extends EventEmitter implements Transport {
+  onclose?: () => void;
+  onerror?: (error: Error) => void;
+  onmessage?: <T extends JSONRPCMessage>(message: T) => void;
+  sessionId?: string;
+
   constructor(private client: AxiosInstance) {
     super();
   }
@@ -157,18 +163,29 @@ class HttpClientTransport extends EventEmitter implements Transport {
     // Nothing to close for HTTP transport
   }
 
-  async send(message: any): Promise<any> {
+  async send(message: JSONRPCMessage, _options?: TransportSendOptions): Promise<void> {
     try {
       const response = await this.client.post('/rpc', message);
-      return response.data;
+      if (this.onmessage && response.data) {
+        this.onmessage(response.data);
+      }
     } catch (error) {
-      throw new Error(`HTTP transport error: ${error}`);
+      const err = new Error(`HTTP transport error: ${error}`);
+      if (this.onerror) {
+        this.onerror(err);
+      }
+      throw err;
     }
   }
 }
 
 // Custom SSE Transport implementation
 class SSEClientTransport extends EventEmitter implements Transport {
+  onclose?: () => void;
+  onerror?: (error: Error) => void;
+  onmessage?: <T extends JSONRPCMessage>(message: T) => void;
+  sessionId?: string;
+
   constructor(private url: string) {
     super();
   }
@@ -181,16 +198,22 @@ class SSEClientTransport extends EventEmitter implements Transport {
     // Nothing to close for basic SSE transport
   }
 
-  async send(message: any): Promise<any> {
+  async send(message: JSONRPCMessage, _options?: TransportSendOptions): Promise<void> {
     // For bidirectional communication over SSE, we typically use HTTP POST
     // for sending messages and SSE for receiving
     try {
       const response = await axios.post(this.url.replace('/sse', '/rpc'), message, {
         headers: { 'Content-Type': 'application/json' }
       });
-      return response.data;
+      if (this.onmessage && response.data) {
+        this.onmessage(response.data);
+      }
     } catch (error) {
-      throw new Error(`SSE transport error: ${error}`);
+      const err = new Error(`SSE transport error: ${error}`);
+      if (this.onerror) {
+        this.onerror(err);
+      }
+      throw err;
     }
   }
 }
@@ -227,7 +250,11 @@ export class StreamableHttpTransport extends EventEmitter implements MCPTranspor
 
 // Custom Streamable HTTP Transport implementation for GitHub Copilot MCP
 class StreamableHttpClientTransport extends EventEmitter implements Transport {
-   
+  onclose?: () => void;
+  onerror?: (error: Error) => void;
+  onmessage?: <T extends JSONRPCMessage>(message: T) => void;
+  sessionId?: string;
+
   constructor(private url: string, private headers?: Record<string, string>) {
     super();
   }
@@ -240,11 +267,11 @@ class StreamableHttpClientTransport extends EventEmitter implements Transport {
     // Nothing to close for streamable HTTP transport
   }
 
-  async send(message: any): Promise<any> {
+  async send(_message: JSONRPCMessage, _options?: TransportSendOptions): Promise<void> {
     console.log('StreamableHttpTransport: SSE endpoints require persistent connections, not suitable for MCP request-response pattern');
-    console.log('StreamableHttpTransport: Message that would be sent:', JSON.stringify(message));
-    
-    // For now, return a mock response to indicate the transport type is not compatible
+    console.log('StreamableHttpTransport: Message that would be sent:', JSON.stringify(_message));
+
+    // For now, throw an error to indicate the transport type is not compatible
     // with the MCP protocol's request-response pattern
     throw new Error('StreamableHttpTransport: SSE endpoints are not compatible with MCP request-response pattern. GitHub Copilot MCP may require a different integration approach.');
   }

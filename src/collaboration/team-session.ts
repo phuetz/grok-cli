@@ -793,7 +793,7 @@ export class TeamSessionManager extends EventEmitter {
 
       // Convert object back to Map
       session.state.cursorPositions = new Map(
-        Object.entries((session.state as any).cursorPositions || {})
+        Object.entries((session.state as SessionState & { cursorPositions: Record<string, CursorPosition> }).cursorPositions || {})
       );
 
       // Convert date strings to Date objects
@@ -939,18 +939,18 @@ export class TeamSessionManager extends EventEmitter {
   /**
    * Handle WebSocket message
    */
-  private handleWebSocketMessage(message: { type: string; payload: any }): void {
+  private handleWebSocketMessage(message: { type: string; payload: unknown }): void {
     switch (message.type) {
       case 'member_joined':
         if (this.currentSession) {
-          this.currentSession.members.push(message.payload);
+          this.currentSession.members.push(message.payload as TeamMember);
           this.emit('member:joined', { member: message.payload });
         }
         break;
 
       case 'member_left':
         if (this.currentSession) {
-          const idx = this.currentSession.members.findIndex(m => m.id === message.payload.id);
+          const idx = this.currentSession.members.findIndex(m => m.id === (message.payload as TeamMember).id);
           if (idx !== -1) {
             this.currentSession.members.splice(idx, 1);
             this.emit('member:left', { member: message.payload });
@@ -960,14 +960,15 @@ export class TeamSessionManager extends EventEmitter {
 
       case 'cursor':
         if (this.currentSession) {
-          this.currentSession.state.cursorPositions.set(message.payload.memberId, message.payload);
+          const cursorPayload = message.payload as CursorPosition;
+          this.currentSession.state.cursorPositions.set(cursorPayload.memberId, cursorPayload);
           this.emit('cursor:updated', { position: message.payload });
         }
         break;
 
       case 'message':
         if (this.currentSession) {
-          this.currentSession.state.sharedContext.conversationHistory.push(message.payload);
+          this.currentSession.state.sharedContext.conversationHistory.push(message.payload as ConversationMessage);
           this.emit('message:received', { message: message.payload });
         }
         break;
@@ -980,7 +981,7 @@ export class TeamSessionManager extends EventEmitter {
   /**
    * Broadcast update to all members
    */
-  private broadcastUpdate(type: string, payload: any): void {
+  private broadcastUpdate(type: string, payload: unknown): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type, payload }));
     }

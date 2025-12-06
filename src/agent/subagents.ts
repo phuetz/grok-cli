@@ -162,7 +162,7 @@ export class Subagent extends EventEmitter {
   async run(
     task: string,
     context?: string,
-    tools?: any[],
+    tools?: import("../grok/client.js").GrokTool[],
     executeTool?: (toolCall: GrokToolCall) => Promise<ToolResult>
   ): Promise<SubagentResult> {
     this.isRunning = true;
@@ -179,7 +179,7 @@ export class Subagent extends EventEmitter {
     let filteredTools = tools;
     if (this.config.tools && this.config.tools.length > 0 && tools) {
       filteredTools = tools.filter((t) =>
-        this.config.tools!.includes(t.function?.name || t.name)
+        this.config.tools!.includes(t.function?.name || "")
       );
     }
 
@@ -213,7 +213,7 @@ export class Subagent extends EventEmitter {
           role: "assistant",
           content: assistantMessage.content || "",
           tool_calls: assistantMessage.tool_calls,
-        } as any);
+        });
 
         // Handle tool calls
         if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
@@ -262,8 +262,9 @@ export class Subagent extends EventEmitter {
       return {
         success: false,
         output:
-          (lastMessage as any).content ||
-          "Maximum rounds reached without completion",
+          (typeof lastMessage === 'object' && lastMessage && 'content' in lastMessage && typeof lastMessage.content === 'string')
+            ? lastMessage.content
+            : "Maximum rounds reached without completion",
         toolsUsed: [...new Set(toolsUsed)],
         rounds,
         duration,
@@ -341,7 +342,7 @@ export class SubagentManager {
     task: string,
     options: {
       context?: string;
-      tools?: any[];
+      tools?: import("../grok/client.js").GrokTool[];
       executeTool?: (toolCall: GrokToolCall) => Promise<ToolResult>;
     } = {}
   ): Promise<SubagentResult> {
@@ -441,7 +442,7 @@ export class ParallelSubagentRunner extends EventEmitter {
     tasks: ParallelTask[],
     options: ParallelExecutionOptions = {},
     sharedOptions: {
-      tools?: any[];
+      tools?: import("../grok/client.js").GrokTool[];
       executeTool?: (toolCall: GrokToolCall) => Promise<ToolResult>;
     } = {}
   ): Promise<ParallelExecutionResult> {
@@ -566,7 +567,7 @@ export class ParallelSubagentRunner extends EventEmitter {
     agentTypes: string[],
     options: ParallelExecutionOptions = {},
     sharedOptions: {
-      tools?: any[];
+      tools?: import("../grok/client.js").GrokTool[];
       executeTool?: (toolCall: GrokToolCall) => Promise<ToolResult>;
     } = {}
   ): Promise<ParallelExecutionResult> {

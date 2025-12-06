@@ -43,11 +43,11 @@ interface JSONRPCRequest {
 interface JSONRPCResponse {
   jsonrpc: '2.0';
   id: number;
-  result?: any;
+  result?: unknown;
   error?: {
     code: number;
     message: string;
-    data?: any;
+    data?: unknown;
   };
 }
 
@@ -194,7 +194,7 @@ export class MCPClient extends EventEmitter {
   /**
    * Call a tool on a specific server
    */
-  async callTool(serverName: string, toolName: string, args: object): Promise<any> {
+  async callTool(serverName: string, toolName: string, args: object): Promise<unknown> {
     const server = this.servers.get(serverName);
     if (!server) {
       throw new Error(`Server ${serverName} is not connected`);
@@ -206,7 +206,7 @@ export class MCPClient extends EventEmitter {
   /**
    * Read a resource from a specific server
    */
-  async readResource(serverName: string, uri: string): Promise<any> {
+  async readResource(serverName: string, uri: string): Promise<unknown> {
     const server = this.servers.get(serverName);
     if (!server) {
       throw new Error(`Server ${serverName} is not connected`);
@@ -249,7 +249,7 @@ class MCPServerConnection extends EventEmitter {
   private config: MCPServerConfig;
   private process: ChildProcess | null = null;
   private requestId = 0;
-  private pendingRequests: Map<number, { resolve: (value: any) => void; reject: (error: any) => void }> = new Map();
+  private pendingRequests: Map<number, { resolve: (value: unknown) => void; reject: (error: unknown) => void }> = new Map();
   private buffer = '';
 
   constructor(config: MCPServerConfig) {
@@ -344,7 +344,7 @@ class MCPServerConnection extends EventEmitter {
     }
   }
 
-  private async sendRequest(method: string, params?: object): Promise<any> {
+  private async sendRequest(method: string, params?: object): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const id = ++this.requestId;
 
@@ -386,16 +386,16 @@ class MCPServerConnection extends EventEmitter {
   }
 
   async listTools(): Promise<MCPTool[]> {
-    const result = await this.sendRequest('tools/list', {});
+    const result = await this.sendRequest('tools/list', {}) as { tools?: MCPTool[] };
     return result.tools || [];
   }
 
   async listResources(): Promise<MCPResource[]> {
-    const result = await this.sendRequest('resources/list', {});
+    const result = await this.sendRequest('resources/list', {}) as { resources?: MCPResource[] };
     return result.resources || [];
   }
 
-  async callTool(name: string, args: object): Promise<any> {
+  async callTool(name: string, args: object): Promise<unknown> {
     const result = await this.sendRequest('tools/call', {
       name,
       arguments: args
@@ -403,7 +403,7 @@ class MCPServerConnection extends EventEmitter {
     return result;
   }
 
-  async readResource(uri: string): Promise<any> {
+  async readResource(uri: string): Promise<unknown> {
     const result = await this.sendRequest('resources/read', { uri });
     return result;
   }

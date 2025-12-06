@@ -35,7 +35,7 @@ export default function App({ agent }: Props) {
     confirmationService.resetSession();
   }, []);
 
-  useInput(async (inputChar: string, key: any) => {
+  useInput(async (inputChar: string, key: { ctrl?: boolean; return?: boolean; backspace?: boolean; delete?: boolean; meta?: boolean }) => {
     // If confirmation dialog is open, don't handle normal input
     if (confirmationOptions) {
       return;

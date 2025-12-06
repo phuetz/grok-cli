@@ -385,7 +385,7 @@ export class GrokAgent extends EventEmitter {
     let toolRounds = 0;
 
     // Track token usage for cost calculation
-    const inputTokens = this.tokenCounter.countMessageTokens(this.messages as any);
+    const inputTokens = this.tokenCounter.countMessageTokens(this.messages as Array<{ role: string; content: string | null; [key: string]: unknown }>);
     let totalOutputTokens = 0;
 
     try {
@@ -448,7 +448,7 @@ export class GrokAgent extends EventEmitter {
             role: "assistant",
             content: assistantMessage.content || "",
             tool_calls: assistantMessage.tool_calls,
-          } as any);
+          });
 
           // Create initial tool call entries to show tools are being executed
           assistantMessage.tool_calls.forEach((toolCall) => {
@@ -576,10 +576,11 @@ export class GrokAgent extends EventEmitter {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private messageReducer(previous: any, item: any): any {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const reduce = (acc: any, delta: any): any => {
+  private messageReducer(previous: Record<string, unknown>, item: unknown): Record<string, unknown> {
+    const reduce = (acc: Record<string, unknown>, delta: unknown): Record<string, unknown> => {
+      if (!delta || typeof delta !== 'object') {
+        return acc;
+      }
       acc = { ...acc };
       for (const [key, value] of Object.entries(delta)) {
         if (acc[key] === undefined || acc[key] === null) {
@@ -587,25 +588,28 @@ export class GrokAgent extends EventEmitter {
           // Clean up index properties from tool calls
           if (Array.isArray(acc[key])) {
             for (const arr of acc[key]) {
-              delete arr.index;
+              if (arr && typeof arr === 'object' && 'index' in arr) {
+                delete arr.index;
+              }
             }
           }
         } else if (typeof acc[key] === "string" && typeof value === "string") {
           (acc[key] as string) += value;
         } else if (Array.isArray(acc[key]) && Array.isArray(value)) {
-          const accArray = acc[key] as any[];
+          const accArray = acc[key] as Array<Record<string, unknown>>;
           for (let i = 0; i < value.length; i++) {
             if (!accArray[i]) accArray[i] = {};
             accArray[i] = reduce(accArray[i], value[i]);
           }
-        } else if (typeof acc[key] === "object" && typeof value === "object") {
-          acc[key] = reduce(acc[key], value);
+        } else if (typeof acc[key] === "object" && typeof value === "object" && acc[key] !== null && value !== null) {
+          acc[key] = reduce(acc[key] as Record<string, unknown>, value);
         }
       }
       return acc;
     };
 
-    return reduce(previous, item.choices[0]?.delta || {});
+    const itemObj = item as { choices?: Array<{ delta?: unknown }> };
+    return reduce(previous, itemObj.choices?.[0]?.delta || {});
   }
 
   /**
@@ -658,7 +662,7 @@ export class GrokAgent extends EventEmitter {
 
     // Calculate input tokens
     let inputTokens = this.tokenCounter.countMessageTokens(
-      this.messages as any
+      this.messages as Array<{ role: string; content: string | null; [key: string]: unknown }>
     );
     yield {
       type: "token_count",
@@ -716,7 +720,7 @@ export class GrokAgent extends EventEmitter {
             ? { search_parameters: { mode: "auto" } }
             : { search_parameters: { mode: "off" } }
         );
-        let accumulatedMessage: any = {};
+        let accumulatedMessage: Record<string, unknown> = {};
         let accumulatedContent = "";
         let toolCallsYielded = false;
 
@@ -737,15 +741,16 @@ export class GrokAgent extends EventEmitter {
           accumulatedMessage = this.messageReducer(accumulatedMessage, chunk);
 
           // Check for tool calls - yield when we have complete tool calls with function names
-          if (!toolCallsYielded && accumulatedMessage.tool_calls?.length > 0) {
+          const toolCalls = accumulatedMessage.tool_calls;
+          if (!toolCallsYielded && Array.isArray(toolCalls) && toolCalls.length > 0) {
             // Check if we have at least one complete tool call with a function name
-            const hasCompleteTool = accumulatedMessage.tool_calls.some(
-              (tc: GrokToolCall) => tc.function?.name
+            const hasCompleteTool = toolCalls.some(
+              (tc: unknown) => typeof tc === 'object' && tc !== null && 'function' in tc && typeof tc.function === 'object' && tc.function !== null && 'name' in tc.function
             );
             if (hasCompleteTool) {
               yield {
                 type: "tool_calls",
-                toolCalls: accumulatedMessage.tool_calls,
+                toolCalls: toolCalls as GrokToolCall[],
               };
               toolCallsYielded = true;
             }
@@ -795,12 +800,14 @@ export class GrokAgent extends EventEmitter {
 
         // Check for "commentary" style tool calls in content (for models without native tool call support)
         // This handles patterns like: "commentary to=web_search {"query":"..."}"
-        if (!accumulatedMessage.tool_calls?.length && accumulatedContent) {
+        const existingToolCalls = accumulatedMessage.tool_calls;
+        const hasToolCalls = Array.isArray(existingToolCalls) && existingToolCalls.length > 0;
+        if (!hasToolCalls && accumulatedContent) {
           const { toolCalls: extractedCalls, remainingContent } = extractCommentaryToolCalls(accumulatedContent);
 
           if (extractedCalls.length > 0) {
             // Convert extracted calls to OpenAI tool call format
-            accumulatedMessage.tool_calls = extractedCalls.map((tc, index) => ({
+            const convertedCalls = extractedCalls.map((tc, index) => ({
               id: `commentary_${Date.now()}_${index}`,
               type: 'function' as const,
               function: {
@@ -808,6 +815,7 @@ export class GrokAgent extends EventEmitter {
                 arguments: JSON.stringify(tc.arguments),
               },
             }));
+            accumulatedMessage.tool_calls = convertedCalls;
 
             // Update content to remove the tool call text
             accumulatedMessage.content = remainingContent;
@@ -816,42 +824,45 @@ export class GrokAgent extends EventEmitter {
             // Yield the extracted tool calls
             yield {
               type: "tool_calls",
-              toolCalls: accumulatedMessage.tool_calls,
+              toolCalls: convertedCalls,
             };
             toolCallsYielded = true;
           }
         }
 
         // Add assistant entry to history
+        const content = typeof accumulatedMessage.content === 'string' ? accumulatedMessage.content : "Using tools to help you...";
+        const toolCalls = Array.isArray(accumulatedMessage.tool_calls) ? accumulatedMessage.tool_calls as GrokToolCall[] : undefined;
+
         const assistantEntry: ChatEntry = {
           type: "assistant",
-          content: accumulatedMessage.content || "Using tools to help you...",
+          content: content,
           timestamp: new Date(),
-          toolCalls: accumulatedMessage.tool_calls || undefined,
+          toolCalls: toolCalls,
         };
         this.chatHistory.push(assistantEntry);
 
         // Add accumulated message to conversation
         this.messages.push({
           role: "assistant",
-          content: accumulatedMessage.content || "",
-          tool_calls: accumulatedMessage.tool_calls,
-        } as any);
+          content: content,
+          tool_calls: toolCalls,
+        });
 
         // Handle tool calls if present
-        if (accumulatedMessage.tool_calls?.length > 0) {
+        if (toolCalls && toolCalls.length > 0) {
           toolRounds++;
 
           // Only yield tool_calls if we haven't already yielded them during streaming
           if (!toolCallsYielded) {
             yield {
               type: "tool_calls",
-              toolCalls: accumulatedMessage.tool_calls,
+              toolCalls: toolCalls,
             };
           }
 
           // Execute tools
-          for (const toolCall of accumulatedMessage.tool_calls) {
+          for (const toolCall of toolCalls) {
             // Check for cancellation before executing each tool
             if (this.abortController?.signal.aborted) {
               yield {
@@ -893,7 +904,7 @@ export class GrokAgent extends EventEmitter {
 
           // Update token count after processing all tool calls to include tool results
           inputTokens = this.tokenCounter.countMessageTokens(
-            this.messages as any
+            this.messages as Array<{ role: string; content: string | null; [key: string]: unknown }>
           );
           // Final token update after tools processed
           yield {
@@ -1247,7 +1258,7 @@ export class GrokAgent extends EventEmitter {
     return this.mcpClient.formatStatus();
   }
 
-  async getMCPTools(): Promise<Map<string, any[]>> {
+  async getMCPTools(): Promise<Map<string, unknown[]>> {
     return this.mcpClient.getAllTools();
   }
 

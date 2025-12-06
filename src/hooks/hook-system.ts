@@ -49,7 +49,7 @@ export interface HookContext {
   oldContent?: string;
   newContent?: string;
   error?: Error;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

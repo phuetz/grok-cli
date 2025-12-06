@@ -384,6 +384,18 @@ export function useInputHandler({
           return true;
         }
 
+        if (result.prompt === "__FEATURES__") {
+          const { handleFeaturesCommand } = await import("../commands/features.js");
+          const entry: ChatEntry = {
+            type: "assistant",
+            content: handleFeaturesCommand(),
+            timestamp: new Date(),
+          };
+          setChatHistory((prev) => [...prev, entry]);
+          clearInput();
+          return true;
+        }
+
         // Handle enhanced commands with special tokens
         if (result.prompt.startsWith("__") && result.prompt.endsWith("__")) {
           const enhancedHandler = getEnhancedCommandHandler();

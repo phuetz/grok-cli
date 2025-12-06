@@ -36,7 +36,9 @@ const SQL_AGENT_CONFIG: SpecializedAgentConfig = {
 // ============================================================================
 
 export class SQLAgent extends SpecializedAgent {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private sqlite: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private alasql: any = null;
   private tempDir: string | null = null;
 
@@ -410,6 +412,7 @@ export class SQLAgent extends SpecializedAgent {
 
         return {
           columns,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           rows: rows.map((r: any) => columns.map(c => (r as Record<string, unknown>)[c])),
           rowCount: rows.length,
           duration: Date.now() - startTime,

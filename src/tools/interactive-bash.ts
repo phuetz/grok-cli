@@ -4,10 +4,28 @@ import { ToolResult, getErrorMessage } from "../types/index.js";
 // Note: node-pty is an optional dependency for PTY support
 // If not available, falls back to regular child_process
 
-let pty: any = null;
+interface PTYShell {
+  onData: (callback: (data: string) => void) => void;
+  onExit: (callback: (event: { exitCode: number }) => void) => void;
+  write: (data: string) => void;
+  resize: (cols: number, rows: number) => void;
+  kill: () => void;
+}
+
+interface PTYModule {
+  spawn: (shell: string, args: string[], options: {
+    name: string;
+    cols: number;
+    rows: number;
+    cwd: string;
+    env: Record<string, string | undefined>;
+  }) => PTYShell;
+}
+
+let pty: PTYModule | null = null;
 try {
   // Dynamic import to avoid crash if node-pty isn't installed
-  pty = require("node-pty");
+  pty = require("node-pty") as PTYModule;
 } catch {
   // node-pty not available
 }
@@ -87,6 +105,11 @@ export class InteractiveBashTool extends EventEmitter {
 
     return new Promise((resolve, reject) => {
       try {
+        if (!pty) {
+          reject(new Error("PTY module not available"));
+          return;
+        }
+
         const shell = pty.spawn("bash", ["-c", command], {
           name: "xterm-256color",
           cols,
@@ -96,7 +119,7 @@ export class InteractiveBashTool extends EventEmitter {
             ...process.env,
             ...options.env,
             TERM: "xterm-256color",
-          } as any,
+          },
         });
 
         let output = "";

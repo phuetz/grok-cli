@@ -231,7 +231,7 @@ export class PipelineRunner extends EventEmitter {
     pipelineName: string,
     task: string,
     options: {
-      tools?: any[];
+      tools?: import("../grok/client.js").GrokTool[];
       executeTool?: (toolCall: GrokToolCall) => Promise<ToolResult>;
       initialVariables?: Record<string, string>;
     } = {}

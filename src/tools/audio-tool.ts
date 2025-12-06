@@ -259,7 +259,7 @@ export class AudioTool {
       const result: TranscriptionResult = {
         text: response.data.text,
         language: response.data.language,
-        segments: response.data.segments?.map((seg: any) => ({
+        segments: response.data.segments?.map((seg: { start: number; end: number; text: string }) => ({
           start: seg.start,
           end: seg.end,
           text: seg.text

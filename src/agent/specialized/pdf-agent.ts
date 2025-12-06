@@ -37,6 +37,7 @@ const PDF_AGENT_CONFIG: SpecializedAgentConfig = {
 // ============================================================================
 
 export class PDFAgent extends SpecializedAgent {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private pdfParse: ((buffer: Buffer) => Promise<any>) | null = null;
 
   constructor() {
@@ -395,21 +396,24 @@ export class PDFAgent extends SpecializedAgent {
     return lines.join('\n');
   }
 
-  private formatAnalysis(analysis: any): string {
+  private formatAnalysis(analysis: Record<string, unknown>): string {
+    const stats = analysis.statistics as Record<string, unknown>;
+    const topWords = analysis.topWords as Array<{ word: string; count: number }>;
+
     const lines: string[] = [
       '┌─────────────────────────────────────────┐',
       '│           PDF ANALYSIS                  │',
       '├─────────────────────────────────────────┤',
-      `│ Pages: ${String(analysis.statistics.pageCount).padEnd(35)}│`,
-      `│ Words: ${String(analysis.statistics.wordCount).padEnd(35)}│`,
-      `│ Sentences: ${String(analysis.statistics.sentenceCount).padEnd(31)}│`,
-      `│ Paragraphs: ${String(analysis.statistics.paragraphCount).padEnd(30)}│`,
-      `│ Avg words/page: ${String(analysis.statistics.avgWordsPerPage).padEnd(26)}│`,
+      `│ Pages: ${String(stats.pageCount).padEnd(35)}│`,
+      `│ Words: ${String(stats.wordCount).padEnd(35)}│`,
+      `│ Sentences: ${String(stats.sentenceCount).padEnd(31)}│`,
+      `│ Paragraphs: ${String(stats.paragraphCount).padEnd(30)}│`,
+      `│ Avg words/page: ${String(stats.avgWordsPerPage).padEnd(26)}│`,
       '├─────────────────────────────────────────┤',
       '│ Top Words:                              │',
     ];
 
-    for (const { word, count } of analysis.topWords.slice(0, 5)) {
+    for (const { word, count } of topWords.slice(0, 5)) {
       lines.push(`│   ${word.padEnd(25)} ${String(count).padStart(10)} │`);
     }
 

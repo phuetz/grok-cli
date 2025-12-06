@@ -177,11 +177,10 @@ export class GrokClient {
       const response = await this.client.chat.completions.create({
         model: this.currentModel,
         messages: [{ role: "user", content: "What time is it? Use the get_current_time tool." }],
-        tools: [testTool],
+        tools: [testTool as unknown as OpenAI.ChatCompletionTool],
         tool_choice: "auto",
         max_tokens: 50,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      });
 
       // Check if response has valid choices
       if (!response.choices || response.choices.length === 0) {

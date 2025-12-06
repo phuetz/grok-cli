@@ -284,14 +284,14 @@ export class CodeContextBuilder {
    * Build contextual dependencies
    */
   private buildDependencies(
-    imports: { source: string; specifiers: any[]; isTypeOnly: boolean }[],
+    imports: { source: string; specifiers: Array<{ name?: string; alias?: string }>; isTypeOnly: boolean }[],
     _filePath: string
   ): ContextualDependency[] {
     const dependencies: ContextualDependency[] = [];
 
     for (const imp of imports) {
       const type = this.categorizeDependency(imp.source);
-      const symbols = imp.specifiers?.map((s: any) => s.name || s.alias) || [];
+      const symbols = imp.specifiers?.map((s) => s.name || s.alias || '') || [];
 
       dependencies.push({
         source: imp.source,

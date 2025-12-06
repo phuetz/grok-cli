@@ -15,7 +15,7 @@ export interface QRGenerateOptions {
 export interface QRDecodeResult {
   text: string;
   type?: 'url' | 'text' | 'vcard' | 'wifi' | 'email' | 'phone' | 'sms' | 'geo';
-  parsed?: any;
+  parsed?: unknown;
 }
 
 /**
@@ -380,8 +380,8 @@ export class QRTool {
   /**
    * Parse vCard content
    */
-  private parseVCard(text: string): any {
-    const vcard: any = {};
+  private parseVCard(text: string): Record<string, string | string[]> {
+    const vcard: Record<string, string | string[]> = {};
     const lines = text.split(/\r?\n/);
 
     for (const line of lines) {
@@ -398,12 +398,20 @@ export class QRTool {
           vcard.firstName = firstName;
           break;
         case 'TEL':
-          vcard.phone = vcard.phone || [];
-          vcard.phone.push(value);
+          if (!vcard.phone) {
+            vcard.phone = [];
+          }
+          if (Array.isArray(vcard.phone)) {
+            vcard.phone.push(value);
+          }
           break;
         case 'EMAIL':
-          vcard.email = vcard.email || [];
-          vcard.email.push(value);
+          if (!vcard.email) {
+            vcard.email = [];
+          }
+          if (Array.isArray(vcard.email)) {
+            vcard.email.push(value);
+          }
           break;
         case 'ORG':
           vcard.organization = value;

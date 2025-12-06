@@ -174,8 +174,7 @@ if (!isMainThread && parentPort) {
             throw new Error(`Method ${msg.method} not found`);
           }
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const result = await (fn as (...args: any[]) => any).apply(pluginModule, msg.args || []);
+          const result = await (fn as (...args: unknown[]) => unknown).apply(pluginModule, msg.args || []);
           port.postMessage({ type: 'result', id: msg.id, result });
           break;
         }

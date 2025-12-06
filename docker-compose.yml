@@ -1,0 +1,40 @@
+# Grok CLI - Docker Compose Configuration
+# Usage: docker-compose run --rm grok "your prompt here"
+
+services:
+  grok:
+    build:
+      context: .
+      target: production
+    image: grok-cli:latest
+    environment:
+      - GROK_API_KEY=${GROK_API_KEY}
+      - GROK_MODEL=${GROK_MODEL:-grok-3-latest}
+    volumes:
+      # Mount current directory as workspace
+      - .:/workspace:rw
+      # Persist grok settings
+      - grok-config:/home/grok/.grok
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+
+  grok-dev:
+    build:
+      context: .
+      target: development
+    image: grok-cli:dev
+    environment:
+      - GROK_API_KEY=${GROK_API_KEY}
+      - GROK_MODEL=${GROK_MODEL:-grok-3-latest}
+    volumes:
+      - .:/app:rw
+      - /app/node_modules
+      - grok-config:/home/node/.grok
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: npm run dev:node
+
+volumes:
+  grok-config:

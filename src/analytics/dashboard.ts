@@ -680,7 +680,10 @@ export class AnalyticsDashboard extends EventEmitter {
   /**
    * Convert to CSV
    */
-  private toCSV(data: any): string {
+  private toCSV(data: {
+    dailyStats: DailyStats[];
+    tools: ToolMetrics[];
+  }): string {
     let csv = '';
 
     // Daily stats
@@ -702,7 +705,13 @@ export class AnalyticsDashboard extends EventEmitter {
   /**
    * Convert to Markdown
    */
-  private toMarkdown(data: any): string {
+  private toMarkdown(data: {
+    exportedAt: string;
+    usage: UsageMetrics;
+    costs: CostMetrics;
+    performance: PerformanceMetrics;
+    tools: ToolMetrics[];
+  }): string {
     let md = '# Grok CLI Analytics Report\n\n';
     md += `**Generated:** ${data.exportedAt}\n\n`;
 

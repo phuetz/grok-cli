@@ -425,7 +425,7 @@ export class DocumentTool {
   /**
    * Extract DOCX metadata
    */
-  private extractDocxMetadata(zip: any): DocumentMetadata {
+  private extractDocxMetadata(zip: { readAsText: (path: string) => string }): DocumentMetadata {
     const metadata: DocumentMetadata = {};
 
     try {

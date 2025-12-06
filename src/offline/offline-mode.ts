@@ -61,7 +61,7 @@ export interface CachedEmbedding {
 export interface QueuedRequest {
   id: string;
   type: 'chat' | 'embedding' | 'tool';
-  payload: any;
+  payload: unknown;
   createdAt: Date;
   retries: number;
   priority: number;
@@ -498,7 +498,7 @@ export class OfflineMode extends EventEmitter {
   /**
    * Queue a request for later processing
    */
-  queueRequest(type: QueuedRequest['type'], payload: any, priority: number = 0): string {
+  queueRequest(type: QueuedRequest['type'], payload: unknown, priority: number = 0): string {
     if (!this.config.queueRequestsWhenOffline) {
       throw new Error('Request queuing is disabled');
     }
@@ -555,7 +555,7 @@ export class OfflineMode extends EventEmitter {
   /**
    * Process a single request
    */
-  private async processRequest(request: QueuedRequest): Promise<any> {
+  private async processRequest(request: QueuedRequest): Promise<unknown> {
     // This would integrate with the main Grok client
     // For now, just emit an event
     this.emit('request:execute', { request });
@@ -592,7 +592,10 @@ export class OfflineMode extends EventEmitter {
   /**
    * Call Ollama API
    */
-  private async callOllama(prompt: string, model: string, options: any): Promise<string> {
+  private async callOllama(prompt: string, model: string, options: {
+    maxTokens?: number;
+    temperature?: number;
+  }): Promise<string> {
     const endpoint = this.config.localLLMEndpoint || 'http://localhost:11434';
 
     const response = await axios.post(`${endpoint}/api/generate`, {
@@ -614,7 +617,10 @@ export class OfflineMode extends EventEmitter {
   /**
    * Call llama.cpp server
    */
-  private async callLlamaCpp(prompt: string, model: string, options: any): Promise<string> {
+  private async callLlamaCpp(prompt: string, model: string, options: {
+    maxTokens?: number;
+    temperature?: number;
+  }): Promise<string> {
     const endpoint = this.config.localLLMEndpoint || 'http://localhost:8080';
 
     const response = await axios.post(`${endpoint}/completion`, {
@@ -663,7 +669,7 @@ export class OfflineMode extends EventEmitter {
       if (this.config.localLLMProvider === 'ollama') {
         const endpoint = this.config.localLLMEndpoint || 'http://localhost:11434';
         const response = await axios.get(`${endpoint}/api/tags`, { timeout: 5000 });
-        return response.data.models?.map((m: any) => m.name) || [];
+        return response.data.models?.map((m: { name: string }) => m.name) || [];
       }
       return [];
     } catch {

@@ -15,7 +15,7 @@ export interface MCPServerConfig {
 export interface MCPTool {
   name: string;
   description: string;
-  inputSchema: any;
+  inputSchema: Record<string, unknown>;
   serverName: string;
 }
 
@@ -108,7 +108,7 @@ export class MCPManager extends EventEmitter {
     this.emit('serverRemoved', serverName);
   }
 
-  async callTool(toolName: string, arguments_: any): Promise<CallToolResult> {
+  async callTool(toolName: string, arguments_: Record<string, unknown>): Promise<CallToolResult> {
     const tool = this.tools.get(toolName);
     if (!tool) {
       throw new Error(`Tool ${toolName} not found`);

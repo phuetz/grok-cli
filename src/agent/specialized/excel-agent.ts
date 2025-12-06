@@ -99,6 +99,7 @@ function formatCSV(data: unknown[][], delimiter: string = ','): string {
 // ============================================================================
 
 export class ExcelAgent extends SpecializedAgent {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private xlsx: any = null;
 
   constructor() {
@@ -430,7 +431,7 @@ export class ExcelAgent extends SpecializedAgent {
     const headers = sheet.data[0] as string[];
 
     // Calculate stats per column
-    const columnStats: Record<string, any> = {};
+    const columnStats: Record<string, Record<string, unknown>> = {};
 
     for (let col = 0; col < headers.length; col++) {
       const values: unknown[] = [];
@@ -441,7 +442,7 @@ export class ExcelAgent extends SpecializedAgent {
       const numericValues = values.filter(v => typeof v === 'number' || !isNaN(Number(v)));
       const nullCount = values.filter(v => v === null || v === undefined || v === '').length;
 
-      const stats: any = {
+      const stats: Record<string, unknown> = {
         type: this.inferType(values),
         count: values.length,
         nullCount,
@@ -451,10 +452,11 @@ export class ExcelAgent extends SpecializedAgent {
       if (numericValues.length > values.length * 0.5) {
         const nums = numericValues.map(Number).filter(n => !isNaN(n));
         if (nums.length > 0) {
+          const sum = nums.reduce((a, b) => a + b, 0);
           stats.min = Math.min(...nums);
           stats.max = Math.max(...nums);
-          stats.sum = nums.reduce((a, b) => a + b, 0);
-          stats.mean = stats.sum / nums.length;
+          stats.sum = sum;
+          stats.mean = sum / nums.length;
         }
       }
 
@@ -567,7 +569,7 @@ export class ExcelAgent extends SpecializedAgent {
     };
   }
 
-  private calculateColumnWidths(data: unknown[][]): any[] {
+  private calculateColumnWidths(data: unknown[][]): Array<{ wch: number }> {
     const widths: number[] = [];
     for (const row of data) {
       for (let i = 0; i < row.length; i++) {
@@ -604,7 +606,7 @@ export class ExcelAgent extends SpecializedAgent {
     return lines.join('\n');
   }
 
-  private formatStats(stats: Record<string, any>, rowCount: number): string {
+  private formatStats(stats: Record<string, Record<string, unknown>>, rowCount: number): string {
     const lines: string[] = [
       '┌─────────────────────────────────────────────────────┐',
       '│              DATA STATISTICS                        │',
@@ -614,9 +616,14 @@ export class ExcelAgent extends SpecializedAgent {
     ];
 
     for (const [col, s] of Object.entries(stats)) {
-      lines.push(`│ ${col.slice(0, 20).padEnd(20)} │ ${s.type.padEnd(10)} │ ${String(s.uniqueCount).padEnd(8)} unique │`);
+      const sType = s.type as string;
+      const sUniqueCount = s.uniqueCount as number;
+      lines.push(`│ ${col.slice(0, 20).padEnd(20)} │ ${sType.padEnd(10)} │ ${String(sUniqueCount).padEnd(8)} unique │`);
       if (s.mean !== undefined) {
-        lines.push(`│   min: ${String(s.min.toFixed(2)).padEnd(12)} max: ${String(s.max.toFixed(2)).padEnd(12)} mean: ${s.mean.toFixed(2).padEnd(10)}│`);
+        const sMin = s.min as number;
+        const sMax = s.max as number;
+        const sMean = s.mean as number;
+        lines.push(`│   min: ${String(sMin.toFixed(2)).padEnd(12)} max: ${String(sMax.toFixed(2)).padEnd(12)} mean: ${sMean.toFixed(2).padEnd(10)}│`);
       }
     }
 

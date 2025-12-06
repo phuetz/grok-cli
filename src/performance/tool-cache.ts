@@ -313,16 +313,16 @@ export function withCache<T extends ToolResult>(
  */
 export function Cacheable(toolName?: string) {
   return function (
-    _target: any,
+    _target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
     const name = toolName || propertyKey;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (this: unknown, ...args: unknown[]) {
       const cache = getToolCache();
-      const argsObj = args[0] || {};
+      const argsObj = (args[0] as Record<string, unknown>) || {};
 
       if (!cache.isCacheable(name, argsObj)) {
         return originalMethod.apply(this, args);

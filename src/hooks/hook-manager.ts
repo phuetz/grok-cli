@@ -254,7 +254,7 @@ export class HookManager {
         }
 
         // Try to parse stdout as JSON for advanced hook responses
-        let parsedOutput: any = null;
+        let parsedOutput: { blocked?: boolean; modifiedArgs?: Record<string, unknown> } | null = null;
         try {
           parsedOutput = JSON.parse(stdout.trim());
         } catch {
