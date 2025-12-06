@@ -13,8 +13,8 @@
 | **Fichiers TypeScript** | 286 |
 | **Lignes de code** | 121,451 |
 | **Modules** | 43 |
-| **Tests** | 1,384 (49 fichiers) |
-| **Couverture** | 20.8% |
+| **Tests** | 1,601 (53 fichiers) |
+| **Couverture** | 22.9% |
 | **Score Global** | **92/100** |
 
 ---
@@ -424,7 +424,7 @@
 |----------|--------|
 | Fichiers | 286 |
 | Lignes | 121,451 |
-| Tests | 1,384 |
+| Tests | 1,601 |
 | Modules | 43 |
 | Agents | 11 (4 multi-agent + 6 spécialisés + 1 principal) |
 | Outils | 41 |
