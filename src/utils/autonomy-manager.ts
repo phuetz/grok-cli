@@ -1,4 +1,5 @@
-import * as fs from "fs-extra";
+import { existsSync } from "fs";
+import fse from "fs-extra";
 import * as path from "path";
 
 export type AutonomyLevel = "suggest" | "confirm" | "auto" | "full" | "yolo";
@@ -118,9 +119,9 @@ export class AutonomyManager {
       yolo: { ...DEFAULT_YOLO_CONFIG },
     };
 
-    if (fs.existsSync(this.configPath)) {
+    if (existsSync(this.configPath)) {
       try {
-        const saved = fs.readJsonSync(this.configPath);
+        const saved = fse.readJsonSync(this.configPath);
         return {
           ...defaultConfig,
           ...saved,
@@ -138,7 +139,7 @@ export class AutonomyManager {
   private saveConfig(): void {
     try {
       const dir = path.dirname(this.configPath);
-      fs.ensureDirSync(dir);
+      fse.ensureDirSync(dir);
 
       const toSave = {
         ...this.config,
@@ -150,7 +151,7 @@ export class AutonomyManager {
         },
       };
 
-      fs.writeJsonSync(this.configPath, toSave, { spaces: 2 });
+      fse.writeJsonSync(this.configPath, toSave, { spaces: 2 });
     } catch (error) {
       console.warn("Failed to save autonomy config:", error);
     }
