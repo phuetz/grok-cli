@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420">
+  <defs>
+    <linearGradient id="bgGradRPC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" fill="url(#bgGradRPC)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">PIPELINE RAG CODE</text>
+
+  <!-- Phase 1: Indexation -->
+  <rect x="40" y="50" width="720" height="150" rx="8" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="400" y="75" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2ecc71" text-anchor="middle">PHASE 1 : INDEXATION (offline, une fois)</text>
+
+  <!-- Codebase input -->
+  <rect x="60" y="95" width="80" height="40" rx="6" fill="#2d2d44" stroke="#4a4a6a"/>
+  <text x="100" y="120" font-family="Arial, sans-serif" font-size="10" fill="#cccccc" text-anchor="middle">Codebase</text>
+
+  <!-- Arrow -->
+  <path d="M 145 115 L 175 115" stroke="#888888" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Parse -->
+  <rect x="180" y="95" width="90" height="40" rx="6" fill="#2d2d44" stroke="#9b59b6"/>
+  <text x="225" y="112" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6" text-anchor="middle">Parse</text>
+  <text x="225" y="126" font-family="Arial, sans-serif" font-size="8" fill="#888888" text-anchor="middle">AST</text>
+
+  <!-- Arrow -->
+  <path d="M 275 115 L 305 115" stroke="#888888" stroke-width="2"/>
+
+  <!-- Chunk -->
+  <rect x="310" y="95" width="90" height="40" rx="6" fill="#2d2d44" stroke="#f39c12"/>
+  <text x="355" y="112" font-family="Arial, sans-serif" font-size="9" fill="#f39c12" text-anchor="middle">Chunk</text>
+  <text x="355" y="126" font-family="Arial, sans-serif" font-size="8" fill="#888888" text-anchor="middle">fonctions/classes</text>
+
+  <!-- Arrow -->
+  <path d="M 405 115 L 435 115" stroke="#888888" stroke-width="2"/>
+
+  <!-- Embed -->
+  <rect x="440" y="95" width="90" height="40" rx="6" fill="#2d2d44" stroke="#3498db"/>
+  <text x="485" y="112" font-family="Arial, sans-serif" font-size="9" fill="#3498db" text-anchor="middle">Embed</text>
+  <text x="485" y="126" font-family="Arial, sans-serif" font-size="8" fill="#888888" text-anchor="middle">vectors</text>
+
+  <!-- Arrow -->
+  <path d="M 535 115 L 565 115" stroke="#888888" stroke-width="2"/>
+
+  <!-- Store -->
+  <rect x="570" y="95" width="90" height="40" rx="6" fill="#2d2d44" stroke="#2ecc71"/>
+  <text x="615" y="112" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71" text-anchor="middle">Store</text>
+  <text x="615" y="126" font-family="Arial, sans-serif" font-size="8" fill="#888888" text-anchor="middle">SQLite</text>
+
+  <!-- Database icon -->
+  <rect x="680" y="95" width="60" height="40" rx="6" fill="#2d2d44" stroke="#4a4a6a"/>
+  <text x="710" y="120" font-family="Arial, sans-serif" font-size="16" fill="#9b59b6" text-anchor="middle">DB</text>
+
+  <!-- Phase 1 timing -->
+  <text x="400" y="175" font-family="Arial, sans-serif" font-size="9" fill="#888888" text-anchor="middle">Frequence: Une fois + incremental lors des modifications</text>
+
+  <!-- Phase 2: Retrieval -->
+  <rect x="40" y="220" width="720" height="180" rx="8" fill="#3a3a1e" stroke="#f39c12" stroke-width="2"/>
+  <text x="400" y="245" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#f39c12" text-anchor="middle">PHASE 2 : RETRIEVAL (online, chaque requete)</text>
+
+  <!-- Query input -->
+  <rect x="60" y="270" width="120" height="50" rx="6" fill="#2d2d44" stroke="#4a4a6a"/>
+  <text x="120" y="292" font-family="Arial, sans-serif" font-size="9" fill="#3498db" text-anchor="middle">Query</text>
+  <text x="120" y="308" font-family="monospace" font-size="7" fill="#888888" text-anchor="middle">"processPayment?"</text>
+
+  <!-- Arrow -->
+  <path d="M 185 295 L 215 295" stroke="#888888" stroke-width="2"/>
+
+  <!-- Embed query -->
+  <rect x="220" y="270" width="90" height="50" rx="6" fill="#2d2d44" stroke="#3498db"/>
+  <text x="265" y="292" font-family="Arial, sans-serif" font-size="9" fill="#3498db" text-anchor="middle">Embed</text>
+  <text x="265" y="306" font-family="Arial, sans-serif" font-size="8" fill="#888888" text-anchor="middle">query</text>
+
+  <!-- Arrow -->
+  <path d="M 315 295 L 345 295" stroke="#888888" stroke-width="2"/>
+
+  <!-- Search -->
+  <rect x="350" y="270" width="90" height="50" rx="6" fill="#2d2d44" stroke="#9b59b6"/>
+  <text x="395" y="292" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6" text-anchor="middle">Search</text>
+  <text x="395" y="306" font-family="Arial, sans-serif" font-size="8" fill="#888888" text-anchor="middle">top 20</text>
+
+  <!-- Arrow -->
+  <path d="M 445 295 L 475 295" stroke="#888888" stroke-width="2"/>
+
+  <!-- Rerank -->
+  <rect x="480" y="270" width="90" height="50" rx="6" fill="#2d2d44" stroke="#2ecc71"/>
+  <text x="525" y="292" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71" text-anchor="middle">Rerank</text>
+  <text x="525" y="306" font-family="Arial, sans-serif" font-size="8" fill="#888888" text-anchor="middle">top 5</text>
+
+  <!-- Arrow -->
+  <path d="M 575 295 L 605 295" stroke="#888888" stroke-width="2"/>
+
+  <!-- Return -->
+  <rect x="610" y="270" width="90" height="50" rx="6" fill="#2d2d44" stroke="#f39c12"/>
+  <text x="655" y="292" font-family="Arial, sans-serif" font-size="9" fill="#f39c12" text-anchor="middle">Return</text>
+  <text x="655" y="306" font-family="Arial, sans-serif" font-size="8" fill="#888888" text-anchor="middle">context</text>
+
+  <!-- Result box -->
+  <rect x="710" y="270" width="40" height="50" rx="6" fill="#1e3a3a" stroke="#2ecc71"/>
+  <text x="730" y="300" font-family="Arial, sans-serif" font-size="14" fill="#2ecc71" text-anchor="middle">LLM</text>
+
+  <!-- Phase 2 timing -->
+  <text x="400" y="365" font-family="Arial, sans-serif" font-size="9" fill="#888888" text-anchor="middle">Frequence: A chaque requete utilisateur</text>
+
+  <!-- Connection arrow from DB to Search -->
+  <path d="M 710 140 L 710 180 L 730 180 L 730 265 L 395 265" stroke="#9b59b6" stroke-width="1" stroke-dasharray="4,2" fill="none"/>
+</svg>

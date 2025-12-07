@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 280">
+  <defs>
+    <linearGradient id="bgGradTB" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="280" fill="url(#bgGradTB)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">BUDGET TOKENS</text>
+  <text x="400" y="48" font-family="Arial, sans-serif" font-size="11" fill="#888888" text-anchor="middle">Contexte total disponible : 128,000 tokens (GPT-4-turbo)</text>
+
+  <!-- Token bar -->
+  <rect x="50" y="70" width="700" height="50" rx="8" fill="#2d2d44" stroke="#4a4a6a" stroke-width="1"/>
+
+  <!-- RAG Context -->
+  <rect x="52" y="72" width="500" height="46" rx="6" fill="#2ecc71"/>
+  <text x="302" y="100" font-family="Arial, sans-serif" font-size="11" fill="#ffffff" text-anchor="middle">RAG Context</text>
+  <text x="302" y="114" font-family="Arial, sans-serif" font-size="10" fill="#ffffff" text-anchor="middle">~100K tokens</text>
+
+  <!-- Query -->
+  <rect x="554" y="72" width="60" height="46" rx="6" fill="#3498db"/>
+  <text x="584" y="100" font-family="Arial, sans-serif" font-size="9" fill="#ffffff" text-anchor="middle">Query</text>
+  <text x="584" y="112" font-family="Arial, sans-serif" font-size="8" fill="#ffffff" text-anchor="middle">~2K</text>
+
+  <!-- System -->
+  <rect x="616" y="72" width="40" height="46" rx="6" fill="#9b59b6"/>
+  <text x="636" y="100" font-family="Arial, sans-serif" font-size="8" fill="#ffffff" text-anchor="middle">Sys</text>
+  <text x="636" y="112" font-family="Arial, sans-serif" font-size="7" fill="#ffffff" text-anchor="middle">~1K</text>
+
+  <!-- Output -->
+  <rect x="658" y="72" width="90" height="46" rx="6" fill="#f39c12"/>
+  <text x="703" y="100" font-family="Arial, sans-serif" font-size="9" fill="#ffffff" text-anchor="middle">Output</text>
+  <text x="703" y="112" font-family="Arial, sans-serif" font-size="8" fill="#ffffff" text-anchor="middle">~25K</text>
+
+  <!-- Strategy -->
+  <rect x="100" y="140" width="600" height="120" rx="10" fill="#2d2d44" stroke="#4a4a6a" stroke-width="2"/>
+  <text x="400" y="165" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">STRATEGIE DE REMPLISSAGE</text>
+
+  <text x="140" y="195" font-family="Arial, sans-serif" font-size="10" fill="#2ecc71">1.</text>
+  <text x="160" y="195" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Chunks les plus pertinents d'abord</text>
+
+  <text x="140" y="218" font-family="Arial, sans-serif" font-size="10" fill="#3498db">2.</text>
+  <text x="160" y="218" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Stop quand la limite approche</text>
+
+  <text x="140" y="241" font-family="Arial, sans-serif" font-size="10" fill="#f39c12">3.</text>
+  <text x="160" y="241" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Tronquer le dernier si necessaire</text>
+</svg>

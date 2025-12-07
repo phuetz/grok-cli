@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320">
+  <defs>
+    <linearGradient id="bgGradSRL" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="320" fill="url(#bgGradSRL)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">LIMITES DU RETRIEVAL SEMANTIQUE PUR</text>
+
+  <!-- Query box -->
+  <rect x="50" y="50" width="700" height="35" rx="6" fill="#2d2d44" stroke="#4a4a6a"/>
+  <text x="70" y="73" font-family="Arial, sans-serif" font-size="12" fill="#3498db">Query :</text>
+  <text x="130" y="73" font-family="monospace" font-size="12" fill="#f39c12">"getUserById"</text>
+
+  <!-- Results box -->
+  <rect x="50" y="100" width="700" height="130" rx="8" fill="#3a1e2a" stroke="#e74c3c" stroke-width="2"/>
+  <text x="400" y="125" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#e74c3c" text-anchor="middle">Retrieval semantique pur :</text>
+
+  <!-- Result 1 - Found -->
+  <rect x="80" y="140" width="300" height="25" rx="4" fill="#1e3a3a"/>
+  <text x="100" y="157" font-family="Arial, sans-serif" font-size="10" fill="#2ecc71">Trouve "getUser"</text>
+  <text x="300" y="157" font-family="Arial, sans-serif" font-size="9" fill="#888888">(similaire semantiquement)</text>
+
+  <!-- Result 2 - Found -->
+  <rect x="80" y="170" width="300" height="25" rx="4" fill="#1e3a3a"/>
+  <text x="100" y="187" font-family="Arial, sans-serif" font-size="10" fill="#2ecc71">Trouve "fetchUserData"</text>
+  <text x="300" y="187" font-family="Arial, sans-serif" font-size="9" fill="#888888">(similaire)</text>
+
+  <!-- Result 3 - MISSED -->
+  <rect x="80" y="200" width="400" height="25" rx="4" fill="#3a1e2a"/>
+  <text x="100" y="217" font-family="Arial, sans-serif" font-size="10" fill="#e74c3c">RATE "getUserById"</text>
+  <text x="290" y="217" font-family="Arial, sans-serif" font-size="9" fill="#e74c3c">(nom exact, embedding different!)</text>
+
+  <!-- Warning box -->
+  <rect x="400" y="140" width="330" height="80" rx="6" fill="#2d2d44" stroke="#f39c12"/>
+  <text x="420" y="165" font-family="Arial, sans-serif" font-size="11" fill="#f39c12">Probleme :</text>
+  <text x="420" y="185" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">Les noms EXACTS de fonctions/variables</text>
+  <text x="420" y="200" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">ne sont pas toujours captures par les</text>
+  <text x="420" y="215" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">embeddings</text>
+
+  <!-- Problematic cases -->
+  <rect x="50" y="245" width="700" height="60" rx="8" fill="#2d2d44" stroke="#4a4a6a"/>
+  <text x="400" y="268" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#888888" text-anchor="middle">Autres cas problematiques :</text>
+
+  <!-- Case 1 -->
+  <text x="100" y="290" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6">Acronymes :</text>
+  <text x="175" y="290" font-family="monospace" font-size="9" fill="#cccccc">"parseJSON" vs "parse_json"</text>
+
+  <!-- Case 2 -->
+  <text x="340" y="290" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6">CamelCase :</text>
+  <text x="415" y="290" font-family="monospace" font-size="9" fill="#cccccc">"getUserById" != "get user by id"</text>
+
+  <!-- Case 3 -->
+  <text x="610" y="290" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6">Techniques :</text>
+  <text x="680" y="290" font-family="monospace" font-size="9" fill="#cccccc">"TRPCClient"</text>
+</svg>

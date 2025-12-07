@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350">
+  <defs>
+    <linearGradient id="bgGradRMA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="350" fill="url(#bgGradRMA)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">ARCHITECTURE DU MODULE RAG</text>
+
+  <!-- Main container -->
+  <rect x="50" y="50" width="700" height="280" rx="10" fill="#2d2d44" stroke="#4a4a6a" stroke-width="2"/>
+  <text x="70" y="75" font-family="monospace" font-size="12" fill="#888888">src/context/</text>
+
+  <!-- codebase-rag -->
+  <rect x="70" y="90" width="300" height="130" rx="6" fill="#1e3a3a" stroke="#2ecc71" stroke-width="1"/>
+  <text x="90" y="112" font-family="monospace" font-size="10" fill="#2ecc71">codebase-rag/</text>
+
+  <text x="100" y="132" font-family="monospace" font-size="9" fill="#cccccc">index.ts</text>
+  <text x="200" y="132" font-family="Arial, sans-serif" font-size="8" fill="#888888">Point d'entree</text>
+
+  <text x="100" y="148" font-family="monospace" font-size="9" fill="#cccccc">indexer.ts</text>
+  <text x="200" y="148" font-family="Arial, sans-serif" font-size="8" fill="#888888">Indexation codebase</text>
+
+  <text x="100" y="164" font-family="monospace" font-size="9" fill="#cccccc">chunker.ts</text>
+  <text x="200" y="164" font-family="Arial, sans-serif" font-size="8" fill="#888888">Decoupage AST</text>
+
+  <text x="100" y="180" font-family="monospace" font-size="9" fill="#cccccc">retriever.ts</text>
+  <text x="200" y="180" font-family="Arial, sans-serif" font-size="8" fill="#888888">Retrieval hybride</text>
+
+  <text x="100" y="196" font-family="monospace" font-size="9" fill="#cccccc">augmenter.ts</text>
+  <text x="200" y="196" font-family="Arial, sans-serif" font-size="8" fill="#888888">Augmentation prompt</text>
+
+  <!-- embeddings -->
+  <rect x="390" y="90" width="340" height="100" rx="6" fill="#3a3a1e" stroke="#f39c12" stroke-width="1"/>
+  <text x="410" y="112" font-family="monospace" font-size="10" fill="#f39c12">embeddings/</text>
+
+  <text x="420" y="135" font-family="monospace" font-size="9" fill="#cccccc">local-embedder.ts</text>
+  <text x="570" y="135" font-family="Arial, sans-serif" font-size="8" fill="#888888">Local</text>
+
+  <text x="420" y="152" font-family="monospace" font-size="9" fill="#cccccc">openai-embedder.ts</text>
+  <text x="570" y="152" font-family="Arial, sans-serif" font-size="8" fill="#888888">API</text>
+
+  <text x="420" y="169" font-family="monospace" font-size="9" fill="#cccccc">embedder-factory.ts</text>
+  <text x="570" y="169" font-family="Arial, sans-serif" font-size="8" fill="#888888">Factory</text>
+
+  <!-- database -->
+  <rect x="390" y="205" width="340" height="55" rx="6" fill="#2a1e3a" stroke="#9b59b6" stroke-width="1"/>
+  <text x="410" y="227" font-family="monospace" font-size="10" fill="#9b59b6">database/</text>
+
+  <text x="420" y="247" font-family="monospace" font-size="9" fill="#cccccc">vector-store.ts</text>
+  <text x="570" y="247" font-family="Arial, sans-serif" font-size="8" fill="#888888">SQLite + vecteurs</text>
+
+  <!-- Flow arrows description -->
+  <rect x="70" y="275" width="660" height="45" rx="6" fill="#1a1a2e"/>
+  <text x="400" y="300" font-family="Arial, sans-serif" font-size="10" fill="#888888" text-anchor="middle">Flux: indexer.ts → chunker.ts → embeddings/ → vector-store.ts → retriever.ts → augmenter.ts</text>
+</svg>

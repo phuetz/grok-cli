@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340">
+  <defs>
+    <linearGradient id="bgGradRM" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="340" fill="url(#bgGradRM)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">METRIQUES RAG</text>
+
+  <!-- Query example -->
+  <rect x="50" y="50" width="700" height="30" rx="6" fill="#2d2d44" stroke="#4a4a6a"/>
+  <text x="70" y="70" font-family="Arial, sans-serif" font-size="10" fill="#888888">Exemple : Query</text>
+  <text x="160" y="70" font-family="monospace" font-size="10" fill="#f39c12">"processPayment"</text>
+  <text x="320" y="70" font-family="Arial, sans-serif" font-size="10" fill="#888888">, 3 docs pertinents dans la base</text>
+
+  <!-- Results list -->
+  <rect x="50" y="95" width="400" height="150" rx="8" fill="#2d2d44" stroke="#4a4a6a" stroke-width="2"/>
+  <text x="250" y="118" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#3498db" text-anchor="middle">Top 5 recuperes :</text>
+
+  <!-- Result 1 -->
+  <text x="80" y="142" font-family="monospace" font-size="10" fill="#888888">1.</text>
+  <text x="100" y="142" font-family="monospace" font-size="10" fill="#cccccc">processPayment.ts</text>
+  <text x="280" y="142" font-family="Arial, sans-serif" font-size="10" fill="#2ecc71">pertinent</text>
+
+  <!-- Result 2 -->
+  <text x="80" y="162" font-family="monospace" font-size="10" fill="#888888">2.</text>
+  <text x="100" y="162" font-family="monospace" font-size="10" fill="#cccccc">validateOrder.ts</text>
+  <text x="280" y="162" font-family="Arial, sans-serif" font-size="10" fill="#e74c3c">-</text>
+
+  <!-- Result 3 -->
+  <text x="80" y="182" font-family="monospace" font-size="10" fill="#888888">3.</text>
+  <text x="100" y="182" font-family="monospace" font-size="10" fill="#cccccc">PaymentService.ts</text>
+  <text x="280" y="182" font-family="Arial, sans-serif" font-size="10" fill="#2ecc71">pertinent</text>
+
+  <!-- Result 4 -->
+  <text x="80" y="202" font-family="monospace" font-size="10" fill="#888888">4.</text>
+  <text x="100" y="202" font-family="monospace" font-size="10" fill="#cccccc">sendReceipt.ts</text>
+  <text x="280" y="202" font-family="Arial, sans-serif" font-size="10" fill="#e74c3c">-</text>
+
+  <!-- Result 5 -->
+  <text x="80" y="222" font-family="monospace" font-size="10" fill="#888888">5.</text>
+  <text x="100" y="222" font-family="monospace" font-size="10" fill="#cccccc">PaymentTypes.ts</text>
+  <text x="280" y="222" font-family="Arial, sans-serif" font-size="10" fill="#2ecc71">pertinent</text>
+
+  <!-- Metrics box -->
+  <rect x="470" y="95" width="280" height="150" rx="8" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="610" y="118" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2ecc71" text-anchor="middle">Calcul des metriques :</text>
+
+  <!-- Recall -->
+  <text x="490" y="148" font-family="Arial, sans-serif" font-size="11" fill="#3498db">Recall@5</text>
+  <text x="580" y="148" font-family="monospace" font-size="11" fill="#cccccc">= 3/3 =</text>
+  <text x="650" y="148" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2ecc71">100%</text>
+  <text x="700" y="148" font-family="Arial, sans-serif" font-size="8" fill="#888888">(tous trouves)</text>
+
+  <!-- Precision -->
+  <text x="490" y="175" font-family="Arial, sans-serif" font-size="11" fill="#f39c12">Precision@5</text>
+  <text x="580" y="175" font-family="monospace" font-size="11" fill="#cccccc">= 3/5 =</text>
+  <text x="650" y="175" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2ecc71">60%</text>
+  <text x="700" y="175" font-family="Arial, sans-serif" font-size="8" fill="#888888">(3 sur 5)</text>
+
+  <!-- MRR -->
+  <text x="490" y="202" font-family="Arial, sans-serif" font-size="11" fill="#9b59b6">MRR</text>
+  <text x="580" y="202" font-family="monospace" font-size="11" fill="#cccccc">= 1/1 =</text>
+  <text x="650" y="202" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2ecc71">1.0</text>
+  <text x="700" y="202" font-family="Arial, sans-serif" font-size="8" fill="#888888">(1er pertinent)</text>
+
+  <!-- Legend -->
+  <rect x="50" y="260" width="700" height="65" rx="8" fill="#2d2d44" stroke="#4a4a6a"/>
+  <text x="400" y="285" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#888888" text-anchor="middle">Interpretation</text>
+
+  <rect x="80" y="298" width="12" height="12" rx="2" fill="#2ecc71"/>
+  <text x="100" y="308" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">Recall@5 = 100% : tous les docs pertinents trouves</text>
+
+  <rect x="380" y="298" width="12" height="12" rx="2" fill="#f39c12"/>
+  <text x="400" y="308" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">Precision@5 = 60% : 60% des resultats pertinents</text>
+</svg>

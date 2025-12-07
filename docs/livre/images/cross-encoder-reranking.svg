@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300">
+  <defs>
+    <linearGradient id="bgGradCE" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="300" fill="url(#bgGradCE)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">RERANKING AVEC CROSS-ENCODER</text>
+
+  <!-- Bi-Encoder -->
+  <rect x="40" y="50" width="350" height="130" rx="8" fill="#3a3a1e" stroke="#f39c12" stroke-width="2"/>
+  <text x="215" y="75" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#f39c12" text-anchor="middle">Bi-Encoder (embeddings)</text>
+
+  <text x="60" y="100" font-family="monospace" font-size="10" fill="#cccccc">Query → [Encoder] → vec_q</text>
+  <text x="60" y="120" font-family="monospace" font-size="10" fill="#cccccc">Doc   → [Encoder] → vec_d</text>
+  <text x="60" y="140" font-family="monospace" font-size="9" fill="#888888">         cosine(vec_q, vec_d)</text>
+
+  <text x="60" y="165" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71">+ Rapide (pre-calcule)</text>
+  <text x="220" y="165" font-family="Arial, sans-serif" font-size="9" fill="#e74c3c">- Moins precis</text>
+
+  <!-- Cross-Encoder -->
+  <rect x="410" y="50" width="350" height="130" rx="8" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="585" y="75" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2ecc71" text-anchor="middle">Cross-Encoder (reranking)</text>
+
+  <text x="430" y="100" font-family="monospace" font-size="10" fill="#cccccc">Query + Doc → [Encoder] → Score</text>
+  <text x="430" y="125" font-family="Arial, sans-serif" font-size="9" fill="#888888">Compare directement ensemble</text>
+
+  <text x="430" y="155" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71">+ Plus precis</text>
+  <text x="570" y="155" font-family="Arial, sans-serif" font-size="9" fill="#e74c3c">- Plus lent (a la volee)</text>
+
+  <!-- Solution -->
+  <rect x="150" y="200" width="500" height="80" rx="10" fill="#2d2d44" stroke="#9b59b6" stroke-width="2"/>
+  <text x="400" y="225" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#9b59b6" text-anchor="middle">SOLUTION RECOMMANDEE</text>
+
+  <text x="400" y="250" font-family="Arial, sans-serif" font-size="11" fill="#cccccc" text-anchor="middle">Bi-encoder pour filtrer top 50 (rapide)</text>
+  <text x="400" y="268" font-family="Arial, sans-serif" font-size="11" fill="#2ecc71" text-anchor="middle">Cross-encoder pour affiner top 5 (precis)</text>
+</svg>

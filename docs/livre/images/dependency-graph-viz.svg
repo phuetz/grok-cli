@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380">
+  <defs>
+    <linearGradient id="bgGradDGV" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+    <marker id="arrowDG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#888888"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="380" fill="url(#bgGradDGV)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">DEPENDENCY GRAPH</text>
+
+  <!-- Main processor node -->
+  <rect x="320" y="55" width="160" height="50" rx="8" fill="#3498db" stroke="#2980b9" stroke-width="2"/>
+  <text x="400" y="78" font-family="monospace" font-size="11" fill="#ffffff" text-anchor="middle">processor.ts</text>
+  <text x="400" y="93" font-family="monospace" font-size="9" fill="#ffffff" text-anchor="middle">processPayment</text>
+
+  <!-- Arrows from processor -->
+  <path d="M 340 105 L 200 150" stroke="#888888" stroke-width="2" marker-end="url(#arrowDG)"/>
+  <path d="M 400 105 L 400 150" stroke="#888888" stroke-width="2" marker-end="url(#arrowDG)"/>
+  <path d="M 460 105 L 600 150" stroke="#888888" stroke-width="2" marker-end="url(#arrowDG)"/>
+
+  <!-- types.ts node -->
+  <rect x="110" y="155" width="140" height="55" rx="6" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="180" y="175" font-family="monospace" font-size="10" fill="#2ecc71" text-anchor="middle">types.ts</text>
+  <text x="180" y="192" font-family="monospace" font-size="8" fill="#cccccc" text-anchor="middle">PaymentReq</text>
+  <text x="180" y="202" font-family="monospace" font-size="8" fill="#cccccc" text-anchor="middle">PaymentRes</text>
+
+  <!-- stripe.ts node -->
+  <rect x="330" y="155" width="140" height="45" rx="6" fill="#3a3a1e" stroke="#f39c12" stroke-width="2"/>
+  <text x="400" y="175" font-family="monospace" font-size="10" fill="#f39c12" text-anchor="middle">stripe.ts</text>
+  <text x="400" y="192" font-family="monospace" font-size="8" fill="#cccccc" text-anchor="middle">StripeClient</text>
+
+  <!-- validation.ts node -->
+  <rect x="530" y="155" width="140" height="45" rx="6" fill="#2a1e3a" stroke="#9b59b6" stroke-width="2"/>
+  <text x="600" y="175" font-family="monospace" font-size="10" fill="#9b59b6" text-anchor="middle">validation.ts</text>
+  <text x="600" y="192" font-family="monospace" font-size="8" fill="#cccccc" text-anchor="middle">validateAmount</text>
+
+  <!-- Arrow from stripe to config -->
+  <path d="M 400 200 L 400 235" stroke="#888888" stroke-width="2" marker-end="url(#arrowDG)"/>
+
+  <!-- config.ts node -->
+  <rect x="330" y="240" width="140" height="45" rx="6" fill="#2d2d44" stroke="#4a4a6a" stroke-width="2"/>
+  <text x="400" y="260" font-family="monospace" font-size="10" fill="#888888" text-anchor="middle">config.ts</text>
+  <text x="400" y="277" font-family="monospace" font-size="8" fill="#cccccc" text-anchor="middle">STRIPE_KEY</text>
+
+  <!-- Legend -->
+  <rect x="100" y="305" width="600" height="55" rx="8" fill="#2d2d44" stroke="#4a4a6a"/>
+  <text x="400" y="325" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#888888" text-anchor="middle">Legende</text>
+
+  <line x1="150" y1="345" x2="200" y2="345" stroke="#888888" stroke-width="2"/>
+  <polygon points="200,342 210,345 200,348" fill="#888888"/>
+  <text x="220" y="348" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">import (dependance directe)</text>
+
+  <line x1="400" y1="345" x2="450" y2="345" stroke="#9b59b6" stroke-width="2" stroke-dasharray="4,2"/>
+  <polygon points="450,342 460,345 450,348" fill="#9b59b6"/>
+  <text x="470" y="348" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">type_reference</text>
+
+  <line x1="600" y1="345" x2="650" y2="345" stroke="#2ecc71" stroke-width="3"/>
+  <polygon points="650,341 662,345 650,349" fill="#2ecc71"/>
+  <text x="670" y="348" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">extends</text>
+</svg>
