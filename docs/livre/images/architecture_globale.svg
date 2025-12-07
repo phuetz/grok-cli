@@ -1,4 +1,4 @@
-<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
@@ -17,7 +17,40 @@
 
   <text x="400" y="30" class="title">Architecture Agent Cognitif</text>
 
-       <line x1="500" y1="110" x2="500" y2="150" class="line" marker-end="url(#arrowhead)" /><line x1="500" y1="210" x2="160" y2="300" class="line" marker-end="url(#arrowhead)" /><line x1="500" y1="210" x2="290" y2="300" class="line" marker-end="url(#arrowhead)" /><line x1="500" y1="210" x2="420" y2="300" class="line" marker-end="url(#arrowhead)" /><line x1="500" y1="210" x2="550" y2="300" class="line" marker-end="url(#arrowhead)" /><line x1="500" y1="210" x2="680" y2="300" class="line" marker-end="url(#arrowhead)" /><line x1="160" y1="380" x2="600" y2="450" class="line" marker-end="url(#arrowhead)" /><line x1="290" y1="380" x2="600" y2="450" class="line" marker-end="url(#arrowhead)" /><line x1="420" y1="380" x2="600" y2="450" class="line" marker-end="url(#arrowhead)" /><line x1="550" y1="380" x2="600" y2="450" class="line" marker-end="url(#arrowhead)" /><line x1="680" y1="380" x2="600" y2="450" class="line" marker-end="url(#arrowhead)" />
+
+           <line x1="500" y1="80" x2="500" y2="180" class="line" marker-end="url(#arrowhead)" />
+
+
+           <line x1="500" y1="180" x2="160" y2="340" class="line" marker-end="url(#arrowhead)" />
+
+
+           <line x1="500" y1="180" x2="290" y2="340" class="line" marker-end="url(#arrowhead)" />
+
+
+           <line x1="500" y1="180" x2="420" y2="340" class="line" marker-end="url(#arrowhead)" />
+
+
+           <line x1="500" y1="180" x2="550" y2="340" class="line" marker-end="url(#arrowhead)" />
+
+
+           <line x1="500" y1="180" x2="680" y2="340" class="line" marker-end="url(#arrowhead)" />
+
+
+           <line x1="160" y1="340" x2="600" y2="480" class="line" marker-end="url(#arrowhead)" />
+
+
+           <line x1="290" y1="340" x2="600" y2="480" class="line" marker-end="url(#arrowhead)" />
+
+
+           <line x1="420" y1="340" x2="600" y2="480" class="line" marker-end="url(#arrowhead)" />
+
+
+           <line x1="550" y1="340" x2="600" y2="480" class="line" marker-end="url(#arrowhead)" />
+
+
+           <line x1="680" y1="340" x2="600" y2="480" class="line" marker-end="url(#arrowhead)" />
+
+
 
          <rect x="300" y="50" width="400" height="60" class="box" rx="5" />
          <text x="500" y="85" class="text label">INTERFACE UTILISATEUR</text>
