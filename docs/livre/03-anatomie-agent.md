@@ -768,15 +768,7 @@ Le système de sécurité vérifie que l'opération est autorisée :
 **Étape 3 : Confirmation utilisateur (conditionnelle)**
 
 Si l'outil est marqué comme nécessitant confirmation, l'utilisateur est sollicité :
-```
-┌─────────────────────────────────────────────────────┐
-│  L'agent veut exécuter :                            │
-│                                                      │
-│  bash: git push origin main                          │
-│                                                      │
-│  [Approuver] [Refuser] [Approuver toujours]         │
-└─────────────────────────────────────────────────────┘
-```
+![Dialogue de confirmation](images/confirmation-dialog.svg)
 
 **Étape 4 : Exécution**
 
