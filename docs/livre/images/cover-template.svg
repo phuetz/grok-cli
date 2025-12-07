@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900">
+  <defs>
+    <linearGradient id="coverGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a1a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="glowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3498db;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#2ecc71;stop-opacity:0.6" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="900" fill="url(#coverGradient)"/>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.05">
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#3498db" stroke-width="0.5"/>
+    </pattern>
+    <rect width="600" height="900" fill="url(#grid)"/>
+  </g>
+
+  <!-- Abstract neural network background -->
+  <g opacity="0.15" filter="url(#softGlow)">
+    <!-- Connection lines -->
+    <line x1="100" y1="300" x2="300" y2="450" stroke="#3498db" stroke-width="1"/>
+    <line x1="500" y1="320" x2="300" y2="450" stroke="#2ecc71" stroke-width="1"/>
+    <line x1="150" y1="500" x2="300" y2="450" stroke="#3498db" stroke-width="1"/>
+    <line x1="450" y1="520" x2="300" y2="450" stroke="#2ecc71" stroke-width="1"/>
+    <line x1="300" y1="450" x2="200" y2="600" stroke="#9b59b6" stroke-width="1"/>
+    <line x1="300" y1="450" x2="400" y2="600" stroke="#f39c12" stroke-width="1"/>
+    <line x1="80" y1="400" x2="200" y2="600" stroke="#3498db" stroke-width="1"/>
+    <line x1="520" y1="420" x2="400" y2="600" stroke="#2ecc71" stroke-width="1"/>
+
+    <!-- Nodes -->
+    <circle cx="100" cy="300" r="4" fill="#3498db"/>
+    <circle cx="500" cy="320" r="4" fill="#2ecc71"/>
+    <circle cx="150" cy="500" r="4" fill="#3498db"/>
+    <circle cx="450" cy="520" r="4" fill="#2ecc71"/>
+    <circle cx="300" cy="450" r="8" fill="#e74c3c"/>
+    <circle cx="200" cy="600" r="5" fill="#9b59b6"/>
+    <circle cx="400" cy="600" r="5" fill="#f39c12"/>
+    <circle cx="80" cy="400" r="3" fill="#3498db"/>
+    <circle cx="520" cy="420" r="3" fill="#2ecc71"/>
+  </g>
+
+  <!-- Central image placeholder -->
+  <rect x="100" y="280" width="400" height="300" rx="8" fill="none" stroke="#3498db" stroke-width="2" stroke-dasharray="10,5" opacity="0.3"/>
+  <text x="300" y="440" text-anchor="middle" fill="#3498db" font-family="monospace" font-size="14" opacity="0.5">
+    [ IMAGE IA ICI ]
+  </text>
+  <text x="300" y="460" text-anchor="middle" fill="#3498db" font-family="monospace" font-size="10" opacity="0.3">
+    400 x 300 px
+  </text>
+
+  <!-- Top decorative line -->
+  <rect x="50" y="60" width="500" height="2" fill="url(#glowGradient)" filter="url(#glow)"/>
+
+  <!-- Category tag -->
+  <rect x="50" y="80" width="180" height="28" rx="4" fill="#2ecc71" opacity="0.9"/>
+  <text x="140" y="100" text-anchor="middle" fill="#0a0a1a" font-family="Arial, sans-serif" font-size="12" font-weight="bold">
+    INTELLIGENCE ARTIFICIELLE
+  </text>
+
+  <!-- Main title -->
+  <text x="300" y="160" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="38" font-weight="bold">
+    Construire un
+  </text>
+  <text x="300" y="210" text-anchor="middle" fill="#3498db" font-family="Arial, sans-serif" font-size="46" font-weight="bold" filter="url(#glow)">
+    Agent LLM
+  </text>
+  <text x="300" y="260" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="38" font-weight="bold">
+    Moderne
+  </text>
+
+  <!-- Subtitle -->
+  <text x="300" y="620" text-anchor="middle" fill="#f39c12" font-family="Georgia, serif" font-size="22" font-style="italic">
+    De la Théorie à Grok-CLI
+  </text>
+
+  <!-- Feature bullets -->
+  <g fill="#a0a0a0" font-family="Arial, sans-serif" font-size="13">
+    <text x="300" y="670" text-anchor="middle">Transformers • RAG • Tree-of-Thought • MCTS</text>
+    <text x="300" y="692" text-anchor="middle">Tool-Use • Mémoire Persistante • Multi-Agent</text>
+  </g>
+
+  <!-- Bottom decorative line -->
+  <rect x="50" y="720" width="500" height="1" fill="#3498db" opacity="0.3"/>
+
+  <!-- Stats badges -->
+  <g font-family="Arial, sans-serif">
+    <!-- Pages -->
+    <rect x="80" y="740" width="100" height="50" rx="6" fill="#1a1a2e" stroke="#3498db" stroke-width="1"/>
+    <text x="130" y="762" text-anchor="middle" fill="#3498db" font-size="18" font-weight="bold">260+</text>
+    <text x="130" y="780" text-anchor="middle" fill="#808080" font-size="10">PAGES</text>
+
+    <!-- Diagrams -->
+    <rect x="200" y="740" width="100" height="50" rx="6" fill="#1a1a2e" stroke="#2ecc71" stroke-width="1"/>
+    <text x="250" y="762" text-anchor="middle" fill="#2ecc71" font-size="18" font-weight="bold">130</text>
+    <text x="250" y="780" text-anchor="middle" fill="#808080" font-size="10">DIAGRAMMES</text>
+
+    <!-- Chapters -->
+    <rect x="320" y="740" width="100" height="50" rx="6" fill="#1a1a2e" stroke="#f39c12" stroke-width="1"/>
+    <text x="370" y="762" text-anchor="middle" fill="#f39c12" font-size="18" font-weight="bold">16</text>
+    <text x="370" y="780" text-anchor="middle" fill="#808080" font-size="10">CHAPITRES</text>
+
+    <!-- Code -->
+    <rect x="440" y="740" width="100" height="50" rx="6" fill="#1a1a2e" stroke="#9b59b6" stroke-width="1"/>
+    <text x="490" y="762" text-anchor="middle" fill="#9b59b6" font-size="18" font-weight="bold">155+</text>
+    <text x="490" y="780" text-anchor="middle" fill="#808080" font-size="10">EXEMPLES CODE</text>
+  </g>
+
+  <!-- Author area -->
+  <text x="300" y="840" text-anchor="middle" fill="#606060" font-family="Arial, sans-serif" font-size="12">
+    Un guide pratique pour comprendre et construire
+  </text>
+  <text x="300" y="858" text-anchor="middle" fill="#606060" font-family="Arial, sans-serif" font-size="12">
+    des agents IA de développement
+  </text>
+
+  <!-- Bottom decorative line -->
+  <rect x="50" y="880" width="500" height="2" fill="url(#glowGradient)" filter="url(#glow)"/>
+
+  <!-- Version tag -->
+  <text x="550" y="895" text-anchor="end" fill="#404040" font-family="monospace" font-size="9">
+    v1.0 • 2024
+  </text>
+</svg>
