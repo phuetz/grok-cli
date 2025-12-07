@@ -299,6 +299,90 @@ ToT est puissant mais coûteux.
 
 ---
 
+## 🏋️ Exercices
+
+### Exercice 1 : Dessiner un Arbre de Pensées (20 min)
+
+Pour le problème suivant, dessinez l'arbre ToT complet :
+
+> "La fonction `parseDate` retourne `Invalid Date` pour certaines entrées"
+
+1. Listez 4 hypothèses initiales (nœuds de niveau 1)
+2. Attribuez un score (0-1) à chaque hypothèse
+3. Développez les 2 meilleures en sous-hypothèses (niveau 2)
+4. Identifiez quelle branche mène probablement à la solution
+
+### Exercice 2 : Implémenter une Évaluation par Vote (30 min)
+
+Implémentez une fonction d'évaluation par vote qui appelle le LLM 3 fois et retourne la moyenne :
+
+```typescript
+interface VoteEvaluationResult {
+  scores: number[];      // Les 3 scores individuels
+  average: number;       // Moyenne
+  variance: number;      // Variance (indicateur de confiance)
+  consensus: boolean;    // true si variance < 0.1
+}
+
+async function voteEvaluate(
+  thought: ThoughtNode,
+  problem: string,
+  llm: LLMClient
+): Promise<VoteEvaluationResult> {
+  // Votre implémentation ici
+}
+```
+
+Bonus : Ajoutez un mécanisme de "tie-breaker" si la variance est trop élevée.
+
+### Exercice 3 : Choisir la Bonne Stratégie (15 min)
+
+Pour chaque scénario, indiquez la stratégie optimale (BFS, DFS, ou Beam) et justifiez :
+
+1. Trouver rapidement UN fix pour un test qui échoue
+2. Explorer toutes les façons de refactorer une classe
+3. Debugging d'un problème de performance avec budget limité
+4. Générer plusieurs alternatives d'architecture
+5. Résoudre un problème mathématique avec une seule solution
+
+### Exercice 4 : Calcul de Coût (15 min)
+
+Calculez le nombre maximum d'appels API pour ces configurations :
+
+| Configuration | Branching | Depth | Beam | Appels max ? |
+|:--------------|:---------:|:-----:|:----:|:------------:|
+| Config A | 3 | 3 | - | ? |
+| Config B | 4 | 4 | 2 | ? |
+| Config C | 5 | 5 | 3 | ? |
+
+Formules :
+- BFS/DFS : `B^D` où B=branching, D=depth
+- Beam : `B × K × D` où K=beam width
+
+### Exercice 5 : Implémentation Early Stopping (20 min)
+
+Modifiez l'algorithme Beam Search pour implémenter un early stopping intelligent :
+
+```typescript
+interface EarlyStopConfig {
+  minScore: number;           // Score minimum pour arrêter (ex: 0.95)
+  minConfidence: number;      // Confiance minimum (ex: 0.8)
+  maxConsecutiveDecline: number; // Arrêter si N niveaux sans amélioration
+}
+
+function shouldStop(
+  currentBest: ThoughtNode,
+  history: ThoughtNode[],    // Meilleurs nœuds des niveaux précédents
+  config: EarlyStopConfig
+): boolean {
+  // Votre implémentation ici
+}
+```
+
+Testez avec un cas où le score stagne à 0.7 pendant 3 niveaux.
+
+---
+
 | ⬅️ Précédent | 📖 Sommaire | ➡️ Suivant |
 |:-------------|:-----------:|:-----------|
 | [Anatomie d'un Agent](03-anatomie-agent.md) | [Index](README.md) | [Monte-Carlo Tree Search](05-mcts.md) |

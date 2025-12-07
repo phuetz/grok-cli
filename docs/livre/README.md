@@ -40,6 +40,10 @@
 ### Partie VII : Étude de Cas
 - [15. Architecture Complète](15-architecture-complete.md) — Grok-CLI de A à Z, 6 couches, intégration
 
+### Annexes
+- [📚 Glossaire](glossaire.md) — Définitions des termes techniques
+- [📖 Bibliographie](bibliographie.md) — Références scientifiques et ressources
+
 ---
 
 ## Comment Lire ce Livre
