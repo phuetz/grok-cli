@@ -20,6 +20,14 @@ import * as crypto from 'crypto';
 import axios from 'axios';
 import { ChildProcess } from 'child_process';
 import { LRUCache } from '../utils/lru-cache.js';
+import {
+  LocalProviderManager,
+  LocalProviderType,
+  LocalLLMMessage,
+  LocalLLMResponse,
+  getLocalProviderManager,
+  autoConfigureLocalProvider,
+} from '../providers/local-llm-provider.js';
 
 export interface OfflineConfig {
   enabled: boolean;
@@ -27,9 +35,11 @@ export interface OfflineConfig {
   cacheMaxSize: number; // MB
   cacheMaxAge: number; // days
   localLLMEnabled: boolean;
-  localLLMProvider: 'ollama' | 'llamacpp' | 'none';
+  localLLMProvider: 'ollama' | 'llamacpp' | 'local-llama' | 'webllm' | 'none';
   localLLMModel: string;
   localLLMEndpoint?: string;
+  localLLMModelPath?: string; // For node-llama-cpp
+  localLLMGpuLayers?: number; // For node-llama-cpp GPU acceleration
   embeddingCacheEnabled: boolean;
   queueRequestsWhenOffline: boolean;
   autoSyncOnReconnect: boolean;
@@ -112,6 +122,7 @@ export class OfflineMode extends EventEmitter {
   private stats: OfflineStats;
   private checkInternetTimer: NodeJS.Timeout | null = null;
   private localLLMProcess: ChildProcess | null = null;
+  private localProviderManager: LocalProviderManager | null = null;
 
   constructor(config: Partial<OfflineConfig> = {}) {
     super();
@@ -563,7 +574,7 @@ export class OfflineMode extends EventEmitter {
   }
 
   /**
-   * Call local LLM
+   * Call local LLM using the new provider system
    */
   async callLocalLLM(prompt: string, options: {
     model?: string;
@@ -575,6 +586,12 @@ export class OfflineMode extends EventEmitter {
     const model = options.model || this.config.localLLMModel;
 
     try {
+      // Use new provider system for local-llama and webllm
+      if (this.config.localLLMProvider === 'local-llama' || this.config.localLLMProvider === 'webllm') {
+        return await this.callNewProvider(prompt, model, options);
+      }
+
+      // Legacy provider support
       switch (this.config.localLLMProvider) {
         case 'ollama':
           return this.callOllama(prompt, model, options);
@@ -587,6 +604,88 @@ export class OfflineMode extends EventEmitter {
       this.emit('localLLM:error', { error });
       return null;
     }
+  }
+
+  /**
+   * Call new provider system (node-llama-cpp, WebLLM)
+   */
+  private async callNewProvider(prompt: string, model: string, options: {
+    maxTokens?: number;
+    temperature?: number;
+  }): Promise<string | null> {
+    // Initialize provider manager if needed
+    if (!this.localProviderManager) {
+      const providerType = this.config.localLLMProvider as LocalProviderType;
+      try {
+        this.localProviderManager = await autoConfigureLocalProvider(providerType);
+        this.localProviderManager.on('progress', (progress) => {
+          this.emit('localLLM:progress', progress);
+        });
+      } catch (error) {
+        this.emit('localLLM:error', { error });
+        return null;
+      }
+    }
+
+    const messages: LocalLLMMessage[] = [
+      { role: 'user', content: prompt }
+    ];
+
+    const response = await this.localProviderManager.complete(messages, {
+      model,
+      maxTokens: options.maxTokens || 2048,
+      temperature: options.temperature || 0.7,
+      modelPath: this.config.localLLMModelPath,
+      gpuLayers: this.config.localLLMGpuLayers,
+    });
+
+    this.stats.localLLMCalls++;
+    return response.content;
+  }
+
+  /**
+   * Stream local LLM response (new provider system)
+   */
+  async *streamLocalLLM(prompt: string, options: {
+    model?: string;
+    maxTokens?: number;
+    temperature?: number;
+  } = {}): AsyncIterable<string> {
+    if (!this.config.localLLMEnabled) return;
+
+    // Initialize provider manager if needed
+    if (!this.localProviderManager) {
+      const providerType = this.config.localLLMProvider as LocalProviderType;
+      if (providerType === 'local-llama' || providerType === 'webllm' || providerType === 'ollama') {
+        try {
+          this.localProviderManager = await autoConfigureLocalProvider(providerType);
+        } catch (error) {
+          this.emit('localLLM:error', { error });
+          return;
+        }
+      } else {
+        // Fallback to non-streaming for legacy providers
+        const result = await this.callLocalLLM(prompt, options);
+        if (result) yield result;
+        return;
+      }
+    }
+
+    const messages: LocalLLMMessage[] = [
+      { role: 'user', content: prompt }
+    ];
+
+    const stream = this.localProviderManager.stream(messages, {
+      model: options.model || this.config.localLLMModel,
+      maxTokens: options.maxTokens || 2048,
+      temperature: options.temperature || 0.7,
+    });
+
+    for await (const chunk of stream) {
+      yield chunk;
+    }
+
+    this.stats.localLLMCalls++;
   }
 
   /**
@@ -653,12 +752,85 @@ export class OfflineMode extends EventEmitter {
           await axios.get(`${endpoint}/health`, { timeout: 2000 });
           return true;
         }
+        case 'local-llama': {
+          // Check if node-llama-cpp is available
+          try {
+            const nodeLlamaCpp = await import('node-llama-cpp').catch(() => null);
+            return nodeLlamaCpp !== null;
+          } catch {
+            return false;
+          }
+        }
+        case 'webllm': {
+          // Check if WebGPU is available (browser/Electron only)
+          if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
+            const adapter = await (navigator as unknown as { gpu: { requestAdapter(): Promise<unknown> } }).gpu.requestAdapter();
+            return adapter !== null;
+          }
+          return false;
+        }
         default:
           return false;
       }
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Get provider manager instance
+   */
+  getLocalProviderManager(): LocalProviderManager | null {
+    return this.localProviderManager;
+  }
+
+  /**
+   * Get available provider types
+   */
+  async getAvailableProviders(): Promise<string[]> {
+    const available: string[] = [];
+
+    // Check Ollama
+    try {
+      const endpoint = this.config.localLLMEndpoint || 'http://localhost:11434';
+      await axios.get(`${endpoint}/api/tags`, { timeout: 2000 });
+      available.push('ollama');
+    } catch {
+      // Not available
+    }
+
+    // Check llama.cpp HTTP server
+    try {
+      const endpoint = this.config.localLLMEndpoint || 'http://localhost:8080';
+      await axios.get(`${endpoint}/health`, { timeout: 2000 });
+      available.push('llamacpp');
+    } catch {
+      // Not available
+    }
+
+    // Check node-llama-cpp
+    try {
+      const nodeLlamaCpp = await import('node-llama-cpp').catch(() => null);
+      if (nodeLlamaCpp) {
+        available.push('local-llama');
+      }
+    } catch {
+      // Not available
+    }
+
+    // Check WebLLM (only in browser/Electron)
+    if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
+      try {
+        const adapter = await (navigator as unknown as { gpu: { requestAdapter(): Promise<unknown> } }).gpu.requestAdapter();
+        if (adapter) {
+          available.push('webllm');
+        }
+      } catch {
+        // Not available
+      }
+    }
+
+    return available;
   }
 
   /**
@@ -739,13 +911,18 @@ export class OfflineMode extends EventEmitter {
       ? ((stats.cacheHits / (stats.cacheHits + stats.cacheMisses)) * 100).toFixed(1)
       : '0.0';
 
+    const providerName = this.config.localLLMProvider === 'local-llama' ? 'node-llama-cpp'
+      : this.config.localLLMProvider === 'webllm' ? 'WebLLM'
+      : this.config.localLLMProvider;
+
     const lines = [
       '╔══════════════════════════════════════════════════════════════╗',
       '║                     📴 OFFLINE MODE                          ║',
       '╠══════════════════════════════════════════════════════════════╣',
       `║ Status:          ${stats.isOnline ? '🟢 Online' : '🔴 Offline'}                              ║`,
       `║ Cache Enabled:   ${this.config.cacheEnabled ? '✅' : '❌'}                                       ║`,
-      `║ Local LLM:       ${this.config.localLLMEnabled ? '✅ ' + this.config.localLLMProvider : '❌ Disabled'}                    ║`,
+      `║ Local LLM:       ${this.config.localLLMEnabled ? '✅ ' + providerName : '❌ Disabled'}                    ║`,
+      `║ Model:           ${this.config.localLLMModel.substring(0, 20)}                       ║`,
       '╠══════════════════════════════════════════════════════════════╣',
       '║ CACHE STATS                                                  ║',
       `║ Size:            ${(stats.cacheSize / 1024 / 1024).toFixed(1)} MB / ${this.config.cacheMaxSize} MB                        ║`,
@@ -755,6 +932,12 @@ export class OfflineMode extends EventEmitter {
       '╠══════════════════════════════════════════════════════════════╣',
       `║ Queued Requests: ${stats.queuedRequests}                                           ║`,
       `║ Local LLM Calls: ${stats.localLLMCalls}                                           ║`,
+      '╠══════════════════════════════════════════════════════════════╣',
+      '║ SUPPORTED PROVIDERS                                          ║',
+      '║ • ollama      - Ollama API (localhost:11434)                 ║',
+      '║ • llamacpp    - llama.cpp HTTP server (localhost:8080)       ║',
+      '║ • local-llama - node-llama-cpp (native bindings)             ║',
+      '║ • webllm      - WebLLM (WebGPU browser/Electron)             ║',
       '╠══════════════════════════════════════════════════════════════╣',
       '║ /offline cache clear | /offline queue process                ║',
       '╚══════════════════════════════════════════════════════════════╝',
@@ -772,6 +955,10 @@ export class OfflineMode extends EventEmitter {
     }
     if (this.localLLMProcess) {
       this.localLLMProcess.kill();
+    }
+    if (this.localProviderManager) {
+      this.localProviderManager.dispose();
+      this.localProviderManager = null;
     }
     this.saveCacheIndexes();
     this.saveQueue();

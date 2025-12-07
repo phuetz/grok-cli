@@ -867,47 +867,111 @@ Grok-CLI utilise principalement l'API Grok (cloud), mais peut également fonctio
 ### 15.12.2 node-llama-cpp : LLM Natif pour Node.js
 
 ```bash
-# Installation
+# Installation (dépendance optionnelle dans Grok-CLI)
 npm install node-llama-cpp
 
 # Télécharger un modèle GGUF
-# https://huggingface.co/models?search=gguf
+mkdir -p ~/.grok/models
+wget -P ~/.grok/models/ https://huggingface.co/lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
 ```
 
+**Implémentation réelle** (extrait de `src/providers/local-llm-provider.ts`) :
+
 ```typescript
-// src/providers/local-llm.ts
+// src/providers/local-llm-provider.ts
 
-import { LlamaModel, LlamaContext, LlamaChatSession } from 'node-llama-cpp';
+export type LocalProviderType = 'ollama' | 'local-llama' | 'webllm';
 
-export class LocalLLMProvider {
-  private model: LlamaModel;
-  private context: LlamaContext;
+export interface LocalLLMMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
 
-  async initialize(modelPath: string) {
-    this.model = new LlamaModel({ modelPath });
-    this.context = new LlamaContext({ model: this.model });
+export interface LocalLLMResponse {
+  content: string;
+  tokensUsed: number;
+  model: string;
+  provider: LocalProviderType;
+  generationTime: number;
+}
+
+/**
+ * Native Node.js LLM provider using node-llama-cpp
+ *
+ * Advantages:
+ * - No external dependencies (Ollama not required)
+ * - Direct C++ bindings = lowest latency
+ * - Fine-grained control over model parameters
+ * - Supports CUDA, Metal, and CPU inference
+ */
+export class NodeLlamaCppProvider extends EventEmitter implements LocalLLMProvider {
+  readonly type: LocalProviderType = 'local-llama';
+  readonly name = 'node-llama-cpp';
+
+  private model: unknown = null;
+  private context: unknown = null;
+  private ready = false;
+  private modelsDir: string;
+
+  constructor() {
+    super();
+    this.modelsDir = path.join(os.homedir(), '.grok', 'models');
   }
 
-  async chat(messages: Message[]): Promise<string> {
-    const session = new LlamaChatSession({ context: this.context });
+  async initialize(config: LocalProviderConfig): Promise<void> {
+    await fs.ensureDir(this.modelsDir);
 
-    // Convertir au format attendu
+    const modelPath = config.modelPath ||
+      path.join(this.modelsDir, 'llama-3.1-8b-q4_k_m.gguf');
+
+    if (!await fs.pathExists(modelPath)) {
+      throw new Error(`Model not found at ${modelPath}`);
+    }
+
+    // Dynamic import of node-llama-cpp
+    const { LlamaModel, LlamaContext } = await import('node-llama-cpp');
+
+    this.model = new LlamaModel({
+      modelPath,
+      gpuLayers: config.gpuLayers ?? 0, // 0 = auto-detect
+    });
+
+    this.context = new LlamaContext({
+      model: this.model as any,
+      contextSize: config.contextSize ?? 4096,
+    });
+
+    this.ready = true;
+  }
+
+  async complete(
+    messages: LocalLLMMessage[],
+    options?: Partial<LocalProviderConfig>
+  ): Promise<LocalLLMResponse> {
+    const startTime = Date.now();
+    const { LlamaChatSession } = await import('node-llama-cpp');
+
+    const session = new LlamaChatSession({
+      context: this.context as any,
+      systemPrompt: messages.find(m => m.role === 'system')?.content,
+    });
+
+    let response = '';
     for (const msg of messages) {
       if (msg.role === 'user') {
-        const response = await session.prompt(msg.content);
-        return response;
+        response = await session.prompt(msg.content, {
+          maxTokens: options?.maxTokens ?? 2048,
+          temperature: options?.temperature ?? 0.7,
+        });
       }
     }
 
-    throw new Error('No user message found');
-  }
-
-  // API compatible OpenAI pour intégration facile
-  async chatCompletion(request: ChatRequest): Promise<ChatResponse> {
-    const content = await this.chat(request.messages);
     return {
-      choices: [{ message: { role: 'assistant', content } }],
-      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+      content: response,
+      tokensUsed: Math.ceil(response.length / 4),
+      model: this.config?.modelPath || 'unknown',
+      provider: this.type,
+      generationTime: Date.now() - startTime,
     };
   }
 }
@@ -915,82 +979,271 @@ export class LocalLLMProvider {
 
 ### 15.12.3 WebLLM : LLM dans le Navigateur
 
-Pour les applications web, **WebLLM** permet d'exécuter des LLM directement dans le navigateur avec WebGPU.
+Pour les applications web ou Electron, **WebLLM** permet d'exécuter des LLM directement avec WebGPU.
+
+**Implémentation réelle** (extrait de `src/providers/local-llm-provider.ts`) :
 
 ```typescript
-// Pour une extension ou app web
-import * as webllm from '@mlc-ai/web-llm';
+/**
+ * Browser-based LLM provider using WebLLM
+ *
+ * Advantages:
+ * - Runs in browser with WebGPU
+ * - Zero server requirements
+ * - Can be used in Electron apps
+ * - Progressive model download with caching
+ */
+export class WebLLMProvider extends EventEmitter implements LocalLLMProvider {
+  readonly type: LocalProviderType = 'webllm';
+  readonly name = 'WebLLM';
 
-const engine = new webllm.MLCEngine();
-await engine.reload('Llama-3.1-8B-Instruct-q4f16_1-MLC');
+  private engine: unknown = null;
+  private ready = false;
 
-const response = await engine.chat.completions.create({
-  messages: [{ role: 'user', content: 'Hello!' }],
-  stream: true
-});
+  async initialize(config: LocalProviderConfig): Promise<void> {
+    // Dynamic import of WebLLM
+    const webllm = await import('@mlc-ai/web-llm');
 
-for await (const chunk of response) {
-  console.log(chunk.choices[0]?.delta?.content || '');
-}
-```
+    const model = config.model || 'Llama-3.1-8B-Instruct-q4f16_1-MLC';
+    this.engine = new webllm.MLCEngine();
 
-### 15.12.4 Configuration Hybride dans Grok-CLI
+    // Progress callback for model download
+    const initProgress = (progress: { progress: number; text: string }) => {
+      this.emit('progress', progress);
+    };
 
-```typescript
-// src/config/llm-provider.ts
+    await (this.engine as any).reload(model, { initProgressCallback: initProgress });
+    this.ready = true;
+  }
 
-type ProviderType = 'grok-api' | 'ollama' | 'local-llama' | 'webllm';
+  async isAvailable(): Promise<boolean> {
+    // Check if WebGPU is available
+    if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
+      const adapter = await (navigator as any).gpu.requestAdapter();
+      return adapter !== null;
+    }
+    return false;
+  }
 
-interface LLMConfig {
-  provider: ProviderType;
-  model: string;
-  endpoint?: string;
-  modelPath?: string;
-}
+  async complete(
+    messages: LocalLLMMessage[],
+    options?: Partial<LocalProviderConfig>
+  ): Promise<LocalLLMResponse> {
+    const startTime = Date.now();
 
-export function createProvider(config: LLMConfig): LLMProvider {
-  switch (config.provider) {
-    case 'grok-api':
-      return new GrokAPIProvider(config.model);
+    const response = await (this.engine as any).chat.completions.create({
+      messages: messages.map(m => ({ role: m.role, content: m.content })),
+      max_tokens: options?.maxTokens ?? 2048,
+      temperature: options?.temperature ?? 0.7,
+      stream: false,
+    });
 
-    case 'ollama':
-      return new OllamaProvider(config.endpoint || 'http://localhost:11434');
+    return {
+      content: response.choices[0]?.message?.content || '',
+      tokensUsed: response.usage?.total_tokens || 0,
+      model: this.config?.model || 'unknown',
+      provider: this.type,
+      generationTime: Date.now() - startTime,
+    };
+  }
 
-    case 'local-llama':
-      return new LocalLLMProvider(config.modelPath!);
+  async *stream(messages: LocalLLMMessage[], options?: Partial<LocalProviderConfig>) {
+    const response = await (this.engine as any).chat.completions.create({
+      messages: messages.map(m => ({ role: m.role, content: m.content })),
+      stream: true,
+    });
 
-    case 'webllm':
-      return new WebLLMProvider(config.model);
+    for await (const chunk of response) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) yield content;
+    }
+  }
 
-    default:
-      throw new Error(`Unknown provider: ${config.provider}`);
+  getModels(): string[] {
+    return [
+      'Llama-3.1-8B-Instruct-q4f16_1-MLC',
+      'Llama-3.1-70B-Instruct-q4f16_1-MLC',
+      'Mistral-7B-Instruct-v0.3-q4f16_1-MLC',
+      'Phi-3.5-mini-instruct-q4f16_1-MLC',
+      'Qwen2.5-7B-Instruct-q4f16_1-MLC',
+    ];
   }
 }
 ```
 
+### 15.12.4 LocalProviderManager : Gestion Unifiée
+
+**Implémentation réelle** (extrait de `src/providers/local-llm-provider.ts`) :
+
+```typescript
+/**
+ * Manager for local LLM providers
+ * Handles provider selection, fallback, and unified interface.
+ */
+export class LocalProviderManager extends EventEmitter {
+  private providers: Map<LocalProviderType, LocalLLMProvider> = new Map();
+  private activeProvider: LocalProviderType | null = null;
+
+  /**
+   * Register and initialize a provider
+   */
+  async registerProvider(type: LocalProviderType, config: LocalProviderConfig): Promise<void> {
+    const provider = this.createProvider(type);
+
+    provider.on('progress', (progress) => {
+      this.emit('progress', { provider: type, ...progress });
+    });
+
+    await provider.initialize(config);
+    this.providers.set(type, provider);
+
+    if (!this.activeProvider) {
+      this.activeProvider = type;
+    }
+  }
+
+  /**
+   * Auto-detect best available provider
+   */
+  async autoDetectProvider(): Promise<LocalProviderType | null> {
+    // Priority: Ollama > node-llama-cpp > WebLLM
+    const ollama = new OllamaProvider();
+    if (await ollama.isAvailable()) return 'ollama';
+
+    const nodeLlama = new NodeLlamaCppProvider();
+    if (await nodeLlama.isAvailable()) return 'local-llama';
+
+    const webllm = new WebLLMProvider();
+    if (await webllm.isAvailable()) return 'webllm';
+
+    return null;
+  }
+
+  /**
+   * Complete with active provider (with automatic fallback)
+   */
+  async complete(
+    messages: LocalLLMMessage[],
+    options?: Partial<LocalProviderConfig>
+  ): Promise<LocalLLMResponse> {
+    const provider = this.getActiveProvider();
+    if (!provider) throw new Error('No local provider available');
+
+    try {
+      return await provider.complete(messages, options);
+    } catch (error) {
+      // Try fallback providers
+      for (const [type, fallbackProvider] of this.providers) {
+        if (type !== this.activeProvider && fallbackProvider.isReady()) {
+          this.emit('provider:fallback', { from: this.activeProvider, to: type });
+          return await fallbackProvider.complete(messages, options);
+        }
+      }
+      throw error;
+    }
+  }
+}
+
+/**
+ * Auto-configure best available local provider
+ */
+export async function autoConfigureLocalProvider(
+  preferredProvider?: LocalProviderType
+): Promise<LocalProviderManager> {
+  const manager = getLocalProviderManager();
+
+  if (preferredProvider) {
+    try {
+      await manager.registerProvider(preferredProvider, {});
+      return manager;
+    } catch {
+      console.warn(`Provider ${preferredProvider} not available`);
+    }
+  }
+
+  const detected = await manager.autoDetectProvider();
+  if (detected) {
+    await manager.registerProvider(detected, {});
+    return manager;
+  }
+
+  throw new Error('No local LLM provider available');
+}
+```
+
+**Intégration dans offline-mode.ts** :
+
+```typescript
+// src/offline/offline-mode.ts (extrait)
+
+export interface OfflineConfig {
+  localLLMProvider: 'ollama' | 'llamacpp' | 'local-llama' | 'webllm' | 'none';
+  localLLMModel: string;
+  localLLMModelPath?: string;      // Pour node-llama-cpp
+  localLLMGpuLayers?: number;      // Accélération GPU
+}
+
+async callLocalLLM(prompt: string, options: {...}): Promise<string | null> {
+  // Use new provider system for local-llama and webllm
+  if (this.config.localLLMProvider === 'local-llama' ||
+      this.config.localLLMProvider === 'webllm') {
+    return await this.callNewProvider(prompt, model, options);
+  }
+
+  // Legacy provider support (ollama, llamacpp HTTP)
+  switch (this.config.localLLMProvider) {
+    case 'ollama': return this.callOllama(prompt, model, options);
+    case 'llamacpp': return this.callLlamaCpp(prompt, model, options);
+  }
+}
+```
+
+**Configuration** (`.grok/settings.json`) :
+
 ```json
-// .grok/settings.json - Configuration locale
 {
-  "provider": "local-llama",
-  "modelPath": "./models/llama-3.1-8b-q4_k_m.gguf",
-  "fallback": {
-    "provider": "grok-api",
-    "model": "grok-2"
+  "offline": {
+    "localLLMEnabled": true,
+    "localLLMProvider": "local-llama",
+    "localLLMModel": "llama-3.1-8b-q4_k_m.gguf",
+    "localLLMModelPath": "~/.grok/models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+    "localLLMGpuLayers": 35
   }
 }
 ```
 
 ### 15.12.5 Comparaison des Approches
 
-| Critère | API Cloud (Grok) | Ollama | node-llama-cpp |
-|---------|------------------|--------|----------------|
-| **Setup** | 5 min | 15 min | 30 min |
-| **Qualité** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **Latence** | 200-2000ms | 50-500ms | 50-300ms |
-| **Confidentialité** | ⚠️ Cloud | ✅ Local | ✅ Local |
-| **Coût** | $/token | Gratuit | Gratuit |
-| **GPU requis** | Non | Recommandé | Recommandé |
-| **Mode hors-ligne** | ❌ | ✅ | ✅ |
+| Critère | API Cloud | Ollama | node-llama-cpp | WebLLM |
+|---------|-----------|--------|----------------|--------|
+| **Setup** | 5 min | 15 min | 30 min | 10 min |
+| **Qualité** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
+| **Latence** | 200-2000ms | 50-500ms | 50-300ms | 100-800ms |
+| **Confidentialité** | ⚠️ Cloud | ✅ Local | ✅ Local | ✅ Local |
+| **Coût** | $/token | Gratuit | Gratuit | Gratuit |
+| **GPU requis** | Non | Recommandé | Recommandé | WebGPU |
+| **Mode hors-ligne** | ❌ | ✅ | ✅ | ✅ |
+| **Environnement** | Tout | Serveur | Node.js | Browser |
+| **Dépendances** | API key | Daemon | CMake, C++ | WebGPU |
+
+**Fichiers implémentés dans Grok-CLI** :
+
+| Fichier | Providers | Rôle |
+|---------|-----------|------|
+| `src/providers/local-llm-provider.ts` | node-llama-cpp, WebLLM, Ollama | Abstraction unifiée |
+| `src/offline/offline-mode.ts` | Tous | Intégration mode hors-ligne |
+| `package.json` | - | Dépendances optionnelles |
+
+**Dépendances optionnelles** (installées à la demande) :
+
+```json
+{
+  "optionalDependencies": {
+    "@mlc-ai/web-llm": "^0.2.78",
+    "node-llama-cpp": "^3.3.0"
+  }
+}
+```
 
 ---
 
