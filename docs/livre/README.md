@@ -2,7 +2,7 @@
 
 **De la Théorie à Grok-CLI**
 
-> *Un guide pratique de 60 000 mots pour comprendre et construire des agents IA de développement*
+> *Un guide pratique de plus de 65 000 mots pour comprendre et construire des agents IA de développement*
 
 ---
 
