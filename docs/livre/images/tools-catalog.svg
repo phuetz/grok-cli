@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 550">
+  <defs>
+    <linearGradient id="bgGradTC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="550" fill="url(#bgGradTC)"/>
+
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">CATALOGUE D'OUTILS GROK-CLI (41)</text>
+
+  <!-- Row 1 -->
+  <!-- Files -->
+  <rect x="30" y="50" width="235" height="145" rx="8" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="50" y="75" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2ecc71">FICHIERS (12)</text>
+  <text x="50" y="95" font-family="monospace" font-size="8" fill="#cccccc">read_file      Lire contenu</text>
+  <text x="50" y="108" font-family="monospace" font-size="8" fill="#cccccc">write_file     Ecrire fichier</text>
+  <text x="50" y="121" font-family="monospace" font-size="8" fill="#cccccc">edit_file      Modifier section</text>
+  <text x="50" y="134" font-family="monospace" font-size="8" fill="#cccccc">multi_edit     Edits atomiques</text>
+  <text x="50" y="147" font-family="monospace" font-size="8" fill="#cccccc">list_directory Lister repertoire</text>
+  <text x="50" y="160" font-family="monospace" font-size="8" fill="#cccccc">find_files     Recherche glob</text>
+  <text x="50" y="173" font-family="monospace" font-size="8" fill="#cccccc">search_content Ripgrep</text>
+  <text x="50" y="186" font-family="monospace" font-size="8" fill="#888888">+5 autres...</text>
+
+  <!-- Shell -->
+  <rect x="280" y="50" width="235" height="145" rx="8" fill="#3a3a1e" stroke="#f39c12" stroke-width="2"/>
+  <text x="300" y="75" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#f39c12">SHELL (4)</text>
+  <text x="300" y="100" font-family="monospace" font-size="8" fill="#cccccc">bash              Commande shell</text>
+  <text x="300" y="118" font-family="monospace" font-size="8" fill="#cccccc">interactive_bash  Session pty</text>
+  <text x="300" y="136" font-family="monospace" font-size="8" fill="#cccccc">background_task   Tache async</text>
+  <text x="300" y="154" font-family="monospace" font-size="8" fill="#cccccc">kill_process      Terminer PID</text>
+
+  <!-- Git -->
+  <rect x="530" y="50" width="235" height="145" rx="8" fill="#2a1e3a" stroke="#9b59b6" stroke-width="2"/>
+  <text x="550" y="75" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#9b59b6">GIT (5)</text>
+  <text x="550" y="100" font-family="monospace" font-size="8" fill="#cccccc">git_status   Etat repo</text>
+  <text x="550" y="118" font-family="monospace" font-size="8" fill="#cccccc">git_diff     Differences</text>
+  <text x="550" y="136" font-family="monospace" font-size="8" fill="#cccccc">git_commit   Creer commit</text>
+  <text x="550" y="154" font-family="monospace" font-size="8" fill="#cccccc">git_log      Historique</text>
+  <text x="550" y="172" font-family="monospace" font-size="8" fill="#cccccc">git_branch   Branches</text>
+
+  <!-- Row 2 -->
+  <!-- Search -->
+  <rect x="30" y="210" width="235" height="145" rx="8" fill="#1e2a3a" stroke="#3498db" stroke-width="2"/>
+  <text x="50" y="235" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#3498db">RECHERCHE (4)</text>
+  <text x="50" y="260" font-family="monospace" font-size="8" fill="#cccccc">search_code      Semantique</text>
+  <text x="50" y="278" font-family="monospace" font-size="8" fill="#cccccc">find_symbol      Definition</text>
+  <text x="50" y="296" font-family="monospace" font-size="8" fill="#cccccc">find_references  Utilisations</text>
+  <text x="50" y="314" font-family="monospace" font-size="8" fill="#cccccc">search_web       Web search</text>
+
+  <!-- Media -->
+  <rect x="280" y="210" width="235" height="145" rx="8" fill="#3a1e2a" stroke="#e74c3c" stroke-width="2"/>
+  <text x="300" y="235" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#e74c3c">MEDIAS (5)</text>
+  <text x="300" y="260" font-family="monospace" font-size="8" fill="#cccccc">screenshot        Capture ecran</text>
+  <text x="300" y="278" font-family="monospace" font-size="8" fill="#cccccc">audio_transcribe  Transcrire</text>
+  <text x="300" y="296" font-family="monospace" font-size="8" fill="#cccccc">video_extract     Frames video</text>
+  <text x="300" y="314" font-family="monospace" font-size="8" fill="#cccccc">image_analyze     OCR, objets</text>
+  <text x="300" y="332" font-family="monospace" font-size="8" fill="#cccccc">qr_code           QR codes</text>
+
+  <!-- Documents -->
+  <rect x="530" y="210" width="235" height="145" rx="8" fill="#2d2d44" stroke="#888888" stroke-width="2"/>
+  <text x="550" y="235" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#888888">DOCUMENTS (5)</text>
+  <text x="550" y="260" font-family="monospace" font-size="8" fill="#cccccc">pdf_extract       Texte PDF</text>
+  <text x="550" y="278" font-family="monospace" font-size="8" fill="#cccccc">excel_read        Lire Excel/CSV</text>
+  <text x="550" y="296" font-family="monospace" font-size="8" fill="#cccccc">excel_write       Ecrire Excel</text>
+  <text x="550" y="314" font-family="monospace" font-size="8" fill="#cccccc">archive_extract   Extraire zip</text>
+  <text x="550" y="332" font-family="monospace" font-size="8" fill="#cccccc">archive_create    Creer archive</text>
+
+  <!-- Row 3 -->
+  <!-- System -->
+  <rect x="180" y="370" width="440" height="100" rx="8" fill="#1e3a1e" stroke="#2ecc71" stroke-width="2"/>
+  <text x="400" y="395" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2ecc71" text-anchor="middle">SYSTEME (6)</text>
+  <text x="200" y="420" font-family="monospace" font-size="8" fill="#cccccc">memory_store    Stocker info</text>
+  <text x="200" y="438" font-family="monospace" font-size="8" fill="#cccccc">memory_recall   Rappeler info</text>
+  <text x="200" y="456" font-family="monospace" font-size="8" fill="#cccccc">spawn_agent     Sous-agent</text>
+  <text x="420" y="420" font-family="monospace" font-size="8" fill="#cccccc">http_request    Requete HTTP</text>
+  <text x="420" y="438" font-family="monospace" font-size="8" fill="#cccccc">database_query  Requete SQL</text>
+  <text x="420" y="456" font-family="monospace" font-size="8" fill="#cccccc">thinking        Reflexion</text>
+
+  <!-- Stats -->
+  <rect x="180" y="485" width="440" height="50" rx="8" fill="#2d2d44" stroke="#4a4a6a" stroke-width="1"/>
+  <text x="400" y="515" font-family="Arial, sans-serif" font-size="11" fill="#cccccc" text-anchor="middle">41 outils disponibles | 7 categories | Extensible via MCP</text>
+</svg>

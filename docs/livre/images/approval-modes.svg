@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520">
+  <defs>
+    <linearGradient id="bgGradAM" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="520" fill="url(#bgGradAM)"/>
+
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">MODES D'APPROBATION</text>
+
+  <!-- Mode 1: Read-Only -->
+  <rect x="50" y="50" width="700" height="140" rx="10" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <circle cx="80" cy="80" r="15" fill="#2ecc71"/>
+  <text x="110" y="85" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2ecc71">MODE 1 : READ-ONLY (Confiance minimale)</text>
+  <text x="70" y="110" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Exploration et audit. L'agent peut lire et analyser, mais pas modifier.</text>
+  <text x="70" y="130" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71">Autorise : read_file, list_directory, git_status, git_diff, search_code</text>
+  <text x="70" y="148" font-family="Arial, sans-serif" font-size="9" fill="#e74c3c">Bloque : write_file, edit_file, delete_file, bash (ecriture), git_commit</text>
+  <text x="70" y="170" font-family="Arial, sans-serif" font-size="9" fill="#888888">Cas d'usage : Audit de securite, Code review, Exploration codebase</text>
+
+  <!-- Mode 2: Auto-Approve -->
+  <rect x="50" y="200" width="700" height="155" rx="10" fill="#3a3a1e" stroke="#f39c12" stroke-width="2"/>
+  <circle cx="80" cy="230" r="15" fill="#f39c12"/>
+  <text x="110" y="235" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#f39c12">MODE 2 : AUTO-APPROVE (Mode par defaut)</text>
+  <text x="70" y="260" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Equilibre entre productivite et securite. Operations courantes auto, risquees = confirmation.</text>
+  <text x="70" y="280" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71">Auto-approuve : read_file, write_file (working dir), edit_file, git_add, git_commit</text>
+  <text x="70" y="298" font-family="Arial, sans-serif" font-size="9" fill="#f39c12">Confirmation requise : bash "dangereuses", delete_file, git_push, hors working dir</text>
+  <text x="70" y="316" font-family="Arial, sans-serif" font-size="9" fill="#e74c3c">Toujours bloque : rm -rf /, format, credentials en clair</text>
+  <text x="70" y="340" font-family="Arial, sans-serif" font-size="9" fill="#888888">Cas d'usage : Developpement quotidien, Refactoring assiste, Debugging</text>
+
+  <!-- Mode 3: Full-Access -->
+  <rect x="50" y="365" width="700" height="140" rx="10" fill="#3d1f1f" stroke="#e74c3c" stroke-width="2"/>
+  <circle cx="80" cy="395" r="15" fill="#e74c3c"/>
+  <text x="110" y="400" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#e74c3c">MODE 3 : FULL-ACCESS (YOLO mode)</text>
+  <text x="70" y="425" font-family="Arial, sans-serif" font-size="10" fill="#e74c3c">DANGER : Autonomie maximale. A utiliser avec precaution.</text>
+  <text x="70" y="445" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71">Auto-approuve : Presque tout - max rounds = 400, limites de cout levees</text>
+  <text x="70" y="463" font-family="Arial, sans-serif" font-size="9" fill="#e74c3c">Toujours bloque (blacklist absolue) : rm -rf /, format disques, fork bombs, credentials externes</text>
+  <text x="70" y="483" font-family="Arial, sans-serif" font-size="9" fill="#888888">Cas d'usage : Scripts CI/CD, Migration grande envergure | Active via: YOLO_MODE=true</text>
+</svg>

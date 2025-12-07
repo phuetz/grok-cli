@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320">
+  <defs>
+    <linearGradient id="bgGradLI" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="320" fill="url(#bgGradLI)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">IMPACT DE LA LOCALISATION</text>
+
+  <!-- Bad localization -->
+  <rect x="40" y="50" width="350" height="120" rx="8" fill="#3a1e2a" stroke="#e74c3c" stroke-width="2"/>
+  <text x="215" y="72" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#e74c3c" text-anchor="middle">MAUVAISE LOCALISATION</text>
+
+  <text x="60" y="95" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">Prompt : "Voici les 50 fichiers du projet.</text>
+  <text x="60" y="108" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">         Trouve et corrige le bug."</text>
+
+  <text x="60" y="130" font-family="Arial, sans-serif" font-size="8" fill="#e74c3c">• Le modele est noye dans l'information</text>
+  <text x="60" y="143" font-family="Arial, sans-serif" font-size="8" fill="#e74c3c">• Il hallucine souvent des solutions</text>
+  <text x="60" y="158" font-family="Arial, sans-serif" font-size="10" fill="#e74c3c">Taux de succes : ~10%</text>
+
+  <!-- Good localization -->
+  <rect x="410" y="50" width="350" height="120" rx="8" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="585" y="72" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2ecc71" text-anchor="middle">BONNE LOCALISATION</text>
+
+  <text x="430" y="95" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">Prompt : "Le bug est dans calculateTotal()</text>
+  <text x="430" y="108" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">         math.ts:45. Voici le code."</text>
+
+  <text x="430" y="130" font-family="Arial, sans-serif" font-size="8" fill="#2ecc71">• Focus precis sur le code pertinent</text>
+  <text x="430" y="143" font-family="Arial, sans-serif" font-size="8" fill="#2ecc71">• Contexte suffisant pour comprendre</text>
+  <text x="430" y="158" font-family="Arial, sans-serif" font-size="10" fill="#2ecc71">Taux de succes : ~50%</text>
+
+  <!-- Techniques box -->
+  <rect x="100" y="190" width="600" height="110" rx="10" fill="#2d2d44" stroke="#4a4a6a" stroke-width="2"/>
+  <text x="400" y="215" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">TECHNIQUES DE LOCALISATION</text>
+
+  <text x="140" y="245" font-family="monospace" font-size="9" fill="#3498db">SBFL (Ochiai, DStar)</text>
+  <text x="140" y="260" font-family="Arial, sans-serif" font-size="8" fill="#888888">Coverage-based</text>
+
+  <text x="340" y="245" font-family="monospace" font-size="9" fill="#9b59b6">Stack Trace</text>
+  <text x="340" y="260" font-family="Arial, sans-serif" font-size="8" fill="#888888">Plus fiable</text>
+
+  <text x="520" y="245" font-family="monospace" font-size="9" fill="#f39c12">LLM Analysis</text>
+  <text x="520" y="260" font-family="Arial, sans-serif" font-size="8" fill="#888888">Flexible</text>
+
+  <text x="400" y="285" font-family="Arial, sans-serif" font-size="9" fill="#cccccc" text-anchor="middle">Combine = Stack + SBFL + LLM pour robustesse</text>
+</svg>

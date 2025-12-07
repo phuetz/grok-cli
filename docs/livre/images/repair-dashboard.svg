@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350">
+  <defs>
+    <linearGradient id="bgGradRD" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="350" fill="url(#bgGradRD)"/>
+
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">REPAIR DASHBOARD</text>
+
+  <!-- Efficacite -->
+  <rect x="40" y="50" width="230" height="115" rx="8" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="155" y="75" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2ecc71" text-anchor="middle">EFFICACITE</text>
+  <text x="60" y="100" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Success Rate</text>
+  <text x="210" y="100" font-family="monospace" font-size="10" fill="#2ecc71">42.5%</text>
+  <text x="60" y="120" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">First-try Success</text>
+  <text x="210" y="120" font-family="monospace" font-size="10" fill="#f39c12">18.2%</text>
+  <text x="60" y="140" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Avg Iterations</text>
+  <text x="210" y="140" font-family="monospace" font-size="10" fill="#cccccc">2.3</text>
+
+  <!-- Qualite -->
+  <rect x="285" y="50" width="230" height="115" rx="8" fill="#3a3a1e" stroke="#f39c12" stroke-width="2"/>
+  <text x="400" y="75" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#f39c12" text-anchor="middle">QUALITE</text>
+  <text x="305" y="100" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Regression Rate</text>
+  <text x="455" y="100" font-family="monospace" font-size="10" fill="#2ecc71">5.1%</text>
+  <text x="305" y="120" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Minimal Patches</text>
+  <text x="455" y="120" font-family="monospace" font-size="10" fill="#2ecc71">78.9%</text>
+
+  <!-- Efficience -->
+  <rect x="530" y="50" width="230" height="115" rx="8" fill="#1e2a3a" stroke="#3498db" stroke-width="2"/>
+  <text x="645" y="75" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#3498db" text-anchor="middle">EFFICIENCE</text>
+  <text x="550" y="100" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Localization Time</text>
+  <text x="700" y="100" font-family="monospace" font-size="10" fill="#cccccc">420ms</text>
+  <text x="550" y="120" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Generation Time</text>
+  <text x="700" y="120" font-family="monospace" font-size="10" fill="#cccccc">3200ms</text>
+  <text x="550" y="140" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">API Calls/Repair</text>
+  <text x="700" y="140" font-family="monospace" font-size="10" fill="#cccccc">4.2</text>
+
+  <!-- Top Patterns -->
+  <rect x="40" y="180" width="720" height="150" rx="8" fill="#2d2d44" stroke="#4a4a6a" stroke-width="2"/>
+  <text x="400" y="205" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">TOP PATTERNS APPRIS</text>
+
+  <!-- Pattern bars -->
+  <text x="80" y="235" font-family="monospace" font-size="10" fill="#cccccc">null_check</text>
+  <rect x="200" y="223" width="445" height="16" rx="3" fill="#1e3a1e"/>
+  <rect x="200" y="223" width="395" height="16" rx="3" fill="#2ecc71"/>
+  <text x="720" y="236" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71">89%</text>
+
+  <text x="80" y="260" font-family="monospace" font-size="10" fill="#cccccc">optional_chain</text>
+  <rect x="200" y="248" width="445" height="16" rx="3" fill="#1e3a1e"/>
+  <rect x="200" y="248" width="378" height="16" rx="3" fill="#2ecc71"/>
+  <text x="720" y="261" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71">85%</text>
+
+  <text x="80" y="285" font-family="monospace" font-size="10" fill="#cccccc">add_await</text>
+  <rect x="200" y="273" width="445" height="16" rx="3" fill="#3a3a1e"/>
+  <rect x="200" y="273" width="338" height="16" rx="3" fill="#f39c12"/>
+  <text x="720" y="286" font-family="Arial, sans-serif" font-size="9" fill="#f39c12">76%</text>
+
+  <text x="80" y="310" font-family="monospace" font-size="10" fill="#cccccc">try_catch</text>
+  <rect x="200" y="298" width="445" height="16" rx="3" fill="#3a3a1e"/>
+  <rect x="200" y="298" width="316" height="16" rx="3" fill="#f39c12"/>
+  <text x="720" y="311" font-family="Arial, sans-serif" font-size="9" fill="#f39c12">71%</text>
+</svg>

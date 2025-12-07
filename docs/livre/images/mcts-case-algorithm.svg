@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420">
+  <defs>
+    <linearGradient id="bgGradAlgo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="420" fill="url(#bgGradAlgo)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#3498db" text-anchor="middle">PROBLEME : "Implementer un tri stable en O(n log n)"</text>
+  <text x="400" y="48" font-family="Arial, sans-serif" font-size="11" fill="#888888" text-anchor="middle">MCTS avec 100 iterations</text>
+
+  <!-- Candidates table -->
+  <rect x="40" y="65" width="720" height="100" rx="8" fill="#1e2a3a" stroke="#3498db" stroke-width="2"/>
+  <text x="60" y="85" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#3498db">Candidats generes et leurs scores :</text>
+
+  <!-- Table header -->
+  <text x="100" y="108" font-family="monospace" font-size="9" fill="#888888">Algorithme</text>
+  <text x="250" y="108" font-family="monospace" font-size="9" fill="#888888">Stable?</text>
+  <text x="350" y="108" font-family="monospace" font-size="9" fill="#888888">Complexite</text>
+  <text x="500" y="108" font-family="monospace" font-size="9" fill="#888888">Reward</text>
+
+  <!-- Table rows -->
+  <text x="100" y="125" font-family="monospace" font-size="9" fill="#2ecc71">Merge Sort</text>
+  <text x="250" y="125" font-family="monospace" font-size="9" fill="#2ecc71">Oui</text>
+  <text x="350" y="125" font-family="monospace" font-size="9" fill="#cccccc">O(n log n)</text>
+  <text x="500" y="125" font-family="monospace" font-size="9" fill="#2ecc71">0.95</text>
+
+  <text x="100" y="142" font-family="monospace" font-size="9" fill="#cccccc">Tim Sort</text>
+  <text x="250" y="142" font-family="monospace" font-size="9" fill="#2ecc71">Oui</text>
+  <text x="350" y="142" font-family="monospace" font-size="9" fill="#cccccc">O(n log n)</text>
+  <text x="500" y="142" font-family="monospace" font-size="9" fill="#cccccc">0.92</text>
+
+  <text x="100" y="159" font-family="monospace" font-size="9" fill="#e74c3c">Quick Sort</text>
+  <text x="250" y="159" font-family="monospace" font-size="9" fill="#e74c3c">Non</text>
+  <text x="350" y="159" font-family="monospace" font-size="9" fill="#cccccc">O(n log n)</text>
+  <text x="500" y="159" font-family="monospace" font-size="9" fill="#e74c3c">0.30</text>
+
+  <!-- Merge Sort exploration -->
+  <rect x="40" y="175" width="720" height="145" rx="8" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="60" y="195" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2ecc71">Exploration Merge Sort :</text>
+
+  <text x="60" y="218" font-family="monospace" font-size="9" fill="#cccccc">"Version recursive classique" (0.90)</text>
+  <text x="80" y="233" font-family="Arial, sans-serif" font-size="8" fill="#888888">Simple, mais consomme de la stack</text>
+
+  <text x="60" y="253" font-family="monospace" font-size="9" fill="#cccccc">"Version iterative bottom-up" (0.85)</text>
+  <text x="80" y="268" font-family="Arial, sans-serif" font-size="8" fill="#888888">Pas de recursion, mais plus complexe</text>
+
+  <text x="60" y="288" font-family="monospace" font-size="9" fill="#2ecc71">"Hybride : insertion sort pour petits tableaux" (0.95)</text>
+  <text x="80" y="303" font-family="Arial, sans-serif" font-size="8" fill="#888888">Merge sort + insertion sort si n &lt; 16 | Tests passent | EARLY STOP !</text>
+
+  <!-- Result -->
+  <rect x="150" y="335" width="500" height="65" rx="10" fill="#2d2d44" stroke="#2ecc71" stroke-width="2"/>
+  <text x="400" y="360" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2ecc71" text-anchor="middle">Solution : Merge sort hybride</text>
+  <text x="400" y="380" font-family="Arial, sans-serif" font-size="10" fill="#cccccc" text-anchor="middle">avec insertion sort pour n &lt; 16</text>
+  <text x="400" y="395" font-family="Arial, sans-serif" font-size="9" fill="#888888" text-anchor="middle">Stable, O(n log n), optimise pour petits tableaux</text>
+</svg>

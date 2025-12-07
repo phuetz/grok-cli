@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <defs>
+    <linearGradient id="bgGradCC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bgGradCC)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#e74c3c" text-anchor="middle">PROBLEME : "Le compteur de connexions devient negatif parfois"</text>
+  <text x="400" y="48" font-family="Arial, sans-serif" font-size="11" fill="#888888" text-anchor="middle">MCTS Exploration (50 iterations)</text>
+
+  <!-- Phase 1: Exploration large -->
+  <rect x="40" y="65" width="720" height="100" rx="8" fill="#1e2a3a" stroke="#3498db" stroke-width="2"/>
+  <text x="60" y="85" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#3498db">Iteration 1-10 : Exploration large</text>
+
+  <text x="60" y="108" font-family="monospace" font-size="9" fill="#cccccc">"Race condition sur l'incrementation" (3 visites, reward 0.4)</text>
+  <text x="60" y="123" font-family="monospace" font-size="9" fill="#cccccc">"Decrementation appelee deux fois" (2 visites, reward 0.3)</text>
+  <text x="60" y="138" font-family="monospace" font-size="9" fill="#e74c3c">"Overflow integer" (2 visites, reward 0.1)</text>
+  <text x="60" y="153" font-family="monospace" font-size="9" fill="#f39c12">"Bug dans la logique de cleanup" (3 visites, reward 0.6)</text>
+
+  <!-- Phase 2: Focus -->
+  <rect x="40" y="175" width="720" height="130" rx="8" fill="#3a3a1e" stroke="#f39c12" stroke-width="2"/>
+  <text x="60" y="195" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#f39c12">Iteration 11-30 : Focus sur les prometteurs</text>
+
+  <text x="60" y="218" font-family="monospace" font-size="9" fill="#cccccc">"Race condition" → "Ajouter mutex"</text>
+  <text x="80" y="233" font-family="monospace" font-size="8" fill="#888888">Simulation : Tests passent mais deadlock possible | Reward : 0.5</text>
+
+  <text x="60" y="256" font-family="monospace" font-size="9" fill="#f39c12">"Bug cleanup" → "Verifier sequence de deconnexion"</text>
+  <text x="80" y="271" font-family="monospace" font-size="8" fill="#888888">Simulation : Reproduit le bug ! | Reward : 0.8</text>
+
+  <text x="60" y="294" font-family="monospace" font-size="9" fill="#2ecc71">"Bug cleanup" → "Ajouter log avant decrementation"</text>
+  <text x="80" y="309" font-family="monospace" font-size="8" fill="#888888">Simulation : Montre decrementation sans connexion | Reward : 0.9</text>
+
+  <!-- Phase 3: Convergence -->
+  <rect x="40" y="315" width="720" height="100" rx="8" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="60" y="335" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2ecc71">Iteration 31-42 : Convergence</text>
+
+  <text x="60" y="358" font-family="monospace" font-size="9" fill="#2ecc71">"Bug cleanup" → "Verifier etat avant decrementer"</text>
+  <text x="80" y="373" font-family="monospace" font-size="8" fill="#888888">Simulation : if (connections > 0) connections--;</text>
+  <text x="80" y="388" font-family="monospace" font-size="8" fill="#2ecc71">Tests : 100% passent | Reward : 1.0 | EARLY STOP !</text>
+
+  <!-- Result -->
+  <rect x="200" y="430" width="400" height="50" rx="10" fill="#2d2d44" stroke="#2ecc71" stroke-width="2"/>
+  <text x="400" y="455" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2ecc71" text-anchor="middle">Solution trouvee en 42 iterations (sur 50 budget)</text>
+  <text x="400" y="472" font-family="Arial, sans-serif" font-size="10" fill="#cccccc" text-anchor="middle">Verification de l'etat avant decrementation</text>
+</svg>

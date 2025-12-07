@@ -74,44 +74,7 @@ Sur les benchmarks standards comme SWE-bench, les résultats single-shot sont d�
 
 Le problème n'est pas de réessayer — c'est de réessayer **intelligemment** :
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    ❌ MAUVAISE APPROCHE : REGENERATE                │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  Essai 1 : Génère solution A → Échoue                               │
-│  Essai 2 : Génère solution A' → Échoue (souvent similaire !)       │
-│  Essai 3 : Génère solution A'' → Échoue                             │
-│  Essai 4 : Génère solution A''' → Échoue                            │
-│  ...                                                                 │
-│                                                                      │
-│  ⚠️ Le modèle n'a pas de feedback — il explore aléatoirement       │
-│  ⚠️ Forte probabilité de retomber sur la même erreur               │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                    ✅ BONNE APPROCHE : REPAIR                       │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  Essai 1 : Génère solution A → Échoue avec erreur E                │
-│                    │                                                 │
-│                    ▼                                                 │
-│            Analyse E : "user existe mais name est undefined"        │
-│                    │                                                 │
-│                    ▼                                                 │
-│  Essai 2 : Génère solution B (différente !) → Échoue avec E'       │
-│                    │                                                 │
-│                    ▼                                                 │
-│            Analyse E' : "fallback nécessaire"                       │
-│                    │                                                 │
-│                    ▼                                                 │
-│  Essai 3 : Corrige précisément → ✅ Succès !                        │
-│                                                                      │
-│  💡 Le modèle apprend de chaque échec et adapte son approche       │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Regenerate vs Repair](images/regenerate-vs-repair.svg)
 
 > 💡 **Analogie humaine** : Quand vous debuggez, vous ne réécrivez pas aveuglément le même code. Vous lisez l'erreur, vous comprenez ce qui s'est passé, et vous ajustez votre approche. ChatRepair donne cette capacité aux LLMs.
 
@@ -141,38 +104,7 @@ ChatRepair (publié à ISSTA 2024) propose une boucle de réparation guidée par
 
 La localisation précise du bug est **déterminante** pour la qualité de la réparation :
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    🎯 IMPACT DE LA LOCALISATION                     │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ❌ MAUVAISE LOCALISATION :                                         │
-│  ─────────────────────────                                          │
-│  Prompt : "Voici les 50 fichiers du projet. Trouve et corrige       │
-│           le bug qui fait échouer les tests."                       │
-│                                                                      │
-│  Résultat :                                                         │
-│  • Le modèle est noyé dans l'information                           │
-│  • Il hallucine souvent des solutions                              │
-│  • Taux de succès : ~10%                                           │
-│                                                                      │
-│  ────────────────────────────────────────────────────────────────   │
-│                                                                      │
-│  ✅ BONNE LOCALISATION :                                            │
-│  ───────────────────────                                            │
-│  Prompt : "Le bug est probablement dans calculateTotal()            │
-│           fichier math.ts, ligne 45.                                │
-│           Le test échoue avec 'expected 100, got NaN'.             │
-│           Voici le code de la fonction et ses dépendances.         │
-│           Corrige."                                                 │
-│                                                                      │
-│  Résultat :                                                         │
-│  • Focus précis sur le code pertinent                              │
-│  • Contexte suffisant pour comprendre                              │
-│  • Taux de succès : ~50%                                           │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Impact de la localisation](images/localization-impact.svg)
 
 ### 6.3.2 📐 Spectrum-Based Fault Localization (SBFL)
 
@@ -347,38 +279,7 @@ Explication courte :
 
 Certains patterns de bugs sont **très récurrents**. Grok-CLI maintient une bibliothèque de templates :
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    📚 TEMPLATES DE RÉPARATION                       │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  🔴 NULL/UNDEFINED CHECK                                            │
-│  Pattern : /cannot read propert.*of (undefined|null)/i             │
-│  Template : if (obj == null) return defaultValue;                  │
-│  Confidence : 85%                                                   │
-│                                                                      │
-│  🔴 DIVISION BY ZERO                                                │
-│  Pattern : /division by zero|NaN|Infinity/i                        │
-│  Template : if (divisor === 0) throw/return;                       │
-│  Confidence : 90%                                                   │
-│                                                                      │
-│  🔴 ARRAY INDEX OUT OF BOUNDS                                       │
-│  Pattern : /index out of (bounds|range)/i                          │
-│  Template : if (idx < 0 || idx >= arr.length) ...                  │
-│  Confidence : 80%                                                   │
-│                                                                      │
-│  🔴 ASYNC/AWAIT MISSING                                             │
-│  Pattern : /promise.*pending|is not a function.*then/i             │
-│  Template : await asyncCall();                                     │
-│  Confidence : 75%                                                   │
-│                                                                      │
-│  🔴 TYPE MISMATCH                                                   │
-│  Pattern : /cannot.*string.*number|expected.*got/i                 │
-│  Template : const converted = Type(value);                         │
-│  Confidence : 70%                                                   │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Templates de réparation](images/repair-templates.svg)
 
 ```typescript
 // src/agent/repair/repair-templates.ts
@@ -504,36 +405,7 @@ export class IterativeRepairEngine {
 
 Le feedback des tentatives précédentes est **crucial** :
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    📋 FEEDBACK STRUCTURÉ                            │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ## Tentatives précédentes (ont échoué)                             │
-│                                                                      │
-│  ### Tentative 1                                                    │
-│  **Patch appliqué:**                                                │
-│  ```diff                                                            │
-│  - return user.name;                                                │
-│  + if (user) return user.name;                                      │
-│  ```                                                                │
-│  **Résultat:** Cannot read property 'name' of undefined             │
-│  **Analyse:** user existe mais est un objet vide {}                │
-│                                                                      │
-│  ### Tentative 2                                                    │
-│  **Patch appliqué:**                                                │
-│  ```diff                                                            │
-│  - if (user) return user.name;                                      │
-│  + if (user && user.name) return user.name;                        │
-│  ```                                                                │
-│  **Résultat:** Returns undefined instead of fallback               │
-│  **Analyse:** Manque une valeur par défaut                         │
-│                                                                      │
-│  ⚠️ Important: Ne répète PAS les mêmes erreurs.                    │
-│  Essaie une approche DIFFÉRENTE basée sur les analyses.            │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Feedback structuré](images/structured-feedback.svg)
 
 ---
 
@@ -703,99 +575,7 @@ export class MetaLearning {
 
 ### 6.8.1 🐛 Cas 1 : Null Pointer Exception
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  🐛 BUG : TypeError: Cannot read property 'name' of undefined       │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  Itération 1                                                        │
-│  ───────────                                                        │
-│  📍 Localisation : user.name (ligne 42)                             │
-│  🔧 Patch : if (user) return user.name;                            │
-│  🧪 Test : FAIL - user.name toujours undefined quand user = {}     │
-│                                                                      │
-│  📝 Feedback : "user existe mais est un objet vide"                 │
-│                                                                      │
-│  Itération 2                                                        │
-│  ───────────                                                        │
-│  📍 Localisation : même endroit                                     │
-│  🔧 Patch : return user?.name ?? 'Unknown';                        │
-│  🧪 Test : PASS ✅                                                  │
-│                                                                      │
-│  📚 Apprentissage :                                                 │
-│     "Cannot read property X of undefined"                          │
-│     → "optional_chaining + nullish_coalescing"                     │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### 6.8.2 🔄 Cas 2 : Race Condition
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  🔄 BUG : Parfois counter devient négatif                           │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  Itération 1                                                        │
-│  ───────────                                                        │
-│  📍 Localisation : counter-- (ligne 78)                             │
-│  🔧 Patch : counter = Math.max(0, counter - 1);                    │
-│  🧪 Test : FAIL - masque le problème mais ne le résout pas         │
-│                                                                      │
-│  📝 Feedback : "Le vrai problème est la race condition"             │
-│                                                                      │
-│  Itération 2                                                        │
-│  ───────────                                                        │
-│  🔧 Patch : Ajout d'un mutex autour de counter                     │
-│  🧪 Test : FAIL - deadlock dans certains cas                       │
-│                                                                      │
-│  📝 Feedback : "Mutex trop agressif, blocage possible"              │
-│                                                                      │
-│  Itération 3                                                        │
-│  ───────────                                                        │
-│  🔧 Patch : Utiliser Atomics.sub() ou compareAndSet                │
-│  🧪 Test : PASS ✅                                                  │
-│                                                                      │
-│  📚 Apprentissage :                                                 │
-│     "Race condition on counter"                                    │
-│     → "atomic_operations"                                          │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### 6.8.3 ⏳ Cas 3 : Async/Await Manquant
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  ⏳ BUG : Promise { <pending> } instead of value                    │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  Itération 1                                                        │
-│  ───────────                                                        │
-│  📍 Localisation : const result = fetchData() (ligne 23)           │
-│  🔧 Patch : const result = await fetchData();                      │
-│  🧪 Test : FAIL - fonction appelante n'est pas async               │
-│                                                                      │
-│  📝 Feedback : "Besoin de propager async"                           │
-│                                                                      │
-│  Itération 2                                                        │
-│  ───────────                                                        │
-│  🔧 Patch : async function caller() { await fetchData(); }         │
-│  🧪 Test : FAIL - caller() pas await dans le test                  │
-│                                                                      │
-│  📝 Feedback : "Cascade d'async jusqu'au test"                      │
-│                                                                      │
-│  Itération 3                                                        │
-│  ───────────                                                        │
-│  🔧 Patch : + await sur tous les appels de la chaîne               │
-│  🧪 Test : PASS ✅                                                  │
-│                                                                      │
-│  📚 Apprentissage :                                                 │
-│     "Promise pending"                                              │
-│     → "async_cascade"                                              │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Cas pratiques de réparation](images/repair-cases.svg)
 
 ---
 
@@ -816,33 +596,7 @@ export class MetaLearning {
 
 ### 6.9.2 🖥️ Dashboard
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    🔧 REPAIR DASHBOARD                              │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  📈 EFFICACITÉ                                                      │
-│  ├─ Success Rate      : 42.5%                                      │
-│  ├─ First-try Success : 18.2%                                      │
-│  └─ Avg Iterations    : 2.3                                        │
-│                                                                      │
-│  ✅ QUALITÉ                                                         │
-│  ├─ Regression Rate   : 5.1%                                       │
-│  └─ Minimal Patches   : 78.9%                                      │
-│                                                                      │
-│  ⚡ EFFICIENCE                                                      │
-│  ├─ Localization Time : 420ms                                      │
-│  ├─ Generation Time   : 3200ms                                     │
-│  └─ API Calls/Repair  : 4.2                                        │
-│                                                                      │
-│  📚 TOP PATTERNS APPRIS                                             │
-│  ├─ null_check         : 89% confidence (142 uses)                 │
-│  ├─ optional_chaining  : 85% confidence (98 uses)                  │
-│  ├─ add_await          : 76% confidence (67 uses)                  │
-│  └─ try_catch          : 71% confidence (45 uses)                  │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Repair Dashboard](images/repair-dashboard.svg)
 
 ---
 

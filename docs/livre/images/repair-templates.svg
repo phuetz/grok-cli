@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 330">
+  <defs>
+    <linearGradient id="bgGradRT" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="330" fill="url(#bgGradRT)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">TEMPLATES DE REPARATION</text>
+
+  <!-- Template rows -->
+  <!-- Row 1: NULL/UNDEFINED -->
+  <rect x="40" y="50" width="350" height="55" rx="6" fill="#1e3a3a" stroke="#2ecc71" stroke-width="1"/>
+  <text x="60" y="70" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#2ecc71">NULL/UNDEFINED CHECK</text>
+  <text x="60" y="85" font-family="monospace" font-size="8" fill="#888888">Pattern: /cannot read propert.*of (undefined|null)/</text>
+  <text x="60" y="98" font-family="monospace" font-size="8" fill="#cccccc">Template: if (obj == null) return defaultValue;</text>
+  <text x="350" y="85" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71">85%</text>
+
+  <!-- Row 2: DIVISION BY ZERO -->
+  <rect x="410" y="50" width="350" height="55" rx="6" fill="#1e3a3a" stroke="#2ecc71" stroke-width="1"/>
+  <text x="430" y="70" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#2ecc71">DIVISION BY ZERO</text>
+  <text x="430" y="85" font-family="monospace" font-size="8" fill="#888888">Pattern: /division by zero|NaN|Infinity/</text>
+  <text x="430" y="98" font-family="monospace" font-size="8" fill="#cccccc">Template: if (divisor === 0) throw/return;</text>
+  <text x="720" y="85" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71">90%</text>
+
+  <!-- Row 3: ARRAY BOUNDS -->
+  <rect x="40" y="115" width="350" height="55" rx="6" fill="#3a3a1e" stroke="#f39c12" stroke-width="1"/>
+  <text x="60" y="135" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#f39c12">ARRAY INDEX OUT OF BOUNDS</text>
+  <text x="60" y="150" font-family="monospace" font-size="8" fill="#888888">Pattern: /index out of (bounds|range)/</text>
+  <text x="60" y="163" font-family="monospace" font-size="8" fill="#cccccc">Template: if (idx &lt; 0 || idx &gt;= arr.length)...</text>
+  <text x="350" y="150" font-family="Arial, sans-serif" font-size="9" fill="#f39c12">80%</text>
+
+  <!-- Row 4: ASYNC/AWAIT -->
+  <rect x="410" y="115" width="350" height="55" rx="6" fill="#3a3a1e" stroke="#f39c12" stroke-width="1"/>
+  <text x="430" y="135" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#f39c12">ASYNC/AWAIT MISSING</text>
+  <text x="430" y="150" font-family="monospace" font-size="8" fill="#888888">Pattern: /promise.*pending|is not a function/</text>
+  <text x="430" y="163" font-family="monospace" font-size="8" fill="#cccccc">Template: await asyncCall();</text>
+  <text x="720" y="150" font-family="Arial, sans-serif" font-size="9" fill="#f39c12">75%</text>
+
+  <!-- Row 5: TYPE MISMATCH -->
+  <rect x="40" y="180" width="350" height="55" rx="6" fill="#2a1e3a" stroke="#9b59b6" stroke-width="1"/>
+  <text x="60" y="200" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#9b59b6">TYPE MISMATCH</text>
+  <text x="60" y="215" font-family="monospace" font-size="8" fill="#888888">Pattern: /cannot.*string.*number|expected.*got/</text>
+  <text x="60" y="228" font-family="monospace" font-size="8" fill="#cccccc">Template: const converted = Type(value);</text>
+  <text x="350" y="215" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6">70%</text>
+
+  <!-- Row 6: IMPORT ERROR -->
+  <rect x="410" y="180" width="350" height="55" rx="6" fill="#1e2a3a" stroke="#3498db" stroke-width="1"/>
+  <text x="430" y="200" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#3498db">IMPORT ERROR</text>
+  <text x="430" y="215" font-family="monospace" font-size="8" fill="#888888">Pattern: /cannot find module/</text>
+  <text x="430" y="228" font-family="monospace" font-size="8" fill="#cccccc">Template: import { sym } from 'module';</text>
+  <text x="720" y="215" font-family="Arial, sans-serif" font-size="9" fill="#3498db">95%</text>
+
+  <!-- Footer -->
+  <rect x="200" y="260" width="400" height="50" rx="8" fill="#2d2d44" stroke="#4a4a6a" stroke-width="1"/>
+  <text x="400" y="285" font-family="Arial, sans-serif" font-size="10" fill="#cccccc" text-anchor="middle">Templates permettent une reparation instantanee</text>
+  <text x="400" y="300" font-family="Arial, sans-serif" font-size="10" fill="#888888" text-anchor="middle">pour les patterns a haute confiance (&gt;80%)</text>
+</svg>

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400">
+  <defs>
+    <linearGradient id="bgGradUCBC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="400" fill="url(#bgGradUCBC)"/>
+
+  <!-- Title -->
+  <text x="400" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">CALCUL UCB1 EN PRATIQUE</text>
+  <text x="400" y="48" font-family="Arial, sans-serif" font-size="11" fill="#888888" text-anchor="middle">Parent avec P = 100 visites</text>
+
+  <!-- Node A -->
+  <rect x="50" y="65" width="340" height="145" rx="8" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="70" y="90" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2ecc71">NOEUD A : Beaucoup visite, bon taux de succes</text>
+  <text x="70" y="112" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">W = 8 victoires, N = 10 visites</text>
+
+  <text x="70" y="135" font-family="monospace" font-size="9" fill="#cccccc">UCB1(A) = 8/10 + 1.41 × √(ln(100)/10)</text>
+  <text x="70" y="150" font-family="monospace" font-size="9" fill="#cccccc">        = 0.8 + 1.41 × √(4.6/10)</text>
+  <text x="70" y="165" font-family="monospace" font-size="9" fill="#cccccc">        = 0.8 + 1.41 × 0.68</text>
+  <text x="70" y="180" font-family="monospace" font-size="9" fill="#cccccc">        = 0.8 + 0.96</text>
+
+  <rect x="70" y="188" width="80" height="18" rx="4" fill="#2d2d44"/>
+  <text x="110" y="201" font-family="monospace" font-size="11" font-weight="bold" fill="#2ecc71" text-anchor="middle">= 1.76</text>
+
+  <!-- Node B -->
+  <rect x="410" y="65" width="340" height="145" rx="8" fill="#3a3a1e" stroke="#f39c12" stroke-width="2"/>
+  <text x="430" y="90" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#f39c12">NOEUD B : Peu visite, taux moyen</text>
+  <text x="430" y="112" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">W = 1 victoire, N = 2 visites</text>
+
+  <text x="430" y="135" font-family="monospace" font-size="9" fill="#cccccc">UCB1(B) = 1/2 + 1.41 × √(ln(100)/2)</text>
+  <text x="430" y="150" font-family="monospace" font-size="9" fill="#cccccc">        = 0.5 + 1.41 × √(2.3)</text>
+  <text x="430" y="165" font-family="monospace" font-size="9" fill="#cccccc">        = 0.5 + 1.41 × 1.52</text>
+  <text x="430" y="180" font-family="monospace" font-size="9" fill="#cccccc">        = 0.5 + 2.14</text>
+
+  <rect x="430" y="188" width="140" height="18" rx="4" fill="#3a3a1e"/>
+  <text x="500" y="201" font-family="monospace" font-size="11" font-weight="bold" fill="#f39c12" text-anchor="middle">= 2.64 SELECTIONNE!</text>
+
+  <!-- Result box -->
+  <rect x="100" y="230" width="600" height="70" rx="10" fill="#2d2d44" stroke="#4a4a6a" stroke-width="2"/>
+  <text x="400" y="255" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">RESULTAT</text>
+  <text x="400" y="278" font-family="Arial, sans-serif" font-size="10" fill="#cccccc" text-anchor="middle">B est selectionne malgre un taux de succes plus bas (50% vs 80%)</text>
+  <text x="400" y="293" font-family="Arial, sans-serif" font-size="10" fill="#f39c12" text-anchor="middle">car il n'a pas ete assez explore (bonus d'exploration eleve)</text>
+
+  <!-- Evolution note -->
+  <rect x="100" y="320" width="600" height="60" rx="8" fill="#1a1a2e" stroke="#4a4a6a" stroke-width="1"/>
+  <text x="400" y="342" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#888888" text-anchor="middle">Evolution au fil du temps :</text>
+  <text x="200" y="362" font-family="Arial, sans-serif" font-size="9" fill="#3498db" text-anchor="middle">Debut: Exploration</text>
+  <text x="400" y="362" font-family="Arial, sans-serif" font-size="9" fill="#f39c12" text-anchor="middle">Milieu: Equilibre</text>
+  <text x="600" y="362" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71" text-anchor="middle">Fin: Exploitation</text>
+</svg>

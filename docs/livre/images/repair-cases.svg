@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 700">
+  <defs>
+    <linearGradient id="bgGradRC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="700" fill="url(#bgGradRC)"/>
+
+  <!-- Title -->
+  <text x="400" y="25" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">CAS PRATIQUES DE REPARATION ITERATIVE</text>
+
+  <!-- Case 1: Null Pointer -->
+  <rect x="30" y="40" width="740" height="195" rx="8" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="50" y="62" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#e74c3c">BUG : TypeError: Cannot read property 'name' of undefined</text>
+
+  <text x="50" y="85" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#f39c12">Iteration 1</text>
+  <text x="50" y="100" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">Localisation : user.name (ligne 42)</text>
+  <text x="50" y="113" font-family="monospace" font-size="8" fill="#cccccc">Patch : if (user) return user.name;</text>
+  <text x="50" y="126" font-family="Arial, sans-serif" font-size="8" fill="#e74c3c">Test : FAIL - user.name toujours undefined quand user = {}</text>
+  <text x="50" y="140" font-family="Arial, sans-serif" font-size="8" fill="#f39c12">Feedback : "user existe mais est un objet vide"</text>
+
+  <text x="400" y="85" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#2ecc71">Iteration 2</text>
+  <text x="400" y="100" font-family="Arial, sans-serif" font-size="9" fill="#cccccc">Localisation : meme endroit</text>
+  <text x="400" y="113" font-family="monospace" font-size="8" fill="#2ecc71">Patch : return user?.name ?? 'Unknown';</text>
+  <text x="400" y="126" font-family="Arial, sans-serif" font-size="8" fill="#2ecc71">Test : PASS</text>
+
+  <rect x="50" y="155" width="700" height="35" rx="4" fill="#1e3a1e"/>
+  <text x="70" y="175" font-family="Arial, sans-serif" font-size="9" fill="#2ecc71">Apprentissage : "Cannot read property X" → "optional_chaining + nullish_coalescing"</text>
+
+  <!-- Case 2: Race Condition -->
+  <rect x="30" y="250" width="740" height="210" rx="8" fill="#3a3a1e" stroke="#f39c12" stroke-width="2"/>
+  <text x="50" y="272" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#e74c3c">BUG : Parfois counter devient negatif</text>
+
+  <text x="50" y="295" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#e74c3c">Iteration 1</text>
+  <text x="50" y="310" font-family="monospace" font-size="8" fill="#cccccc">Patch : counter = Math.max(0, counter - 1);</text>
+  <text x="50" y="323" font-family="Arial, sans-serif" font-size="8" fill="#e74c3c">Test : FAIL - masque le probleme</text>
+
+  <text x="300" y="295" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#f39c12">Iteration 2</text>
+  <text x="300" y="310" font-family="monospace" font-size="8" fill="#cccccc">Patch : Ajout d'un mutex</text>
+  <text x="300" y="323" font-family="Arial, sans-serif" font-size="8" fill="#f39c12">Test : FAIL - deadlock</text>
+
+  <text x="550" y="295" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#2ecc71">Iteration 3</text>
+  <text x="550" y="310" font-family="monospace" font-size="8" fill="#2ecc71">Patch : Atomics.sub()</text>
+  <text x="550" y="323" font-family="Arial, sans-serif" font-size="8" fill="#2ecc71">Test : PASS</text>
+
+  <rect x="50" y="345" width="700" height="35" rx="4" fill="#3a3a1e"/>
+  <text x="70" y="365" font-family="Arial, sans-serif" font-size="9" fill="#f39c12">Apprentissage : "Race condition on counter" → "atomic_operations"</text>
+
+  <!-- Case 3: Async/Await -->
+  <rect x="30" y="475" width="740" height="210" rx="8" fill="#1e2a3a" stroke="#3498db" stroke-width="2"/>
+  <text x="50" y="497" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#e74c3c">BUG : Promise { &lt;pending&gt; } instead of value</text>
+
+  <text x="50" y="520" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#e74c3c">Iteration 1</text>
+  <text x="50" y="535" font-family="monospace" font-size="8" fill="#cccccc">Patch : await fetchData();</text>
+  <text x="50" y="548" font-family="Arial, sans-serif" font-size="8" fill="#e74c3c">Test : FAIL - fonction n'est pas async</text>
+
+  <text x="300" y="520" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#f39c12">Iteration 2</text>
+  <text x="300" y="535" font-family="monospace" font-size="8" fill="#cccccc">Patch : async function caller()</text>
+  <text x="300" y="548" font-family="Arial, sans-serif" font-size="8" fill="#f39c12">Test : FAIL - caller() pas await</text>
+
+  <text x="550" y="520" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#2ecc71">Iteration 3</text>
+  <text x="550" y="535" font-family="monospace" font-size="8" fill="#2ecc71">Patch : await sur toute la chaine</text>
+  <text x="550" y="548" font-family="Arial, sans-serif" font-size="8" fill="#2ecc71">Test : PASS</text>
+
+  <rect x="50" y="570" width="700" height="35" rx="4" fill="#1e2a3a"/>
+  <text x="70" y="590" font-family="Arial, sans-serif" font-size="9" fill="#3498db">Apprentissage : "Promise pending" → "async_cascade"</text>
+
+  <!-- Footer -->
+  <text x="400" y="680" font-family="Arial, sans-serif" font-size="10" fill="#888888" text-anchor="middle">Le feedback iteratif permet d'apprendre de chaque echec et d'affiner progressivement la solution</text>
+</svg>

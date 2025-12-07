@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 620">
+  <defs>
+    <linearGradient id="bgGradLT" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="620" fill="url(#bgGradLT)"/>
+
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">TYPES D'APPRENTISSAGE</text>
+
+  <!-- Type 1: Repair Patterns -->
+  <rect x="50" y="50" width="700" height="130" rx="10" fill="#1e3a3a" stroke="#2ecc71" stroke-width="2"/>
+  <text x="70" y="75" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2ecc71">PATTERNS DE REPARATION</text>
+  <text x="70" y="95" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">Quand l'agent resout une erreur, il memorise le pattern :</text>
+
+  <!-- Table header -->
+  <text x="90" y="115" font-family="monospace" font-size="9" fill="#888888">Erreur observee              Solution appliquee         Resultat</text>
+  <line x1="70" y1="120" x2="730" y2="120" stroke="#4a4a6a" stroke-width="1"/>
+  <text x="90" y="135" font-family="monospace" font-size="9" fill="#cccccc">"Cannot find module"         npm install &lt;module&gt;       </text>
+  <text x="595" y="135" font-family="monospace" font-size="9" fill="#2ecc71">Resolu</text>
+  <text x="90" y="150" font-family="monospace" font-size="9" fill="#cccccc">"TypeError: undefined"       Ajout de null check        </text>
+  <text x="595" y="150" font-family="monospace" font-size="9" fill="#2ecc71">Resolu</text>
+  <text x="90" y="165" font-family="monospace" font-size="9" fill="#cccccc">"ENOENT: no such file"       Creer le repertoire        </text>
+  <text x="595" y="165" font-family="monospace" font-size="9" fill="#2ecc71">Resolu</text>
+
+  <!-- Type 2: Code Conventions -->
+  <rect x="50" y="195" width="700" height="130" rx="10" fill="#3a3a1e" stroke="#f39c12" stroke-width="2"/>
+  <text x="70" y="220" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#f39c12">CONVENTIONS DE CODE</text>
+  <text x="70" y="240" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">L'agent observe le style du projet et l'applique :</text>
+
+  <text x="90" y="260" font-family="monospace" font-size="9" fill="#888888">Aspect analyse               Valeur detectee</text>
+  <line x1="70" y1="265" x2="730" y2="265" stroke="#4a4a6a" stroke-width="1"/>
+  <text x="90" y="280" font-family="monospace" font-size="9" fill="#cccccc">Indentation                  2 espaces</text>
+  <text x="90" y="295" font-family="monospace" font-size="9" fill="#cccccc">Quotes                       Simples (')</text>
+  <text x="90" y="310" font-family="monospace" font-size="9" fill="#cccccc">Naming conventions           camelCase</text>
+
+  <!-- Type 3: Tool Statistics -->
+  <rect x="50" y="340" width="700" height="130" rx="10" fill="#2a1e3a" stroke="#9b59b6" stroke-width="2"/>
+  <text x="70" y="365" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#9b59b6">STATISTIQUES D'OUTILS</text>
+  <text x="70" y="385" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">L'agent track les performances de chaque outil :</text>
+
+  <text x="90" y="405" font-family="monospace" font-size="9" fill="#888888">Outil          Appels    Succes    Temps moyen    Frequence</text>
+  <line x1="70" y1="410" x2="730" y2="410" stroke="#4a4a6a" stroke-width="1"/>
+  <text x="90" y="425" font-family="monospace" font-size="9" fill="#cccccc">bash           1,234     85%       1.2s           45%</text>
+  <text x="90" y="440" font-family="monospace" font-size="9" fill="#cccccc">read_file      2,456     99%       0.1s           30%</text>
+  <text x="90" y="455" font-family="monospace" font-size="9" fill="#cccccc">edit_file      876       92%       0.3s           20%</text>
+
+  <!-- Type 4: User Preferences -->
+  <rect x="50" y="485" width="700" height="115" rx="10" fill="#1e2a3a" stroke="#3498db" stroke-width="2"/>
+  <text x="70" y="510" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#3498db">PREFERENCES UTILISATEUR</text>
+  <text x="70" y="530" font-family="Arial, sans-serif" font-size="10" fill="#cccccc">L'agent apprend les preferences de l'utilisateur :</text>
+
+  <text x="90" y="550" font-family="monospace" font-size="9" fill="#888888">Comportement observe                     Adaptation</text>
+  <line x1="70" y1="555" x2="730" y2="555" stroke="#4a4a6a" stroke-width="1"/>
+  <text x="90" y="570" font-family="monospace" font-size="9" fill="#cccccc">Demande souvent des explications         Reponses detaillees</text>
+  <text x="90" y="585" font-family="monospace" font-size="9" fill="#cccccc">Refuse les git push automatiques         Confirmation requise</text>
+</svg>
