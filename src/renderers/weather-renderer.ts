@@ -38,7 +38,7 @@ const WEATHER_ICONS: Record<WeatherCondition, string[]> = {
   ],
   'partly-cloudy': [
     '   \\  /      ',
-    ' _ /\"\".-.    ',
+    ' _ /"".-.    ',
     '   \\_(   ).  ',
     '   /(___(__) ',
     '             ',

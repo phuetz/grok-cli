@@ -79,7 +79,7 @@ const DEFAULT_PATTERNS: RedactionPattern[] = [
   // API Keys - Generic
   {
     name: 'Generic API Key',
-    pattern: /(?:api[_-]?key|apikey|api_secret|apisecret)[\s]*[=:]["']?\s*([a-zA-Z0-9_\-]{20,})/gi,
+    pattern: /(?:api[_-]?key|apikey|api_secret|apisecret)[\s]*[=:]["']?\s*([a-zA-Z0-9_-]{20,})/gi,
     replacement: '[REDACTED:API_KEY]',
     category: 'api_key',
     severity: 'critical',
@@ -97,7 +97,7 @@ const DEFAULT_PATTERNS: RedactionPattern[] = [
   // Anthropic
   {
     name: 'Anthropic API Key',
-    pattern: /sk-ant-[a-zA-Z0-9\-]{20,}/g,
+    pattern: /sk-ant-[a-zA-Z0-9-]{20,}/g,
     replacement: '[REDACTED:ANTHROPIC_KEY]',
     category: 'api_key',
     severity: 'critical',
@@ -535,7 +535,7 @@ export class DataRedactionEngine extends EventEmitter {
    */
   private redactHighEntropyStrings(text: string, redactions: RedactionMatch[]): string {
     // Find potential secrets (alphanumeric strings of certain length)
-    const potentialSecrets = text.match(/[a-zA-Z0-9_\-]{16,64}/g) || [];
+    const potentialSecrets = text.match(/[a-zA-Z0-9_-]{16,64}/g) || [];
 
     let result = text;
     for (const potential of potentialSecrets) {
@@ -547,7 +547,7 @@ export class DataRedactionEngine extends EventEmitter {
       if (entropy >= this.config.entropyThreshold) {
         // High entropy string - likely a secret
         const replacement = '[REDACTED:HIGH_ENTROPY]';
-        result = result.replace(potential, replacement);
+        result = result.replaceAll(potential, replacement);
 
         redactions.push({
           pattern: 'High Entropy String',

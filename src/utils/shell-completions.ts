@@ -242,7 +242,7 @@ ${slashCommandLines}
     _files
 }
 
-_grok "\$@"
+_grok "$@"
 `;
 }
 

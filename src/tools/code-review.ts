@@ -157,15 +157,20 @@ export class CodeReviewTool extends EventEmitter {
 
     this.emit('review:start', { type: 'git-diff', staged, branch });
 
-    // Get diff
-    let diffCommand = 'git diff';
+    // Get diff - use array args to prevent command injection
+    let diffArgs: string[] = ['diff'];
     if (staged) {
-      diffCommand = 'git diff --cached';
+      diffArgs = ['diff', '--cached'];
     } else if (branch) {
-      diffCommand = `git diff ${branch}...HEAD`;
+      // Sanitize branch name to prevent command injection
+      const sanitizedBranch = branch.replace(/[;&|`$(){}[\]<>\\]/g, '');
+      if (sanitizedBranch !== branch) {
+        return this.createEmptyResult([], startTime);
+      }
+      diffArgs = ['diff', `${sanitizedBranch}...HEAD`];
     }
 
-    const diffResult = await this.bash.execute(diffCommand);
+    const diffResult = await this.bash.execute(`git ${diffArgs.join(' ')}`);
     if (!diffResult.success || !diffResult.output) {
       return this.createEmptyResult([], startTime);
     }
