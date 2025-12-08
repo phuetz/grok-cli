@@ -1300,6 +1300,44 @@ export class CacheMemoryManager {
 
 ---
 
+## ⚠️ 12.7 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Mitigation |
+|--------|-------------|------------|
+| **Faux positifs du cache** | Réponse similaire mais incorrecte pour le contexte | Seuil de similarité élevé (>0.92) |
+| **Dérive temporelle** | Cache obsolète si le contexte évolue | TTL approprié, invalidation proactive |
+| **Coût des embeddings** | Chaque lookup = 1 embedding | Cache des embeddings de requêtes |
+| **Mémoire RAM** | Cache volumineux = pression mémoire | LRU avec limite stricte |
+| **Cold start** | Aucun bénéfice à la première session | Pré-chauffage des requêtes fréquentes |
+
+### ⚠️ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Réponses périmées** | Moyenne | Moyen | Invalidation sur changement de fichier |
+| **Cache poisoning** | Faible | Élevé | Validation des entrées, isolation |
+| **Consommation mémoire** | Moyenne | Moyen | Monitoring, éviction automatique |
+| **Sur-optimisation** | Moyenne | Moyen | Mesurer avant d'optimiser |
+| **Fuite d'info entre sessions** | Faible | Élevé | Isolation par utilisateur/projet |
+
+### 📊 Quand NE PAS Utiliser le Cache
+
+| Situation | Raison |
+|-----------|--------|
+| Questions personnalisées | Le contexte change la réponse |
+| Analyse de code live | Les fichiers changent fréquemment |
+| Sessions multi-utilisateurs | Risque de fuite entre contextes |
+| Données sensibles | Le cache persiste sur disque |
+| Première utilisation | Pas de historique à exploiter |
+
+### 💡 Recommandations
+
+> 💡 **Astuce** : Commencez avec un seuil de similarité conservateur (0.95) et baissez progressivement en surveillant les faux positifs. Le coût d'une mauvaise réponse dépasse largement les économies d'un cache agressif.
+
+---
+
 ## 📝 Points Clés
 
 | Concept | Icône | Description | Impact |

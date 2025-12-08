@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+  <defs>
+    <style>
+      .bg { fill: #f8f9fa; }
+      .node { stroke-width: 2; }
+      .node-start { fill: #e3f2fd; stroke: #1976d2; }
+      .node-thought { fill: #fff3e0; stroke: #f57c00; }
+      .node-good { fill: #e8f5e9; stroke: #388e3c; }
+      .node-bad { fill: #ffebee; stroke: #d32f2f; }
+      .node-solution { fill: #c8e6c9; stroke: #2e7d32; stroke-width: 3; }
+      .text-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 20px; font-weight: bold; fill: #0f3460; }
+      .text-subtitle { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; fill: #666; }
+      .text-node { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; fill: #333; }
+      .text-label { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; font-weight: bold; fill: #0f3460; }
+      .arrow { stroke: #666; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-good { stroke: #388e3c; stroke-width: 2; fill: none; marker-end: url(#arrowhead-green); }
+      .arrow-pruned { stroke: #d32f2f; stroke-width: 1.5; stroke-dasharray: 5,3; fill: none; }
+      .divider { stroke: #ccc; stroke-width: 1; stroke-dasharray: 10,5; }
+      .box-cot { fill: #fff8e1; stroke: #ffa000; stroke-width: 2; rx: 10; }
+      .box-tot { fill: #e8f5e9; stroke: #43a047; stroke-width: 2; rx: 10; }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#666"/>
+    </marker>
+    <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#388e3c"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="900" height="500"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" class="text-title">Chain-of-Thought vs Tree-of-Thought</text>
+
+  <!-- Divider -->
+  <line x1="450" y1="50" x2="450" y2="480" class="divider"/>
+
+  <!-- === LEFT SIDE: Chain-of-Thought === -->
+  <rect x="30" y="55" width="390" height="35" class="box-cot"/>
+  <text x="225" y="78" text-anchor="middle" class="text-label">Chain-of-Thought (CoT)</text>
+  <text x="225" y="110" text-anchor="middle" class="text-subtitle">Raisonnement lineaire, une seule piste</text>
+
+  <!-- CoT nodes - vertical chain -->
+  <ellipse cx="225" cy="160" rx="60" ry="25" class="node node-start"/>
+  <text x="225" y="165" text-anchor="middle" class="text-node">Probleme</text>
+
+  <path d="M 225 185 L 225 215" class="arrow"/>
+
+  <ellipse cx="225" cy="240" rx="70" ry="25" class="node node-thought"/>
+  <text x="225" y="245" text-anchor="middle" class="text-node">Pensee 1</text>
+
+  <path d="M 225 265 L 225 295" class="arrow"/>
+
+  <ellipse cx="225" cy="320" rx="70" ry="25" class="node node-thought"/>
+  <text x="225" y="325" text-anchor="middle" class="text-node">Pensee 2</text>
+
+  <path d="M 225 345 L 225 375" class="arrow"/>
+
+  <ellipse cx="225" cy="400" rx="70" ry="25" class="node node-thought"/>
+  <text x="225" y="405" text-anchor="middle" class="text-node">Pensee 3</text>
+
+  <path d="M 225 425 L 225 455" class="arrow"/>
+
+  <ellipse cx="225" cy="470" rx="55" ry="20" class="node node-good"/>
+  <text x="225" y="475" text-anchor="middle" class="text-node">Solution</text>
+
+  <!-- CoT limitation note -->
+  <text x="380" y="320" text-anchor="end" font-size="10" fill="#d32f2f">Si erreur ici,</text>
+  <text x="380" y="332" text-anchor="end" font-size="10" fill="#d32f2f">pas de retour!</text>
+
+  <!-- === RIGHT SIDE: Tree-of-Thought === -->
+  <rect x="480" y="55" width="390" height="35" class="box-tot"/>
+  <text x="675" y="78" text-anchor="middle" class="text-label">Tree-of-Thought (ToT)</text>
+  <text x="675" y="110" text-anchor="middle" class="text-subtitle">Exploration parallele, evaluation, backtrack</text>
+
+  <!-- ToT nodes - tree structure -->
+  <ellipse cx="675" cy="160" rx="60" ry="25" class="node node-start"/>
+  <text x="675" y="165" text-anchor="middle" class="text-node">Probleme</text>
+
+  <!-- First level branches -->
+  <path d="M 640 180 Q 580 200 560 230" class="arrow"/>
+  <path d="M 675 185 L 675 225" class="arrow"/>
+  <path d="M 710 180 Q 770 200 790 230" class="arrow"/>
+
+  <!-- Branch A (left) - pruned -->
+  <ellipse cx="560" cy="255" rx="55" ry="22" class="node node-bad"/>
+  <text x="560" y="252" text-anchor="middle" class="text-node">Pensee A</text>
+  <text x="560" y="265" text-anchor="middle" font-size="9" fill="#d32f2f">Score: 0.2</text>
+  <text x="560" y="295" text-anchor="middle" font-size="10" fill="#d32f2f">Pruned</text>
+
+  <!-- Branch B (center) - good -->
+  <ellipse cx="675" cy="255" rx="55" ry="22" class="node node-good"/>
+  <text x="675" y="252" text-anchor="middle" class="text-node">Pensee B</text>
+  <text x="675" y="265" text-anchor="middle" font-size="9" fill="#388e3c">Score: 0.8</text>
+
+  <!-- Branch C (right) - moderate -->
+  <ellipse cx="790" cy="255" rx="55" ry="22" class="node node-thought"/>
+  <text x="790" y="252" text-anchor="middle" class="text-node">Pensee C</text>
+  <text x="790" y="265" text-anchor="middle" font-size="9" fill="#f57c00">Score: 0.5</text>
+
+  <!-- Second level from B -->
+  <path d="M 650 275 Q 610 300 600 330" class="arrow-good"/>
+  <path d="M 700 275 Q 740 300 750 330" class="arrow"/>
+
+  <ellipse cx="600" cy="355" rx="55" ry="22" class="node node-good"/>
+  <text x="600" y="352" text-anchor="middle" class="text-node">B.1</text>
+  <text x="600" y="365" text-anchor="middle" font-size="9" fill="#388e3c">Score: 0.9</text>
+
+  <ellipse cx="750" cy="355" rx="55" ry="22" class="node node-thought"/>
+  <text x="750" y="352" text-anchor="middle" class="text-node">B.2</text>
+  <text x="750" y="365" text-anchor="middle" font-size="9" fill="#f57c00">Score: 0.6</text>
+
+  <!-- Solution from B.1 -->
+  <path d="M 600 377 L 600 420" class="arrow-good"/>
+  <ellipse cx="600" cy="445" rx="60" ry="25" class="node node-solution"/>
+  <text x="600" y="442" text-anchor="middle" class="text-node" font-weight="bold">Solution</text>
+  <text x="600" y="456" text-anchor="middle" font-size="9" fill="#2e7d32">Optimale!</text>
+
+  <!-- Legend -->
+  <rect x="720" y="420" width="150" height="70" fill="white" stroke="#ccc" rx="5"/>
+  <text x="795" y="438" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">Legende</text>
+  <ellipse cx="740" cy="455" rx="12" ry="8" class="node node-good"/>
+  <text x="760" y="459" font-size="10" fill="#333">Bon score</text>
+  <ellipse cx="740" cy="475" rx="12" ry="8" class="node node-bad"/>
+  <text x="760" y="479" font-size="10" fill="#333">Elimine</text>
+
+  <!-- Source reference -->
+  <text x="870" y="495" text-anchor="end" font-size="10" fill="#999">Ch.04 - Tree-of-Thought</text>
+</svg>

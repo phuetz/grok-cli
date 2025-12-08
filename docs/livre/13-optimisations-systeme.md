@@ -1345,6 +1345,57 @@ export class ToolFilter {
 
 ---
 
+## ⚠️ 13.8 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Complexité du routing** | Classification incorrecte = modèle inadapté | Qualité ou coût dégradé |
+| **Overhead de parallélisation** | Setup > gain pour petites tâches | Latence accrue |
+| **Cold start lazy loading** | Premier usage d'un module = délai | UX dégradée ponctuellement |
+| **Dépendance aux métriques** | Décisions basées sur données potentiellement biaisées | Optimisations contre-productives |
+| **Cache stale** | Réponses obsolètes servies | Informations incorrectes |
+
+### ⚡ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Sur-optimisation** | Moyenne | Moyen | Monitoring qualité, pas juste coûts |
+| **Régression de qualité** | Moyenne | Élevé | A/B testing, seuils de confiance |
+| **Boucles d'optimisation** | Faible | Moyen | Circuit breakers, limites |
+| **Complexité accidentelle** | Haute | Moyen | KISS, mesurer avant d'optimiser |
+
+### 📊 Ordre des Optimisations
+
+| Priorité | Optimisation | Risque | ROI |
+|:--------:|--------------|--------|-----|
+| 1 | Caching sémantique | Faible | Élevé |
+| 2 | Model routing | Moyen | Élevé |
+| 3 | Parallélisation | Faible | Moyen |
+| 4 | Lazy loading | Faible | Moyen |
+| 5 | Tool filtering | Moyen | Moyen |
+
+> 📌 **À Retenir** : L'optimisation prématurée est la racine de tous les maux. **Mesurez d'abord**, optimisez ensuite. Une optimisation sans métriques est un pari. Chaque optimisation ajoute de la complexité — assurez-vous que le gain justifie le coût de maintenance.
+
+> 💡 **Astuce Pratique** : Commencez par le caching sémantique (gain le plus élevé, risque le plus faible). Ajoutez le model routing seulement si les coûts sont un problème réel. La parallélisation et le lazy loading sont des "quick wins" avec peu de risques.
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 13
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Optimisations Système |
+| **Model Routing** | FrugalGPT : bon modèle pour chaque tâche (-68% coût) |
+| **Parallélisation** | LLMCompiler : exécution par niveaux (3.8x speedup) |
+| **Lazy Loading** | Chargement différé (98% réduction startup) |
+| **Latence** | Streaming + prefetch + pool (P95 <1s) |
+| **Tool Filtering** | Less-is-More : outils pertinents uniquement (+26% précision) |
+| **Monitoring** | Dashboard temps réel pour amélioration continue |
+
+---
+
 ## 📝 Points Clés
 
 | Concept | Icône | Description | Impact |

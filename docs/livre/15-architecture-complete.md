@@ -739,7 +739,76 @@ export class SecurityManager {
 
 ---
 
-## 📝 15.10 Points Clés du Chapitre
+## ⚠️ 15.10 Limites et Risques de l'Architecture
+
+### 🚧 Limites Architecturales
+
+| Limite | Description | Mitigation |
+|--------|-------------|------------|
+| **Complexité émergente** | 6 couches = nombreuses interactions non prévues | Tests d'intégration exhaustifs |
+| **Single point of failure** | GrokAgent centralise tout | Graceful degradation, circuit breakers |
+| **Couplage vertical** | Changement de couche = cascade de modifications | Interfaces stables, versioning |
+| **Overhead mémoire** | Chaque couche maintient son état | Lazy loading, garbage collection |
+| **Latence bout-en-bout** | Traversée des 6 couches à chaque requête | Optimisation hot paths, caching |
+
+### ⚠️ Risques Systémiques
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Cascade d'erreurs** | Moyenne | Élevé | Isolation des erreurs par couche |
+| **Deadlocks multi-agents** | Faible | Critique | Timeouts, détection de cycles |
+| **Épuisement de ressources** | Moyenne | Élevé | Quotas, monitoring proactif |
+| **Incohérence d'état** | Moyenne | Moyen | Transactions, snapshots |
+| **Régression de performance** | Moyenne | Moyen | Benchmarks CI/CD |
+
+### 📊 Compromis Architecturaux
+
+| Choix | Avantage | Inconvénient |
+|-------|----------|--------------|
+| 6 couches distinctes | Modularité, testabilité | Overhead, complexité |
+| Multi-agent | Parallélisme, spécialisation | Coordination, latence |
+| Mémoire unifiée | Contexte riche | Consommation RAM |
+| 41 outils intégrés | Polyvalence | Surface d'attaque |
+| 3 modes d'approbation | Flexibilité sécurité | Complexité UX |
+
+### 🎯 Anti-Patterns à Éviter
+
+| Anti-Pattern | Symptôme | Solution |
+|--------------|----------|----------|
+| **God Agent** | Un agent fait tout | Décomposition en spécialistes |
+| **Callback Hell** | Enchaînement de callbacks | Async/await, orchestrateur |
+| **Premature Optimization** | Cache partout | Mesurer d'abord, optimiser après |
+| **Security Afterthought** | Sécurité ajoutée en fin | Security by design |
+| **Monolithic Memory** | Une seule table de mémoire | 4 types spécialisés |
+
+### 💡 Recommandations
+
+> ⚠️ **Attention** : L'architecture parfaite n'existe pas. Chaque projet a ses contraintes. Cette architecture est un point de départ, pas une fin. Adaptez les couches à vos besoins réels plutôt que d'implémenter aveuglément.
+
+> 📌 **À Retenir** : Une bonne architecture d'agent n'est pas celle qui a le plus de fonctionnalités — c'est celle qui permet d'**ajouter des fonctionnalités facilement** tout en restant maintenable. Les 6 couches ne sont pas un dogme : c'est un guide. Si votre cas d'usage est simple, fusionnez des couches. Si c'est complexe, subdivisez.
+
+> 💡 **Astuce Pratique** : Commencez avec les couches 1-2-5-6 (Interface, Orchestration, Actions, Sécurité). Ajoutez le Raisonnement (3) quand les tâches deviennent complexes, et le Contexte (4) quand le projet grandit. Évitez de tout implémenter d'un coup.
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 15
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Architecture Complète de Grok-CLI |
+| **6 Couches** | Interface, Orchestration, Raisonnement, Contexte, Actions, Sécurité |
+| **Orchestrateur** | GrokAgent avec boucle agentique (max 30 rounds) |
+| **Multi-Agent** | Décomposition en sous-tâches spécialisées |
+| **Raisonnement** | Sélection auto ToT/MCTS/Repair selon complexité |
+| **Mémoire** | 4 types : épisodique, sémantique, procédurale, prospective |
+| **Outils** | 41 outils avec registre centralisé et métriques |
+| **Sécurité** | 3 modes (read-only, auto, full-access) |
+| **Démarrage** | 40ms visible, preload async |
+| **Recherche** | 10+ articles académiques implémentés |
+
+---
+
+## 📝 15.11 Points Clés du Chapitre
 
 | Concept | Description | Impact |
 |---------|-------------|--------|

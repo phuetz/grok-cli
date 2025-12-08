@@ -1368,6 +1368,44 @@ async consolidate(): Promise<ConsolidationReport> {
 
 ---
 
+## ⚠️ 14.8 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Mitigation |
+|--------|-------------|------------|
+| **Qualité des souvenirs** | Mémoires bruitées = suggestions inadaptées | Consolidation régulière, seuils d'importance |
+| **Biais de confirmation** | L'agent renforce ses propres erreurs | Feedback utilisateur explicite |
+| **Croissance non bornée** | Sans oubli, la base explose | Politiques d'archivage et suppression |
+| **Drift contextuel** | Préférences apprises dans un projet appliquées ailleurs | Isolation par projet |
+| **Latence de rappel** | Recherche dans 100K+ mémoires = lent | Index vectoriel, pagination |
+
+### ⚠️ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Fuite d'info personnelle** | Moyenne | Critique | Chiffrement, options d'effacement |
+| **Apprentissage de mauvais patterns** | Moyenne | Moyen | Validation humaine périodique |
+| **Surcharge cognitive** | Faible | Moyen | Limiter les rappels à 3-5 max |
+| **Perte de données** | Faible | Élevé | Backups automatiques |
+| **Conflit entre mémoires** | Moyenne | Faible | Priorité par timestamp + confidence |
+
+### 🔒 Considérations de Confidentialité
+
+| Donnée Stockée | Risque | Protection |
+|----------------|--------|------------|
+| Messages utilisateur | Élevé | Chiffrement AES-256 |
+| Chemins de fichiers | Moyen | Masquage des chemins absolus |
+| Contenu de code | Élevé | Option d'exclusion par pattern |
+| Erreurs rencontrées | Moyen | Anonymisation des traces |
+| Préférences utilisateur | Faible | Export/suppression RGPD |
+
+### 💡 Recommandations
+
+> 📌 **À Retenir** : Une mémoire parfaite n'est pas souhaitable. L'oubli intelligent est aussi important que la mémorisation. Implémentez des politiques de rétention claires et donnez toujours à l'utilisateur le contrôle sur ses données.
+
+---
+
 ## 📝 Points Clés
 
 | Concept | Icône | Description | Bénéfice |

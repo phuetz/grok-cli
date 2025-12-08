@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 350">
+  <defs>
+    <style>
+      .bg { fill: #f8f9fa; }
+      .main-box { fill: #e3f2fd; stroke: #1976d2; stroke-width: 2; rx: 15; }
+      .input-box { fill: #fff3e0; stroke: #f57c00; stroke-width: 2; rx: 10; }
+      .process-box { fill: #e8f5e9; stroke: #388e3c; stroke-width: 2; rx: 10; }
+      .output-box { fill: #f3e5f5; stroke: #7b1fa2; stroke-width: 2; rx: 10; }
+      .text-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1976d2; }
+      .text-label { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #333; }
+      .text-desc { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; fill: #666; }
+      .arrow { stroke: #0f3460; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .icon { font-size: 24px; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#0f3460"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="700" height="350"/>
+
+  <!-- Title -->
+  <text x="350" y="30" text-anchor="middle" class="text-title">Agent Multimodal - Fusion des Entrées</text>
+
+  <!-- Main container -->
+  <rect x="30" y="50" width="640" height="280" class="main-box"/>
+
+  <!-- Input boxes -->
+  <rect x="60" y="80" width="120" height="60" class="input-box"/>
+  <text x="120" y="100" text-anchor="middle" class="icon">📸</text>
+  <text x="120" y="125" text-anchor="middle" class="text-label">Screenshot</text>
+
+  <rect x="60" y="160" width="120" height="60" class="input-box"/>
+  <text x="120" y="180" text-anchor="middle" class="icon">🎤</text>
+  <text x="120" y="205" text-anchor="middle" class="text-label">Audio</text>
+
+  <rect x="60" y="240" width="120" height="60" class="input-box"/>
+  <text x="120" y="260" text-anchor="middle" class="icon">💻</text>
+  <text x="120" y="285" text-anchor="middle" class="text-label">Code</text>
+
+  <!-- Arrows to fusion -->
+  <path d="M 180 110 L 250 175" class="arrow"/>
+  <path d="M 180 190 L 250 190" class="arrow"/>
+  <path d="M 180 270 L 250 205" class="arrow"/>
+
+  <!-- Fusion box -->
+  <rect x="260" y="150" width="120" height="80" class="process-box"/>
+  <text x="320" y="180" text-anchor="middle" class="icon">🔀</text>
+  <text x="320" y="205" text-anchor="middle" class="text-label">Fusion</text>
+  <text x="320" y="220" text-anchor="middle" class="text-desc">Contexte unifié</text>
+
+  <!-- Arrow to reasoning -->
+  <path d="M 380 190 L 430 190" class="arrow"/>
+
+  <!-- Reasoning box -->
+  <rect x="440" y="130" width="100" height="60" class="process-box"/>
+  <text x="490" y="155" text-anchor="middle" class="icon">🧠</text>
+  <text x="490" y="180" text-anchor="middle" class="text-label">Reasoning</text>
+
+  <!-- Arrow from reasoning to action -->
+  <path d="M 490 190 L 490 230" class="arrow"/>
+
+  <!-- Action box -->
+  <rect x="440" y="240" width="100" height="60" class="output-box"/>
+  <text x="490" y="265" text-anchor="middle" class="icon">⚡</text>
+  <text x="490" y="290" text-anchor="middle" class="text-label">Action</text>
+
+  <!-- Output arrow -->
+  <path d="M 540 270 L 620 270" class="arrow"/>
+  <text x="600" y="255" class="text-desc">Réponse</text>
+
+  <!-- Source reference -->
+  <text x="650" y="340" text-anchor="end" font-size="10" fill="#999">Ch.17 - Perspectives Futures</text>
+</svg>

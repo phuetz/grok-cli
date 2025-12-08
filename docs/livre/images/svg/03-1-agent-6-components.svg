@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 650">
+  <defs>
+    <style>
+      .bg { fill: #f8f9fa; }
+      .box { fill: #ffffff; stroke: #0f3460; stroke-width: 2; rx: 10; }
+      .box-orchestrator { fill: #e3f2fd; stroke: #1976d2; }
+      .box-reasoning { fill: #fff3e0; stroke: #f57c00; }
+      .box-memory { fill: #e8f5e9; stroke: #388e3c; }
+      .box-action { fill: #fce4ec; stroke: #c2185b; }
+      .box-learning { fill: #f3e5f5; stroke: #7b1fa2; }
+      .box-security { fill: #ffebee; stroke: #d32f2f; }
+      .text-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #1a1a2e; }
+      .text-desc { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; fill: #555; }
+      .text-icon { font-size: 28px; }
+      .text-header { font-family: 'Segoe UI', Arial, sans-serif; font-size: 24px; font-weight: bold; fill: #0f3460; }
+      .arrow { stroke: #0f3460; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-dashed { stroke: #999; stroke-width: 1.5; stroke-dasharray: 5,5; fill: none; }
+      .center-circle { fill: #0f3460; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#0f3460"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="900" height="650"/>
+
+  <!-- Title -->
+  <text x="450" y="40" text-anchor="middle" class="text-header">Les 6 Composants d'un Agent LLM</text>
+
+  <!-- Central Orchestrator -->
+  <rect x="350" y="270" width="200" height="110" class="box box-orchestrator"/>
+  <text x="450" y="305" text-anchor="middle" class="text-icon">🎯</text>
+  <text x="450" y="335" text-anchor="middle" class="text-title">Orchestrateur</text>
+  <text x="450" y="355" text-anchor="middle" class="text-desc">Coordination centrale</text>
+  <text x="450" y="370" text-anchor="middle" class="text-desc">Boucle agentique</text>
+
+  <!-- Component 1: Reasoning (top left) -->
+  <rect x="80" y="100" width="180" height="120" class="box box-reasoning"/>
+  <text x="170" y="140" text-anchor="middle" class="text-icon">🧠</text>
+  <text x="170" y="170" text-anchor="middle" class="text-title">Raisonnement</text>
+  <text x="170" y="190" text-anchor="middle" class="text-desc">Tree-of-Thought</text>
+  <text x="170" y="205" text-anchor="middle" class="text-desc">MCTS, Reflexion</text>
+
+  <!-- Component 2: Memory (top right) -->
+  <rect x="640" y="100" width="180" height="120" class="box box-memory"/>
+  <text x="730" y="140" text-anchor="middle" class="text-icon">💾</text>
+  <text x="730" y="170" text-anchor="middle" class="text-title">Memoire</text>
+  <text x="730" y="190" text-anchor="middle" class="text-desc">RAG, Contexte</text>
+  <text x="730" y="205" text-anchor="middle" class="text-desc">Episodique, Semantique</text>
+
+  <!-- Component 3: Action (bottom left) -->
+  <rect x="80" y="430" width="180" height="120" class="box box-action"/>
+  <text x="170" y="470" text-anchor="middle" class="text-icon">⚡</text>
+  <text x="170" y="500" text-anchor="middle" class="text-title">Action</text>
+  <text x="170" y="520" text-anchor="middle" class="text-desc">41 outils</text>
+  <text x="170" y="535" text-anchor="middle" class="text-desc">Execution parallele</text>
+
+  <!-- Component 4: Learning (bottom right) -->
+  <rect x="640" y="430" width="180" height="120" class="box box-learning"/>
+  <text x="730" y="470" text-anchor="middle" class="text-icon">📚</text>
+  <text x="730" y="500" text-anchor="middle" class="text-title">Apprentissage</text>
+  <text x="730" y="520" text-anchor="middle" class="text-desc">Feedback, Patterns</text>
+  <text x="730" y="535" text-anchor="middle" class="text-desc">Amelioration continue</text>
+
+  <!-- Component 5: Security (bottom center) -->
+  <rect x="350" y="520" width="200" height="100" class="box box-security"/>
+  <text x="450" y="555" text-anchor="middle" class="text-icon">🔒</text>
+  <text x="450" y="585" text-anchor="middle" class="text-title">Securite</text>
+  <text x="450" y="605" text-anchor="middle" class="text-desc">Permissions, Sandbox, Audit</text>
+
+  <!-- Arrows from Orchestrator to components -->
+  <!-- To Reasoning -->
+  <path d="M 350 295 Q 270 250 260 220" class="arrow"/>
+  <!-- To Memory -->
+  <path d="M 550 295 Q 630 250 640 220" class="arrow"/>
+  <!-- To Action -->
+  <path d="M 350 355 Q 270 400 260 430" class="arrow"/>
+  <!-- To Learning -->
+  <path d="M 550 355 Q 630 400 640 430" class="arrow"/>
+  <!-- To Security -->
+  <path d="M 450 380 L 450 520" class="arrow"/>
+
+  <!-- Bidirectional hints -->
+  <path d="M 260 160 Q 270 200 350 300" class="arrow-dashed"/>
+  <path d="M 640 160 Q 630 200 550 300" class="arrow-dashed"/>
+  <path d="M 260 490 Q 270 450 350 360" class="arrow-dashed"/>
+  <path d="M 640 490 Q 630 450 550 360" class="arrow-dashed"/>
+
+  <!-- Legend -->
+  <rect x="30" y="600" width="15" height="15" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="50" y="612" class="text-desc">Central</text>
+  <rect x="120" y="600" width="15" height="15" fill="#fff3e0" stroke="#f57c00"/>
+  <text x="140" y="612" class="text-desc">Cognitif</text>
+  <rect x="210" y="600" width="15" height="15" fill="#e8f5e9" stroke="#388e3c"/>
+  <text x="230" y="612" class="text-desc">Donnees</text>
+  <rect x="300" y="600" width="15" height="15" fill="#fce4ec" stroke="#c2185b"/>
+  <text x="320" y="612" class="text-desc">Execution</text>
+  <rect x="390" y="600" width="15" height="15" fill="#f3e5f5" stroke="#7b1fa2"/>
+  <text x="410" y="612" class="text-desc">Evolution</text>
+  <rect x="480" y="600" width="15" height="15" fill="#ffebee" stroke="#d32f2f"/>
+  <text x="500" y="612" class="text-desc">Protection</text>
+
+  <!-- Source reference -->
+  <text x="870" y="640" text-anchor="end" font-size="10" fill="#999">Ch.03 - Anatomie d'un Agent</text>
+</svg>

@@ -303,6 +303,61 @@ L'autonomie des agents crée des risques qui n'existaient pas avec les chatbots 
 
 ---
 
+## ⚠️ 2.8 Limites et Risques des Agents
+
+### 🚧 Limites Actuelles des Agents
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Planification long-terme** | Difficulté à maintenir un plan cohérent sur >20 étapes | Drift, incohérences, oublis |
+| **Récupération d'erreurs** | Peut s'enfermer dans des boucles d'échec | Coûts, temps perdu |
+| **Compréhension du contexte business** | Manque le "pourquoi" au-delà du "quoi" | Solutions techniquement correctes mais inadaptées |
+| **Raisonnement causal** | Corrèle mais ne comprend pas vraiment | Corrections superficielles |
+| **Créativité architecturale** | Reproduit des patterns connus | Peu d'innovation |
+
+### ⚠️ Risques Spécifiques aux Agents
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Boucles infinies** | Moyenne | Moyen | Limites de rounds, timeouts |
+| **Modifications destructives** | Faible | Critique | Confirmations, git backup |
+| **Coûts API explosifs** | Moyenne | Moyen | Budgets, monitoring |
+| **Introduction de bugs** | Élevée | Moyen | Tests automatiques, revue |
+| **Exécution de commandes dangereuses** | Faible | Critique | Sandbox, blocklist |
+| **Sur-confiance de l'utilisateur** | Élevée | Moyen | Formation, warnings |
+
+### 🎯 Quand NE PAS Utiliser un Agent
+
+| Situation | Raison | Alternative |
+|-----------|--------|-------------|
+| Tâche de 2 minutes | Overhead de setup > bénéfice | Faire soi-même |
+| Code critique (sécurité, finance) | Risque trop élevé | Revue humaine approfondie |
+| Exploration sans but clair | Agent a besoin d'objectif précis | Chatbot/brainstorming |
+| Environnement de production | Risque de casse | Sandbox/staging |
+
+> 📌 **À Retenir** : Un agent n'est pas un développeur senior qu'on peut laisser sans supervision. C'est un outil puissant qui **amplifie** les capacités humaines mais nécessite toujours une **supervision active**. La règle d'or : plus l'agent est autonome, plus les garde-fous doivent être robustes.
+
+> 💡 **Astuce Pratique** : Commencez avec le mode le plus restrictif (confirmations systématiques), observez les patterns de l'agent pendant quelques sessions, puis relâchez progressivement les contrôles sur les opérations qui se révèlent fiables.
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 02
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Le Rôle des Agents dans l'Écosystème IA |
+| **Concepts Clés** | Taxonomie à 4 niveaux, Pattern ReAct, Autonomie vs Contrôle |
+| **Les 4 Niveaux** | Chatbot → Assistant → Agent → Multi-Agent |
+| **Critère Distinctif** | Qui contrôle la boucle d'exécution ? |
+| **Pattern Fondamental** | ReAct = Reasoning + Acting (Think → Act → Observe) |
+| **Année Charnière** | 2023 — Function Calling + modèles puissants |
+| **Exemples Agents** | Claude Code, Grok-CLI, Aider, Devin |
+| **Trade-off Central** | Plus d'autonomie = plus de productivité MAIS plus de risques |
+| **Garde-fous Essentiels** | Modes d'approbation, sandbox, limites, audit |
+| **Prérequis Chapitre Suivant** | Comprendre les 6 composants d'un agent |
+
+---
+
 ## 📝 2.7 Points Clés du Chapitre
 
 | Concept | Description | Importance |

@@ -1,0 +1,278 @@
+/* styles/epub.css - Styles pour la version EPUB du livre */
+
+body {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  line-height: 1.6;
+  margin: 1em;
+  color: #333;
+}
+
+/* Titres */
+h1 {
+  font-size: 2em;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+  page-break-before: always;
+  color: #0f3460;
+  border-bottom: 2px solid #e94560;
+  padding-bottom: 0.3em;
+}
+
+h2 {
+  font-size: 1.5em;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: #16213e;
+}
+
+h3 {
+  font-size: 1.2em;
+  margin-top: 1.2em;
+  color: #1a1a2e;
+}
+
+h4 {
+  font-size: 1.1em;
+  margin-top: 1em;
+  color: #333;
+}
+
+/* Code inline */
+code {
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  background: #f4f4f4;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  font-size: 0.9em;
+  color: #e94560;
+}
+
+/* Blocs de code */
+pre {
+  background: #1a1a2e;
+  color: #eaeaea;
+  padding: 1em;
+  overflow-x: auto;
+  border-radius: 5px;
+  margin: 1em 0;
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+  color: #eaeaea;
+}
+
+/* Citations / Blockquotes */
+blockquote {
+  border-left: 4px solid #e94560;
+  margin: 1em 0;
+  margin-left: 0;
+  padding: 0.5em 1em;
+  background: #f9f9f9;
+  color: #555;
+  font-style: italic;
+}
+
+blockquote p {
+  margin: 0.5em 0;
+}
+
+/* Encadres pedagogiques */
+blockquote strong:first-child {
+  display: block;
+  margin-bottom: 0.5em;
+  font-style: normal;
+}
+
+/* Tableaux */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 0.6em;
+  text-align: left;
+}
+
+th {
+  background: #16213e;
+  color: white;
+  font-weight: bold;
+}
+
+tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+tr:hover {
+  background: #f0f0f0;
+}
+
+/* Listes */
+ul, ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+li {
+  margin: 0.3em 0;
+}
+
+/* Liens */
+a {
+  color: #0f3460;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em auto;
+}
+
+figure {
+  margin: 1em 0;
+  text-align: center;
+}
+
+figcaption {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 0.5em;
+}
+
+/* Separateurs */
+hr {
+  border: none;
+  border-top: 2px solid #e94560;
+  margin: 2em 0;
+}
+
+/* Notes de bas de page */
+.footnote {
+  font-size: 0.85em;
+  color: #666;
+}
+
+/* Page de titre */
+.title-page {
+  text-align: center;
+  page-break-after: always;
+}
+
+.title-page h1 {
+  font-size: 2.5em;
+  border: none;
+  margin-top: 3em;
+}
+
+.title-page .subtitle {
+  font-size: 1.5em;
+  color: #666;
+  margin-top: 0.5em;
+}
+
+.title-page .author {
+  font-size: 1.2em;
+  margin-top: 2em;
+}
+
+/* Table des matieres */
+.toc {
+  page-break-after: always;
+}
+
+.toc a {
+  text-decoration: none;
+}
+
+.toc ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.toc li {
+  margin: 0.5em 0;
+}
+
+.toc li li {
+  padding-left: 1.5em;
+}
+
+/* Emojis - s'assurer qu'ils s'affichent bien */
+.emoji {
+  font-style: normal;
+}
+
+/* Styles pour les differents types d'encadres */
+.note-retenir {
+  background: #e3f2fd;
+  border-left-color: #2196f3;
+}
+
+.note-attention {
+  background: #fff3e0;
+  border-left-color: #ff9800;
+}
+
+.note-astuce {
+  background: #e8f5e9;
+  border-left-color: #4caf50;
+}
+
+.note-lien {
+  background: #f3e5f5;
+  border-left-color: #9c27b0;
+}
+
+.note-exercice {
+  background: #fffde7;
+  border-left-color: #ffc107;
+}
+
+.note-limite {
+  background: #ffebee;
+  border-left-color: #f44336;
+}
+
+/* Responsive pour petits ecrans */
+@media (max-width: 600px) {
+  body {
+    margin: 0.5em;
+    font-size: 0.95em;
+  }
+
+  h1 {
+    font-size: 1.6em;
+  }
+
+  h2 {
+    font-size: 1.3em;
+  }
+
+  pre {
+    font-size: 0.8em;
+    padding: 0.5em;
+  }
+
+  table {
+    font-size: 0.8em;
+  }
+
+  th, td {
+    padding: 0.4em;
+  }
+}

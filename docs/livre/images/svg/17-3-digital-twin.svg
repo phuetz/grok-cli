@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450">
+  <defs>
+    <style>
+      .bg { fill: #f8f9fa; }
+      .main-box { fill: #e3f2fd; stroke: #1976d2; stroke-width: 2; rx: 15; }
+      .section-box { fill: white; stroke: #999; stroke-width: 1.5; rx: 10; }
+      .header { fill: #1976d2; rx: 10 10 0 0; }
+      .text-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #0f3460; }
+      .text-header { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; font-weight: bold; fill: white; }
+      .text-label { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; font-weight: bold; fill: #333; }
+      .text-value { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; fill: #666; }
+      .icon { font-size: 28px; }
+      .badge { rx: 10; }
+      .badge-expert { fill: #4caf50; }
+      .badge-familier { fill: #ff9800; }
+      .badge-debutant { fill: #f44336; }
+      .badge-text { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9px; fill: white; font-weight: bold; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="600" height="450"/>
+
+  <!-- Title -->
+  <text x="300" y="30" text-anchor="middle" class="text-title">🧬 Digital Twin du Développeur</text>
+
+  <!-- Main container -->
+  <rect x="30" y="50" width="540" height="380" class="main-box"/>
+
+  <!-- Profile Section -->
+  <rect x="50" y="70" width="240" height="170" class="section-box"/>
+  <rect x="50" y="70" width="240" height="30" class="header"/>
+  <text x="170" y="92" text-anchor="middle" class="text-header">👤 PROFIL</text>
+
+  <text x="70" y="120" class="text-label">Style de code :</text>
+  <text x="70" y="135" class="text-value">Fonctionnel, types stricts</text>
+
+  <text x="70" y="160" class="text-label">Patterns préférés :</text>
+  <text x="70" y="175" class="text-value">Composition {'>'} Héritage</text>
+
+  <text x="70" y="200" class="text-label">Erreurs communes :</text>
+  <text x="70" y="215" class="text-value">Oubli de null check</text>
+
+  <!-- Activity Section -->
+  <rect x="310" y="70" width="240" height="170" class="section-box"/>
+  <rect x="310" y="70" width="240" height="30" class="header"/>
+  <text x="430" y="92" text-anchor="middle" class="text-header">⏰ ACTIVITÉ</text>
+
+  <text x="330" y="120" class="text-label">Heures actives :</text>
+  <text x="330" y="135" class="text-value">9h-12h, 14h-19h</text>
+
+  <text x="330" y="160" class="text-label">Projets récents :</text>
+  <text x="330" y="175" class="text-value">Payment module</text>
+  <text x="330" y="190" class="text-value">Auth refactor</text>
+
+  <text x="330" y="215" class="text-label">Bugs résolus ce mois :</text>
+  <text x="490" y="215" class="text-value" font-weight="bold" fill="#4caf50">47</text>
+
+  <!-- Knowledge Section -->
+  <rect x="50" y="260" width="500" height="150" class="section-box"/>
+  <rect x="50" y="260" width="500" height="30" class="header"/>
+  <text x="300" y="282" text-anchor="middle" class="text-header">🧠 CONNAISSANCES</text>
+
+  <!-- Expertise bars -->
+  <text x="70" y="315" class="text-label">src/payment</text>
+  <rect x="180" y="302" width="200" height="18" fill="#e8f5e9" stroke="#4caf50" rx="3"/>
+  <rect x="180" y="302" width="180" height="18" fill="#4caf50" rx="3"/>
+  <rect x="395" y="302" width="50" height="18" class="badge badge-expert"/>
+  <text x="420" y="315" text-anchor="middle" class="badge-text">EXPERT</text>
+
+  <text x="70" y="345" class="text-label">src/auth</text>
+  <rect x="180" y="332" width="200" height="18" fill="#fff3e0" stroke="#ff9800" rx="3"/>
+  <rect x="180" y="332" width="120" height="18" fill="#ff9800" rx="3"/>
+  <rect x="395" y="332" width="60" height="18" class="badge badge-familier"/>
+  <text x="425" y="345" text-anchor="middle" class="badge-text">FAMILIER</text>
+
+  <text x="70" y="375" class="text-label">src/ui</text>
+  <rect x="180" y="362" width="200" height="18" fill="#ffebee" stroke="#f44336" rx="3"/>
+  <rect x="180" y="362" width="50" height="18" fill="#f44336" rx="3"/>
+  <rect x="395" y="362" width="65" height="18" class="badge badge-debutant"/>
+  <text x="427" y="375" text-anchor="middle" class="badge-text">DÉBUTANT</text>
+
+  <!-- Patterns learned -->
+  <text x="490" y="315" class="text-value">Patterns appris :</text>
+  <text x="490" y="335" class="text-value">• Retry with backoff</text>
+  <text x="490" y="355" class="text-value">• Circuit breaker</text>
+  <text x="490" y="375" class="text-value">• Saga pattern</text>
+
+  <!-- Source reference -->
+  <text x="550" y="440" text-anchor="end" font-size="10" fill="#999">Ch.17 - Perspectives Futures</text>
+</svg>

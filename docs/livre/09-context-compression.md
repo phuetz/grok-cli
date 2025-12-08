@@ -853,6 +853,56 @@ function checkCompressionHealth(metrics: CompressionMetrics): Alert[] {
 
 ---
 
+## ⚠️ 9.8 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Perte d'information** | Compression = suppression | Détails importants potentiellement perdus |
+| **Qualité du résumé** | Dépend du LLM de summarization | Résumés parfois incomplets |
+| **Latence ajoutée** | Classification + compression = temps | Réponse initiale plus lente |
+| **Masquage trop agressif** | Informations nécessaires cachées | Réponses incomplètes |
+| **Calibration des priorités** | Dépend du domaine/workflow | Configuration nécessaire |
+
+### ⚡ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Sur-compression** | Moyenne | Élevé | Seuil de compression conservateur (0.7) |
+| **Masquage de contexte critique** | Faible | Critique | Exceptions pour erreurs et code récent |
+| **Incohérence du résumé** | Moyenne | Moyen | Validation du résumé par le LLM |
+| **Dégradation de la qualité** | Faible | Moyen | Monitoring du taux de succès |
+
+### 📊 Quand NE PAS Compresser
+
+| Situation | Raison | Action |
+|-----------|--------|--------|
+| Contexte < 50% du budget | Pas nécessaire | Skip compression |
+| Debugging critique | Besoin de tous les détails | Mode verbose |
+| Première interaction | Pas encore de contexte | Rien à compresser |
+
+> 📌 **À Retenir** : La compression de contexte est un **compromis économique** — on échange des tokens (donc du coût et de la capacité) contre une potentielle perte d'information. L'art est de trouver le point où on gagne plus qu'on ne perd. En pratique, une compression de 50-70% améliore souvent les résultats en forçant le modèle à se concentrer sur l'essentiel.
+
+> 💡 **Astuce Pratique** : Activez le masquage des observations d'abord (gain facile, peu de risque), puis la summarization (gain modéré, risque modéré), puis la troncation (dernier recours).
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 09
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Context Compression |
+| **Problème** | Contexte explose → coûts et "Lost in the Middle" |
+| **Solution** | Classification + compression intelligente |
+| **Priorités** | CRITICAL > HIGH > MEDIUM > LOW |
+| **Techniques** | Masking, Summarization, Truncation |
+| **"Lost in the Middle"** | Placer l'important au début/fin |
+| **Résultats** | -70% tokens, +2.6% succès |
+| **Papier de Référence** | JetBrains Research (2024) |
+
+---
+
 ## 🏋️ Exercices
 
 ### Exercice 1 : Système de priorités

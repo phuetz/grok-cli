@@ -1002,6 +1002,56 @@ async function updateGraphIncremental(
 
 ---
 
+## ⚠️ 8.9 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Explosion transitive** | Suivre toutes les dépendances = trop de contexte | Budget tokens épuisé |
+| **Qualité du parsing** | Dépend de la syntaxe (TS/JS OK, autres difficiles) | Graphe incomplet |
+| **Dépendances dynamiques** | Imports dynamiques / reflection invisibles | Relations manquantes |
+| **Coût de construction** | Analyse AST de tout le projet = lent | Démarrage ralenti |
+| **Maintenance du graphe** | Doit être mis à jour à chaque changement | Cache stale possible |
+
+### ⚡ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Over-fetching** | Haute | Moyen | Limiter maxDepth à 2, scorer la pertinence |
+| **Graphe obsolète** | Moyenne | Moyen | Mise à jour incrémentale, invalidation auto |
+| **Cycles de dépendances** | Moyenne | Moyen | Détection et coupure des cycles |
+| **Fichiers manquants** | Faible | Faible | Graceful degradation vers RAG classique |
+
+### 📊 Quand NE PAS Utiliser Dependency-Aware RAG
+
+| Situation | Raison | Alternative |
+|-----------|--------|-------------|
+| Projet < 20 fichiers | Overhead > bénéfice | RAG classique suffisant |
+| Questions génériques | Pas besoin de dépendances | Recherche sémantique simple |
+| Langages non supportés | Parsing AST impossible | RAG classique + heuristiques |
+
+> 📌 **À Retenir** : Le graphe de dépendances est un **amplificateur** — il amplifie la qualité du retrieval initial, mais aussi ses erreurs. Si le retrieval de base récupère du code non pertinent, l'expansion des dépendances va récupérer encore plus de code non pertinent. Assurez-vous que votre retrieval de base est solide avant d'activer l'expansion.
+
+> 💡 **Astuce Pratique** : Commencez avec `maxDepth: 1` et `maxExpansion: 5`. Augmentez progressivement si les réponses manquent de contexte. Un ratio d'expansion > 3x est souvent signe de sur-fetching.
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 08
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Dependency-Aware RAG |
+| **Problème** | RAG classique = fichiers en isolation |
+| **Solution** | Graphe de dépendances + expansion automatique |
+| **Construction** | Analyse AST : imports, types, appels de fonctions |
+| **Algorithme** | BFS avec scoring décroissant par profondeur |
+| **Stratégies** | Adapt expansion selon le type de question |
+| **Performance** | Cache + mise à jour incrémentale |
+| **Papier de Référence** | CodeRAG (2024) |
+
+---
+
 ## 📝 Points Clés
 
 | Concept | Point clé |

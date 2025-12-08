@@ -1,0 +1,20 @@
+---
+title: "Construire un Agent LLM Moderne"
+subtitle: "De la Theorie a Grok-CLI"
+author: "Contributeurs Grok-CLI"
+date: "Decembre 2024"
+lang: fr-FR
+papersize: a4
+fontsize: 11pt
+documentclass: book
+geometry:
+  - margin=2.5cm
+  - bindingoffset=1cm
+toc: true
+toc-depth: 3
+numbersections: true
+colorlinks: true
+linkcolor: blue
+urlcolor: blue
+highlight-style: tango
+---

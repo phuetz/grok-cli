@@ -41,8 +41,12 @@
 ### Partie VI : Apprentissage
 - [14. Apprentissage Persistant](14-apprentissage-persistant.md) — Mémoire épisodique, sémantique, procédurale
 
-### Partie VII : Étude de Cas
+### Partie VII : Sécurité et Architecture
 - [15. Architecture Complète](15-architecture-complete.md) — Grok-CLI de A à Z, 6 couches, intégration
+- [16. System Prompts et Sécurité](16-system-prompts-securite.md) — Prompt injection, défense en profondeur, audit
+
+### Partie VIII : Perspectives
+- [17. Perspectives Futures](17-perspectives-futures.md) — Agents multimodaux, multi-agent avancé, MCP, éthique
 
 ### Annexes
 - [📚 Glossaire](glossaire.md) — Définitions des termes techniques
@@ -130,11 +134,38 @@ Ce livre a été généré dans le cadre du projet Grok-CLI pour documenter les 
 Le livre s'appuie sur des publications récentes :
 - Tree-of-Thought (Yao et al., 2023)
 - RethinkMCTS (Zhang et al., 2024)
-- ChatRepair (ISSTA 2024)
+- ChatRepair (ISSTA 2024, Distinguished Paper)
 - CodeRAG (2024)
 - FrugalGPT (Stanford, 2023)
 - LLMCompiler (Berkeley, 2023)
 - JetBrains Research (2024)
+- MemGPT (UC Berkeley, 2023)
+
+---
+
+## 📊 Statistiques du Livre
+
+| Métrique | Valeur |
+|----------|--------|
+| **Chapitres** | 17 + annexes |
+| **Mots estimés** | ~70,000 |
+| **Pages imprimées** | ~220 |
+| **Schémas SVG** | 5+ |
+| **Exercices** | 50+ |
+
+---
+
+## 🚀 Génération PDF/EPUB
+
+```bash
+# Générer le PDF
+./scripts/generate-pdf.sh
+
+# Générer l'EPUB
+./scripts/generate-epub.sh
+```
+
+Les fichiers sont générés dans `docs/livre/`.
 
 ---
 

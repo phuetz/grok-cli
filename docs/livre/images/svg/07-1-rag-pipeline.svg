@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 450">
+  <defs>
+    <style>
+      .bg { fill: #f8f9fa; }
+      .stage-box { rx: 12; stroke-width: 2; }
+      .stage-query { fill: #e3f2fd; stroke: #1976d2; }
+      .stage-embed { fill: #fff3e0; stroke: #f57c00; }
+      .stage-retrieve { fill: #e8f5e9; stroke: #388e3c; }
+      .stage-rerank { fill: #fce4ec; stroke: #c2185b; }
+      .stage-generate { fill: #f3e5f5; stroke: #7b1fa2; }
+      .text-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 20px; font-weight: bold; fill: #0f3460; }
+      .text-stage { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; font-weight: bold; }
+      .text-desc { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10px; fill: #555; }
+      .text-detail { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9px; fill: #777; }
+      .arrow-main { stroke: #0f3460; stroke-width: 3; fill: none; marker-end: url(#arrowhead-main); }
+      .arrow-sub { stroke: #999; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead-sub); }
+      .db-shape { fill: #e0e0e0; stroke: #757575; stroke-width: 2; }
+      .doc-shape { fill: #fff; stroke: #999; stroke-width: 1; rx: 3; }
+      .icon { font-size: 24px; }
+    </style>
+    <marker id="arrowhead-main" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#0f3460"/>
+    </marker>
+    <marker id="arrowhead-sub" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#999"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="1000" height="450"/>
+
+  <!-- Title -->
+  <text x="500" y="35" text-anchor="middle" class="text-title">Pipeline RAG Complet (Retrieval-Augmented Generation)</text>
+
+  <!-- Stage 1: Query -->
+  <rect x="30" y="70" width="160" height="140" class="stage-box stage-query"/>
+  <text x="110" y="100" text-anchor="middle" class="icon">❓</text>
+  <text x="110" y="125" text-anchor="middle" class="text-stage" fill="#1976d2">1. QUERY</text>
+  <text x="110" y="145" text-anchor="middle" class="text-desc">Question utilisateur</text>
+  <rect x="45" y="160" width="130" height="35" class="doc-shape"/>
+  <text x="110" y="175" text-anchor="middle" class="text-detail">"Comment fonctionne</text>
+  <text x="110" y="187" text-anchor="middle" class="text-detail">validateEmail() ?"</text>
+
+  <!-- Arrow 1->2 -->
+  <path d="M 190 140 L 220 140" class="arrow-main"/>
+
+  <!-- Stage 2: Embed -->
+  <rect x="230" y="70" width="160" height="140" class="stage-box stage-embed"/>
+  <text x="310" y="100" text-anchor="middle" class="icon">🔢</text>
+  <text x="310" y="125" text-anchor="middle" class="text-stage" fill="#f57c00">2. EMBED</text>
+  <text x="310" y="145" text-anchor="middle" class="text-desc">Vectorisation</text>
+  <text x="310" y="165" text-anchor="middle" class="text-detail">Query → [0.12, -0.34, ...]</text>
+  <text x="310" y="180" text-anchor="middle" class="text-detail">768-1536 dimensions</text>
+  <text x="310" y="195" text-anchor="middle" class="text-detail" fill="#f57c00">Sentence-BERT</text>
+
+  <!-- Arrow 2->3 -->
+  <path d="M 390 140 L 420 140" class="arrow-main"/>
+
+  <!-- Stage 3: Retrieve -->
+  <rect x="430" y="70" width="160" height="140" class="stage-box stage-retrieve"/>
+  <text x="510" y="100" text-anchor="middle" class="icon">🔍</text>
+  <text x="510" y="125" text-anchor="middle" class="text-stage" fill="#388e3c">3. RETRIEVE</text>
+  <text x="510" y="145" text-anchor="middle" class="text-desc">Recherche k-NN</text>
+  <text x="510" y="165" text-anchor="middle" class="text-detail">Top-k similaires</text>
+  <text x="510" y="180" text-anchor="middle" class="text-detail">Cosine similarity</text>
+  <text x="510" y="195" text-anchor="middle" class="text-detail" fill="#388e3c">FAISS / Chroma</text>
+
+  <!-- Vector DB -->
+  <ellipse cx="510" cy="280" rx="50" ry="15" class="db-shape"/>
+  <rect x="460" y="280" width="100" height="50" class="db-shape"/>
+  <ellipse cx="510" cy="330" rx="50" ry="15" class="db-shape"/>
+  <text x="510" y="310" text-anchor="middle" class="text-detail">Vector DB</text>
+  <path d="M 510 210 L 510 265" class="arrow-sub"/>
+
+  <!-- Arrow 3->4 -->
+  <path d="M 590 140 L 620 140" class="arrow-main"/>
+
+  <!-- Stage 4: Rerank -->
+  <rect x="630" y="70" width="160" height="140" class="stage-box stage-rerank"/>
+  <text x="710" y="100" text-anchor="middle" class="icon">📊</text>
+  <text x="710" y="125" text-anchor="middle" class="text-stage" fill="#c2185b">4. RERANK</text>
+  <text x="710" y="145" text-anchor="middle" class="text-desc">Re-ordonnancement</text>
+  <text x="710" y="165" text-anchor="middle" class="text-detail">Cross-encoder</text>
+  <text x="710" y="180" text-anchor="middle" class="text-detail">Query+Doc → Score</text>
+  <text x="710" y="195" text-anchor="middle" class="text-detail" fill="#c2185b">+15% precision</text>
+
+  <!-- Arrow 4->5 -->
+  <path d="M 790 140 L 820 140" class="arrow-main"/>
+
+  <!-- Stage 5: Generate -->
+  <rect x="830" y="70" width="150" height="140" class="stage-box stage-generate"/>
+  <text x="905" y="100" text-anchor="middle" class="icon">🤖</text>
+  <text x="905" y="125" text-anchor="middle" class="text-stage" fill="#7b1fa2">5. GENERATE</text>
+  <text x="905" y="145" text-anchor="middle" class="text-desc">Generation LLM</text>
+  <text x="905" y="165" text-anchor="middle" class="text-detail">Context + Query</text>
+  <text x="905" y="180" text-anchor="middle" class="text-detail">→ Response</text>
+  <text x="905" y="195" text-anchor="middle" class="text-detail" fill="#7b1fa2">Grok / GPT-4</text>
+
+  <!-- Documents Retrieved -->
+  <rect x="100" y="280" width="280" height="120" fill="#fafafa" stroke="#ddd" rx="8"/>
+  <text x="240" y="300" text-anchor="middle" class="text-stage" fill="#333">Documents Recuperes</text>
+
+  <rect x="115" y="315" width="120" height="35" class="doc-shape"/>
+  <text x="175" y="330" text-anchor="middle" class="text-detail">validators.ts</text>
+  <text x="175" y="343" text-anchor="middle" class="text-detail" fill="#388e3c">sim: 0.94</text>
+
+  <rect x="245" y="315" width="120" height="35" class="doc-shape"/>
+  <text x="305" y="330" text-anchor="middle" class="text-detail">auth.ts</text>
+  <text x="305" y="343" text-anchor="middle" class="text-detail" fill="#f57c00">sim: 0.72</text>
+
+  <rect x="115" y="355" width="120" height="35" class="doc-shape"/>
+  <text x="175" y="370" text-anchor="middle" class="text-detail">types.ts</text>
+  <text x="175" y="383" text-anchor="middle" class="text-detail" fill="#999">sim: 0.58</text>
+
+  <rect x="245" y="355" width="120" height="35" class="doc-shape"/>
+  <text x="305" y="370" text-anchor="middle" class="text-detail">utils.ts</text>
+  <text x="305" y="383" text-anchor="middle" class="text-detail" fill="#999">sim: 0.45</text>
+
+  <!-- Chunking info -->
+  <rect x="630" y="280" width="180" height="90" fill="#fafafa" stroke="#ddd" rx="8"/>
+  <text x="720" y="300" text-anchor="middle" class="text-stage" fill="#333">Strategies Chunking</text>
+  <text x="720" y="325" text-anchor="middle" class="text-detail">• Fixe (512 tokens)</text>
+  <text x="720" y="342" text-anchor="middle" class="text-detail">• Semantique (paragraphes)</text>
+  <text x="720" y="359" text-anchor="middle" class="text-detail" fill="#388e3c">• AST (fonctions/classes)</text>
+
+  <!-- Legend -->
+  <rect x="830" y="280" width="150" height="90" fill="white" stroke="#ccc" rx="8"/>
+  <text x="905" y="300" text-anchor="middle" class="text-stage" fill="#333">Metriques</text>
+  <text x="905" y="325" text-anchor="middle" class="text-detail">Recall@5: 0.85</text>
+  <text x="905" y="342" text-anchor="middle" class="text-detail">Precision: 0.72</text>
+  <text x="905" y="359" text-anchor="middle" class="text-detail" fill="#388e3c">Latency: ~150ms</text>
+
+  <!-- Source reference -->
+  <text x="970" y="440" text-anchor="end" font-size="10" fill="#999">Ch.07 - RAG Moderne</text>
+</svg>

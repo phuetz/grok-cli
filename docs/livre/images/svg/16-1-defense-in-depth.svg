@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 450">
+  <defs>
+    <style>
+      .bg { fill: #f8f9fa; }
+      .title-box { fill: #1976d2; rx: 10; }
+      .layer-box { fill: white; stroke: #333; stroke-width: 2; rx: 8; }
+      .layer1 { fill: #e3f2fd; stroke: #1976d2; }
+      .layer2 { fill: #fff3e0; stroke: #f57c00; }
+      .layer3 { fill: #e8f5e9; stroke: #388e3c; }
+      .layer4 { fill: #f3e5f5; stroke: #7b1fa2; }
+      .text-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 18px; font-weight: bold; fill: white; }
+      .text-layer { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #333; }
+      .text-item { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; fill: #555; }
+      .icon { font-size: 18px; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="700" height="450"/>
+
+  <!-- Title -->
+  <rect x="50" y="20" width="600" height="40" class="title-box"/>
+  <text x="350" y="47" text-anchor="middle" class="text-title">DEFENSE IN DEPTH</text>
+
+  <!-- Layer 1: Input Validation -->
+  <rect x="50" y="80" width="600" height="80" class="layer-box layer1"/>
+  <text x="70" y="105" class="icon">1️⃣</text>
+  <text x="100" y="108" class="text-layer">Layer 1: INPUT VALIDATION</text>
+  <text x="100" y="130" class="text-item">• Detecter patterns d'injection ("ignore instructions")</text>
+  <text x="100" y="148" class="text-item">• Filtrer encodages suspects (base64, hex)</text>
+  <text x="400" y="130" class="text-item">• Limiter la longueur des inputs</text>
+
+  <!-- Layer 2: Prompt Hardening -->
+  <rect x="50" y="170" width="600" height="80" class="layer-box layer2"/>
+  <text x="70" y="195" class="icon">2️⃣</text>
+  <text x="100" y="198" class="text-layer">Layer 2: PROMPT HARDENING</text>
+  <text x="100" y="220" class="text-item">• Separer clairement system/user avec des delimiteurs</text>
+  <text x="100" y="238" class="text-item">• Definir regles comme "NON-NEGOCIABLES"</text>
+  <text x="400" y="220" class="text-item">• Inclure instructions de detection d'injection</text>
+
+  <!-- Layer 3: Output Validation -->
+  <rect x="50" y="260" width="600" height="80" class="layer-box layer3"/>
+  <text x="70" y="285" class="icon">3️⃣</text>
+  <text x="100" y="288" class="text-layer">Layer 3: OUTPUT VALIDATION</text>
+  <text x="100" y="310" class="text-item">• Detecter leakage du system prompt</text>
+  <text x="100" y="328" class="text-item">• Redacter credentials dans les outputs</text>
+  <text x="400" y="310" class="text-item">• Valider les commandes avant execution</text>
+
+  <!-- Layer 4: Human-in-the-Loop -->
+  <rect x="50" y="350" width="600" height="80" class="layer-box layer4"/>
+  <text x="70" y="375" class="icon">4️⃣</text>
+  <text x="100" y="378" class="text-layer">Layer 4: HUMAN-IN-THE-LOOP</text>
+  <text x="100" y="400" class="text-item">• Confirmer les operations a risque</text>
+  <text x="100" y="418" class="text-item">• Alerter sur comportements suspects</text>
+  <text x="400" y="400" class="text-item">• Permettre annulation des actions</text>
+
+  <!-- Source reference -->
+  <text x="630" y="445" text-anchor="end" font-size="10" fill="#999">Ch.16 - System Prompts et Securite</text>
+</svg>

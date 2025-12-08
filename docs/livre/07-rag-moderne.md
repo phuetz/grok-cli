@@ -78,6 +78,26 @@ stripe.paymentIntents.create() avec les paramètres appropriés...
 
 ---
 
+## 📊 Tableau Synthétique — Chapitre 07
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | RAG Moderne — Retrieval-Augmented Generation |
+| **Objectifs** | • Comprendre le pipeline RAG complet<br>• Implémenter le chunking AST<br>• Configurer la recherche hybride |
+| **Concepts Clés** | Embeddings, Chunking, Recherche hybride, Reranking |
+| **Mots-Clés** | `embedding`, `BM25`, `cosine`, `cross-encoder`, `chunk` |
+| **Outils/Techniques** | Sentence-BERT, FAISS/Chroma, Cross-Encoder |
+| **Fichiers Code** | `src/context/rag-pipeline.ts`, `src/context/chunker.ts` |
+| **Références** | RAG (Lewis et al., 2020), CodeRAG (Zhang 2024) |
+| **Prérequis** | Ch.01 (LLMs), Ch.03 (Agent) |
+| **Chapitres Liés** | Ch.08 (Dependency-Aware), Ch.09 (Compression) |
+
+> 📌 **À Retenir**
+>
+> Le **reranking** est souvent plus important que le retrieval initial. Un cross-encoder qui réordonne les résultats peut améliorer la précision de +15% à coût minime.
+
+---
+
 ## 7.1 🚫 Le Problème du Contexte
 
 ### 7.1.1 Les limites du LLM seul
@@ -1006,6 +1026,40 @@ const myBenchmark: RAGBenchmark = {
   ]
 };
 ```
+
+---
+
+## ⚠️ 7.8 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Mitigation |
+|--------|-------------|------------|
+| **Qualité des embeddings** | Les embeddings capturent la similarité sémantique, pas la logique du code | Combiner avec recherche par keywords (hybride) |
+| **Fragmentation du contexte** | Le chunking peut couper des blocs logiques importants | Chunking AST plutôt que par lignes |
+| **Cold start** | Première indexation lente sur gros projets (>10k fichiers) | Indexation incrémentale + cache |
+| **Limite de contexte** | Même 128K tokens ne suffisent pas pour tout inclure | Compression + sélection intelligente |
+| **Coût des embeddings** | Réindexation fréquente = coûts API | Cache des embeddings, embeddings locaux |
+
+### ⚠️ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Hallucination malgré RAG** | Moyenne | Élevé | Vérifier les citations, cross-check |
+| **Données périmées** | Moyenne | Moyen | Invalidation proactive, timestamps |
+| **Bruit dans les résultats** | Élevée | Moyen | Reranking cross-encoder, seuils stricts |
+| **Fuite d'info sensible** | Faible | Critique | Exclusion patterns, redaction |
+| **Dérive du modèle d'embedding** | Faible | Élevé | Versioning, réindexation périodique |
+
+### 📚 Recherches en Cours
+
+- **Self-RAG** (2024) : Le modèle décide lui-même quand récupérer
+- **RAPTOR** : Résumés hiérarchiques pour navigation multi-niveau
+- **Hypothetical Document Embeddings (HyDE)** : Générer un document hypothétique pour améliorer le retrieval
+
+### 💡 Recommandations
+
+> 📌 **À Retenir** : Le RAG n'est pas une solution magique. Mesurez systématiquement Recall@K et Precision@K sur un benchmark maison. Un RAG mal configuré peut être pire que pas de RAG du tout.
 
 ---
 

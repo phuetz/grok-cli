@@ -776,6 +776,58 @@ for await (const chunk of stream) {
 
 ---
 
+## ⚠️ 1.8 Limites et Risques des LLMs
+
+### 🚧 Limites Techniques Fondamentales
+
+| Limite | Description | Conséquence pratique |
+|--------|-------------|----------------------|
+| **Fenêtre de contexte** | Limite fixe de tokens (même 128K n'est pas infini) | Projets volumineux doivent être fragmentés |
+| **Coupure temporelle** | Connaissances figées à la date d'entraînement | Hallucinations sur événements/APIs récents |
+| **Raisonnement limité** | Pas de vrai calcul symbolique | Erreurs sur logique formelle et maths |
+| **Incohérence entre sessions** | Pas de mémoire native entre conversations | Contexte perdu, répétitions nécessaires |
+| **Sensibilité au prompt** | Résultats varient selon formulation | Nécessite prompt engineering |
+
+### ⚠️ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Hallucinations** | Élevée | Moyen-Élevé | RAG, vérification humaine, chain-of-thought |
+| **Génération de code vulnérable** | Moyenne | Élevé | Revue de sécurité, linters, tests |
+| **Fuite de données sensibles** | Faible | Critique | Pas de secrets dans les prompts |
+| **Dépendance excessive** | Moyenne | Moyen | Formation continue des développeurs |
+| **Coûts non maîtrisés** | Moyenne | Moyen | Budgets, monitoring, caching |
+
+### 📊 Quand NE PAS Utiliser un LLM
+
+| Situation | Raison | Alternative |
+|-----------|--------|-------------|
+| Calculs critiques (finance, médical) | Risque d'erreur inacceptable | Systèmes déterministes |
+| Données ultra-confidentielles | Risque de fuite | Traitement local sans API |
+| Vérité absolue requise | Hallucinations possibles | Sources vérifiées |
+| Temps réel < 100ms | Latence API incompressible | Règles codées en dur |
+
+> 📌 **À Retenir** : Les LLMs sont des outils probabilistes, pas des oracles infaillibles. Leur force réside dans la génération et la transformation de texte, pas dans le raisonnement logique ou la mémorisation exacte. Utilisez-les comme **copilotes**, jamais comme **pilotes automatiques** pour des décisions critiques.
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 01
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Comprendre les Large Language Models |
+| **Concepts Clés** | Transformer, Attention, Tokenisation, Embeddings, Scaling Laws |
+| **Architecture** | Multi-Head Attention → Feed Forward → Residual Connections |
+| **Innovation Majeure** | "Attention Is All You Need" (2017) — traitement parallèle |
+| **Forces** | Pattern matching, génération fluide, contexte long |
+| **Faiblesses** | Hallucinations, pas de raisonnement formel, coûts |
+| **Modèles 2025** | GPT-4o, Claude 3.5, Gemini 1.5, Llama 3.1, Mistral |
+| **Exécution Locale** | Ollama, LM Studio, vLLM, llama.cpp |
+| **Format Standard** | API Chat Completions (OpenAI-compatible) |
+| **Prérequis Chapitre Suivant** | Comprendre le fonctionnement interne des LLMs |
+
+---
+
 ## 📝 1.11 Points Clés du Chapitre
 
 | Concept | Description | Importance |

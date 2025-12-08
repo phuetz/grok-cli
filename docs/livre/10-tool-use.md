@@ -965,6 +965,101 @@ export class ToolRecovery {
 
 ---
 
+## ⚠️ 10.8 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Mitigation |
+|--------|-------------|------------|
+| **Hallucination d'arguments** | Le LLM peut inventer des chemins/paramètres | Validation stricte + suggestions |
+| **Combinaisons invalides** | Appels d'outils dans le mauvais ordre | Analyse de dépendances |
+| **Latence cumulée** | 10 outils × 100ms = 1s de latence | Parallélisation intelligente |
+| **Limites des schémas JSON** | Pas de validation sémantique profonde | Validators custom |
+| **Conflit d'outils** | Deux outils modifiant le même fichier | Transactions atomiques |
+
+### ⚠️ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Exécution de code malveillant** | Faible | Critique | Sandbox, liste blanche |
+| **Suppression accidentelle** | Moyenne | Élevé | Confirmation obligatoire, backups |
+| **Injection de commandes** | Moyenne | Critique | Échappement strict, validation regex |
+| **Déni de service (boucle infinie)** | Faible | Moyen | Timeouts, max rounds |
+| **Fuite de données via outils** | Faible | Critique | Redaction, audit logging |
+
+### 📚 Patterns Anti-Sécurité à Éviter
+
+```typescript
+// ❌ DANGEREUX : Exécution directe sans validation
+await bash(userInput);
+
+// ❌ DANGEREUX : Concaténation de commandes
+await bash(`cat ${userPath} | grep ${userPattern}`);
+
+// ✅ SÉCURISÉ : Validation et échappement
+const safePath = validatePath(userPath);
+const safePattern = escapeRegex(userPattern);
+await bash(['cat', safePath], { pipe: ['grep', safePattern] });
+```
+
+### 💡 Recommandations
+
+> ⚠️ **Attention** : Chaque outil est une surface d'attaque potentielle. Appliquez le principe du moindre privilège : un outil ne devrait avoir accès qu'aux ressources strictement nécessaires.
+
+---
+
+## ⚠️ 10.8 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Hallucination de paramètres** | LLM peut inventer des valeurs pour les arguments | Erreurs d'exécution, comportement inattendu |
+| **Mauvais choix d'outil** | LLM peut sélectionner l'outil incorrect | Temps perdu, résultats erronés |
+| **Overhead de validation** | Chaque call = parsing + validation + confirmation | Latence accrue |
+| **Limites du schéma JSON** | Certaines contraintes complexes inexprimables | Validation incomplète |
+| **Dépendance au modèle** | Qualité du tool use varie selon le LLM | Inconsistance entre modèles |
+
+### ⚡ Risques de Sécurité
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Injection de commandes** | Moyenne | Critique | Échapper tous les paramètres shell |
+| **Path traversal** | Moyenne | Élevé | Valider et normaliser les chemins |
+| **Exfiltration de données** | Faible | Critique | Blocklist de destinations réseau |
+| **Exécution de code arbitraire** | Faible | Critique | Sandbox, whitelist de commandes |
+| **Denial of service** | Moyenne | Moyen | Timeouts, limites de ressources |
+
+### 📊 Quand Être Extra-Vigilant
+
+| Situation | Risque | Action |
+|-----------|--------|--------|
+| Arguments venant de l'utilisateur | Injection | Double validation |
+| Fichiers hors du projet | Path traversal | Whitelist de répertoires |
+| Commandes avec pipes | Injection shell | Éviter les shells, utiliser spawn |
+| Accès réseau | Exfiltration | Proxy/firewall |
+
+> 📌 **À Retenir** : Les outils sont la **surface d'attaque** la plus large d'un agent. Chaque paramètre venant du LLM doit être traité comme potentiellement malveillant. Appliquez le principe du **moindre privilège** : un outil ne devrait avoir accès qu'aux ressources strictement nécessaires pour sa fonction.
+
+> 💡 **Astuce Pratique** : Créez un outil `safe_bash` qui n'autorise qu'une whitelist de commandes prédéfinies. Réservez `bash` brut aux utilisateurs qui ont explicitement activé le mode YOLO.
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 10
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Tool-Use et Exécution |
+| **Interface Tool** | name, description, schema JSON, execute() |
+| **41 Outils** | Fichiers, shell, git, recherche, médias, docs |
+| **Flow** | LLM → tool_call → validate → confirm → execute → result |
+| **Validation** | JSON Schema + règles métier + permissions |
+| **Sécurité** | Confirmation, sandbox, audit log |
+| **Parallélisme** | Groupement par dépendance, exécution concurrente |
+| **Recovery** | Suggestions, retry, alternatives |
+
+---
+
 ## 📝 Points Clés
 
 | Concept | Point clé |

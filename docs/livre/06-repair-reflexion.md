@@ -600,6 +600,26 @@ export class MetaLearning {
 
 ---
 
+## 📊 Tableau Synthétique — Chapitre 06
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Repair, Réflexion et Auto-Amélioration |
+| **Problème** | Réparation single-shot = ~15% de succès seulement |
+| **Solution** | Boucle itérative ChatRepair = ~40% de succès (+167%) |
+| **Les 4 Phases** | Localiser → Générer → Valider → Feedback |
+| **Localisation** | SBFL (Ochiai, DStar) + Stack trace + LLM |
+| **Templates** | Patterns récurrents (null_check, try_catch, await...) |
+| **Apprentissage** | Mémorisation des patterns qui fonctionnent |
+| **Limite d'itérations** | 5 max (rendements décroissants au-delà) |
+| **Papier de Référence** | ChatRepair (ISSTA 2024) |
+
+> 📌 **À Retenir** : La différence entre un agent qui **réessaie** et un agent qui **répare** est le **feedback structuré**. Sans information sur pourquoi les tentatives précédentes ont échoué, le modèle répètera les mêmes erreurs. Le secret : toujours inclure l'historique des échecs dans le contexte et forcer explicitement une approche différente.
+
+> 💡 **Astuce Pratique** : Commencez par les templates de réparation pour les bugs les plus courants (null checks, async/await). Ils ont une confidence de 80-95% et évitent des appels LLM coûteux. Réservez la génération libre pour les cas non couverts.
+
+---
+
 ## 📝 6.10 Points Clés à Retenir
 
 ### 🎯 Sur le Problème
@@ -636,7 +656,52 @@ export class MetaLearning {
 
 ---
 
-## 🏋️ 6.11 Exercices
+## ⚠️ 6.11 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Mitigation |
+|--------|-------------|------------|
+| **Reparation partielle** | Le patch peut corriger le symptome, pas la cause racine | Tests d'integration obligatoires apres chaque fix |
+| **Regression** | Un fix peut introduire de nouveaux bugs ailleurs | Suite de tests exhaustive, analyse de couverture |
+| **Boucle infinie** | L'agent peut ne jamais converger vers une solution | Limite stricte de tentatives (5-10 max) |
+| **Complexite du bug** | Bugs architecturaux ou multi-fichiers hors de portee | Detection automatique et escalade humaine |
+| **Overfitting** | Le patch peut etre trop specifique au cas de test | Validation sur des tests supplementaires |
+
+### ⚡ Risques Operationnels
+
+1. **Sur-confiance dans les corrections automatiques**
+   - *Probabilite* : Haute
+   - *Impact* : Eleve (bugs en production)
+   - *Mitigation* : Toujours revue humaine avant merge en production
+
+2. **Masquage de problemes profonds**
+   - *Probabilite* : Moyenne
+   - *Impact* : Critique (dette technique)
+   - *Mitigation* : Analyse des patterns de bugs recurrents, refactoring preventif
+
+3. **Dependance excessive a l'automatisation**
+   - *Probabilite* : Moyenne
+   - *Impact* : Modere (perte de competences)
+   - *Mitigation* : Utiliser comme outil d'apprentissage, pas de remplacement
+
+### 🔬 Recherche en Cours
+
+- **Reparation multi-fichiers** : Techniques pour coordonner les modifications sur plusieurs fichiers
+- **Comprehension semantique** : Aller au-dela du pattern matching vers la comprehension du code
+- **Garanties formelles** : Prouver mathematiquement qu'un patch est correct
+
+### 💡 Recommandations
+
+> **Pour les debutants** : Utilisez le repair engine uniquement sur des tests unitaires isoles.
+> Validez toujours manuellement les patches avant de les integrer.
+>
+> **Pour les experts** : Configurez des seuils de confiance stricts et integrez
+> le repair dans votre CI/CD avec des gates de qualite.
+
+---
+
+## 🏋️ 6.12 Exercices
 
 ### Exercice 1 : Formule Tarantula (30 min)
 

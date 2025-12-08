@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 550">
+  <defs>
+    <style>
+      .bg { fill: #f8f9fa; }
+      .step-box { fill: white; stroke: #333; stroke-width: 2; rx: 8; }
+      .input-box { fill: #e3f2fd; stroke: #1976d2; }
+      .validation-box { fill: #fff3e0; stroke: #f57c00; }
+      .process-box { fill: #e8f5e9; stroke: #388e3c; }
+      .human-box { fill: #f3e5f5; stroke: #7b1fa2; }
+      .output-box { fill: #fce4ec; stroke: #c2185b; }
+      .text-step { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; font-weight: bold; fill: #333; }
+      .text-note { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10px; fill: #666; font-style: italic; }
+      .arrow { stroke: #333; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="350" height="550"/>
+
+  <!-- User Input -->
+  <rect x="100" y="20" width="150" height="35" class="step-box input-box"/>
+  <text x="175" y="42" text-anchor="middle" class="text-step">User Input</text>
+  <line x1="175" y1="55" x2="175" y2="75" class="arrow"/>
+
+  <!-- Input Validation -->
+  <rect x="75" y="80" width="200" height="40" class="step-box validation-box"/>
+  <text x="175" y="102" text-anchor="middle" class="text-step">Input Validation</text>
+  <text x="280" y="105" class="text-note">Detection injection</text>
+  <line x1="175" y1="120" x2="175" y2="140" class="arrow"/>
+
+  <!-- System Prompt -->
+  <rect x="75" y="145" width="200" height="50" class="step-box process-box"/>
+  <text x="175" y="167" text-anchor="middle" class="text-step">System Prompt</text>
+  <text x="175" y="182" text-anchor="middle" class="text-step">+ Security Rules</text>
+  <text x="280" y="175" class="text-note">Regles hardcodees</text>
+  <line x1="175" y1="195" x2="175" y2="215" class="arrow"/>
+
+  <!-- LLM Process -->
+  <rect x="100" y="220" width="150" height="40" class="step-box"/>
+  <text x="175" y="245" text-anchor="middle" class="text-step">LLM Process</text>
+  <line x1="175" y1="260" x2="175" y2="280" class="arrow"/>
+
+  <!-- Tool Validation -->
+  <rect x="75" y="285" width="200" height="40" class="step-box validation-box"/>
+  <text x="175" y="310" text-anchor="middle" class="text-step">Tool Validation</text>
+  <text x="280" y="310" class="text-note">Paths, commandes</text>
+  <line x1="175" y1="325" x2="175" y2="345" class="arrow"/>
+
+  <!-- User Confirmation -->
+  <rect x="75" y="350" width="200" height="40" class="step-box human-box"/>
+  <text x="175" y="375" text-anchor="middle" class="text-step">User Confirmation</text>
+  <text x="280" y="375" class="text-note">Human-in-the-loop</text>
+  <line x1="175" y1="390" x2="175" y2="410" class="arrow"/>
+
+  <!-- Output Redaction -->
+  <rect x="75" y="415" width="200" height="40" class="step-box output-box"/>
+  <text x="175" y="440" text-anchor="middle" class="text-step">Output Redaction</text>
+  <text x="280" y="440" class="text-note">Masquage secrets</text>
+  <line x1="175" y1="455" x2="175" y2="475" class="arrow"/>
+
+  <!-- Response -->
+  <rect x="100" y="480" width="150" height="35" class="step-box input-box"/>
+  <text x="175" y="502" text-anchor="middle" class="text-step">Response</text>
+
+  <!-- Source reference -->
+  <text x="330" y="545" text-anchor="end" font-size="10" fill="#999">Ch.16 - Security Flow</text>
+</svg>

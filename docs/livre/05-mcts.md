@@ -48,6 +48,28 @@
 
 ---
 
+## 📊 Tableau Synthétique — Chapitre 05
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Monte-Carlo Tree Search (MCTS) |
+| **Objectifs** | • Comprendre l'algorithme MCTS et ses 4 phases<br>• Implémenter UCB1 pour le balance exploration/exploitation<br>• Appliquer MCTS au raisonnement d'agents |
+| **Concepts Clés** | UCB1, Select, Expand, Simulate, Backpropagate |
+| **Mots-Clés** | `MCTS`, `UCB1`, `rollout`, `backprop`, `ultrathink` |
+| **Outils/Techniques** | MCTSReasoner, UCBSelector, RolloutSimulator |
+| **Fichiers Code** | `src/agent/reasoning/mcts-reasoning.ts` |
+| **Références** | AlphaGo (Silver et al., 2016), RethinkMCTS (Zhang 2024) |
+| **Prérequis** | Ch.04 (Tree-of-Thought) |
+| **Chapitres Liés** | Ch.06 (Repair), Ch.15 (Architecture) |
+
+---
+
+> 💡 **Astuce Pratique**
+>
+> Commencez avec **50 simulations par nœud** pour un bon équilibre performance/coût. Augmentez à 100+ uniquement pour les problèmes complexes où la précision est critique.
+
+---
+
 ## 🎯 5.1 Pourquoi MCTS pour les LLMs ?
 
 ### 5.1.1 ⚠️ Le Problème de l'Évaluation Locale
@@ -624,6 +646,42 @@ Exemple de sortie :
 | **Rollout** | LLM (rapide) ou Exécution (précis) ou Hybride |
 | **Variante** | PUCT pour utiliser les priors du LLM |
 | **Hybride** | ToT génère candidats → MCTS affine |
+
+---
+
+## ⚠️ 5.10.5 Limites et Risques du MCTS
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Coût des simulations** | Chaque rollout = appel LLM ou exécution | Budget consommé rapidement |
+| **Qualité des rollouts** | Simulation approximative ≠ réalité | Mauvaises estimations |
+| **Explosion combinatoire** | Arbre peut devenir énorme | Mémoire/temps limités |
+| **Cold start** | Premières itérations quasi-aléatoires | Besoin de budget minimal |
+| **Sensibilité à C** | Mauvais C = sur/sous-exploration | Tuning nécessaire |
+
+### ⚡ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Timeout sur rollouts** | Moyenne | Moyen | Limites de temps strictes |
+| **Mémoire saturée** | Faible | Élevé | Pruning agressif, transposition tables |
+| **Convergence locale** | Moyenne | Élevé | Augmenter C, forcer exploration |
+| **Coûts excessifs** | Moyenne | Moyen | Budget d'itérations fixe |
+
+### 📊 Quand NE PAS Utiliser MCTS
+
+| Situation | Raison | Alternative |
+|-----------|--------|-------------|
+| Problème à solution unique évidente | Overhead inutile | CoT / ToT simple |
+| Pas de feedback disponible | Rollouts impossibles à évaluer | ToT avec heuristiques |
+| Budget < 20 itérations | Pas assez de données statistiques | Beam Search |
+| Latence critique (< 5s) | Trop lent | Single-shot |
+
+> 📌 **À Retenir** : MCTS excelle quand on peut **simuler le résultat** d'une action (tests, exécution). Sans feedback objectif, préférez ToT. Le sweet spot : 50-100 itérations avec rollouts de 2-5 secondes.
+
+> 💡 **Astuce Pratique** : Commencez avec C=1.4 et 50 itérations. Si l'agent converge trop vite (même branche toujours choisie), augmentez C. S'il explore trop (scores dispersés), diminuez-le.
 
 ---
 

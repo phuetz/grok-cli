@@ -1062,6 +1062,59 @@ export class PluginVerifier {
 
 ---
 
+## ⚠️ 11.7 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Complexité de l'écosystème** | Chaque plugin = dépendance externe | Maintenance accrue |
+| **Compatibilité** | Versions de protocole peuvent diverger | Plugins cassés après mise à jour |
+| **Performance** | Communication inter-process = latence | Overhead par call |
+| **Isolation imparfaite** | Plugins peuvent affecter l'hôte | Stabilité réduite |
+| **Découverte de capacités** | Pas toujours clair ce qu'un plugin peut faire | UX dégradée |
+
+### ⚡ Risques de Sécurité
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Code malveillant dans un plugin** | Moyenne | Critique | Signatures, audit, sandbox |
+| **Élévation de privilèges** | Faible | Critique | Permissions granulaires |
+| **Fuite de données via MCP** | Moyenne | Élevé | Revue des ressources exposées |
+| **Supply chain attack** | Faible | Critique | Vérification des sources |
+| **Plugin abandonné** | Haute | Moyen | Warnings, alternatives |
+
+### 📊 Bonnes Pratiques de Sécurité
+
+| Pratique | Description |
+|----------|-------------|
+| **Vérifier la source** | Installer uniquement depuis des sources de confiance |
+| **Lire les permissions** | Comprendre ce que le plugin demande |
+| **Isoler les plugins sensibles** | Sandbox renforcé pour les plugins douteux |
+| **Auditer régulièrement** | Revoir les plugins installés périodiquement |
+| **Limiter le scope** | N'activer que les outils nécessaires |
+
+> 📌 **À Retenir** : Un système de plugins est une **arme à double tranchant**. Il offre une extensibilité puissante mais ouvre des vecteurs d'attaque. Chaque plugin installé est du code tiers qui s'exécute avec les privilèges de votre agent. Appliquez le même scepticisme que pour installer un package npm : vérifiez la réputation, les permissions, et le code si possible.
+
+> 💡 **Astuce Pratique** : Créez un "plugin de test" en local avant d'installer des plugins tiers. Cela vous permettra de comprendre le modèle de sécurité et de détecter plus facilement les comportements suspects.
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 11
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Plugins et Model Context Protocol |
+| **Plugins** | Extension dynamique sans rebuild |
+| **Interface Plugin** | id, tools, initialize, shutdown |
+| **MCP** | Standard Anthropic, JSON-RPC 2.0 |
+| **Transports** | stdio (local) ou HTTP (distant) |
+| **Ressources** | URI schemes pour exposer des données |
+| **Marketplace** | search, install, uninstall, update |
+| **Sécurité** | Permissions, sandbox, signatures |
+
+---
+
 ## 📝 Points Clés
 
 | Concept | Point clé |

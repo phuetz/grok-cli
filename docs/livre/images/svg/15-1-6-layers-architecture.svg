@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700">
+  <defs>
+    <style>
+      .bg { fill: #f8f9fa; }
+      .layer { rx: 15; stroke-width: 3; }
+      .layer-ui { fill: #e3f2fd; stroke: #1976d2; }
+      .layer-orchestration { fill: #fff3e0; stroke: #f57c00; }
+      .layer-reasoning { fill: #fce4ec; stroke: #c2185b; }
+      .layer-context { fill: #e8f5e9; stroke: #388e3c; }
+      .layer-action { fill: #f3e5f5; stroke: #7b1fa2; }
+      .layer-security { fill: #ffebee; stroke: #d32f2f; }
+      .component { fill: white; stroke: #999; stroke-width: 1.5; rx: 8; }
+      .text-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 22px; font-weight: bold; fill: #0f3460; }
+      .text-layer { font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; font-weight: bold; }
+      .text-component { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10px; fill: #333; }
+      .text-desc { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9px; fill: #666; }
+      .arrow { stroke: #0f3460; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-bidirect { stroke: #666; stroke-width: 1.5; fill: none; }
+      .icon { font-size: 18px; }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0f3460"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="900" height="700"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" class="text-title">Architecture 6 Couches de Grok-CLI</text>
+
+  <!-- Layer 1: Interface (top) -->
+  <rect x="50" y="60" width="800" height="85" class="layer layer-ui"/>
+  <text x="75" y="85" class="icon">🖥️</text>
+  <text x="100" y="85" class="text-layer" fill="#1976d2">INTERFACE</text>
+  <text x="100" y="102" class="text-desc">Interaction utilisateur</text>
+
+  <rect x="220" y="75" width="120" height="55" class="component"/>
+  <text x="280" y="98" text-anchor="middle" class="text-component">ChatInterface</text>
+  <text x="280" y="112" text-anchor="middle" class="text-desc">React + Ink</text>
+
+  <rect x="360" y="75" width="120" height="55" class="component"/>
+  <text x="420" y="98" text-anchor="middle" class="text-component">StreamingText</text>
+  <text x="420" y="112" text-anchor="middle" class="text-desc">Affichage progressif</text>
+
+  <rect x="500" y="75" width="120" height="55" class="component"/>
+  <text x="560" y="98" text-anchor="middle" class="text-component">ToolProgress</text>
+  <text x="560" y="112" text-anchor="middle" class="text-desc">Progression outils</text>
+
+  <rect x="640" y="75" width="120" height="55" class="component"/>
+  <text x="700" y="98" text-anchor="middle" class="text-component">ErrorBoundary</text>
+  <text x="700" y="112" text-anchor="middle" class="text-desc">Crash resilience</text>
+
+  <!-- Arrow down -->
+  <path d="M 450 145 L 450 165" class="arrow"/>
+
+  <!-- Layer 2: Orchestration -->
+  <rect x="50" y="170" width="800" height="85" class="layer layer-orchestration"/>
+  <text x="75" y="195" class="icon">🎯</text>
+  <text x="100" y="195" class="text-layer" fill="#f57c00">ORCHESTRATION</text>
+  <text x="100" y="212" class="text-desc">Coordination globale</text>
+
+  <rect x="220" y="185" width="140" height="55" class="component"/>
+  <text x="290" y="208" text-anchor="middle" class="text-component">GrokAgent</text>
+  <text x="290" y="222" text-anchor="middle" class="text-desc">Boucle agentique (30 max)</text>
+
+  <rect x="380" y="185" width="160" height="55" class="component"/>
+  <text x="460" y="208" text-anchor="middle" class="text-component">MultiAgentCoordinator</text>
+  <text x="460" y="222" text-anchor="middle" class="text-desc">Taches paralleles</text>
+
+  <rect x="560" y="185" width="130" height="55" class="component"/>
+  <text x="625" y="208" text-anchor="middle" class="text-component">ModelRouter</text>
+  <text x="625" y="222" text-anchor="middle" class="text-desc">FrugalGPT routing</text>
+
+  <!-- Arrow down -->
+  <path d="M 450 255 L 450 275" class="arrow"/>
+
+  <!-- Layer 3: Reasoning -->
+  <rect x="50" y="280" width="800" height="85" class="layer layer-reasoning"/>
+  <text x="75" y="305" class="icon">🧠</text>
+  <text x="100" y="305" class="text-layer" fill="#c2185b">RAISONNEMENT</text>
+  <text x="100" y="322" class="text-desc">Strategies de resolution</text>
+
+  <rect x="220" y="295" width="120" height="55" class="component"/>
+  <text x="280" y="318" text-anchor="middle" class="text-component">TreeOfThought</text>
+  <text x="280" y="332" text-anchor="middle" class="text-desc">Exploration BFS/DFS</text>
+
+  <rect x="360" y="295" width="120" height="55" class="component"/>
+  <text x="420" y="318" text-anchor="middle" class="text-component">MCTSReasoner</text>
+  <text x="420" y="332" text-anchor="middle" class="text-desc">Monte-Carlo</text>
+
+  <rect x="500" y="295" width="120" height="55" class="component"/>
+  <text x="560" y="318" text-anchor="middle" class="text-component">IterativeRepair</text>
+  <text x="560" y="332" text-anchor="middle" class="text-desc">ChatRepair loop</text>
+
+  <rect x="640" y="295" width="120" height="55" class="component"/>
+  <text x="700" y="318" text-anchor="middle" class="text-component">HybridReasoner</text>
+  <text x="700" y="332" text-anchor="middle" class="text-desc">Combinaison auto</text>
+
+  <!-- Arrow down -->
+  <path d="M 450 365 L 450 385" class="arrow"/>
+
+  <!-- Layer 4: Context & Memory -->
+  <rect x="50" y="390" width="800" height="85" class="layer layer-context"/>
+  <text x="75" y="415" class="icon">💾</text>
+  <text x="100" y="415" class="text-layer" fill="#388e3c">CONTEXTE & MEMOIRE</text>
+  <text x="100" y="432" class="text-desc">Gestion de l'information</text>
+
+  <rect x="180" y="405" width="130" height="55" class="component"/>
+  <text x="245" y="428" text-anchor="middle" class="text-component">RAGPipeline</text>
+  <text x="245" y="442" text-anchor="middle" class="text-desc">Retrieval augmented</text>
+
+  <rect x="325" y="405" width="130" height="55" class="component"/>
+  <text x="390" y="428" text-anchor="middle" class="text-component">ContextCompressor</text>
+  <text x="390" y="442" text-anchor="middle" class="text-desc">-70% tokens</text>
+
+  <rect x="470" y="405" width="130" height="55" class="component"/>
+  <text x="535" y="428" text-anchor="middle" class="text-component">UnifiedMemory</text>
+  <text x="535" y="442" text-anchor="middle" class="text-desc">4 types memoire</text>
+
+  <rect x="615" y="405" width="130" height="55" class="component"/>
+  <text x="680" y="428" text-anchor="middle" class="text-component">SemanticCache</text>
+  <text x="680" y="442" text-anchor="middle" class="text-desc">68% reduction API</text>
+
+  <!-- Arrow down -->
+  <path d="M 450 475 L 450 495" class="arrow"/>
+
+  <!-- Layer 5: Actions -->
+  <rect x="50" y="500" width="800" height="85" class="layer layer-action"/>
+  <text x="75" y="525" class="icon">⚡</text>
+  <text x="100" y="525" class="text-layer" fill="#7b1fa2">ACTIONS</text>
+  <text x="100" y="542" class="text-desc">Execution des taches</text>
+
+  <rect x="180" y="515" width="120" height="55" class="component"/>
+  <text x="240" y="538" text-anchor="middle" class="text-component">ToolRegistry</text>
+  <text x="240" y="552" text-anchor="middle" class="text-desc">41 outils</text>
+
+  <rect x="315" y="515" width="130" height="55" class="component"/>
+  <text x="380" y="538" text-anchor="middle" class="text-component">ParallelExecutor</text>
+  <text x="380" y="552" text-anchor="middle" class="text-desc">LLMCompiler 4.6x</text>
+
+  <rect x="460" y="515" width="110" height="55" class="component"/>
+  <text x="515" y="538" text-anchor="middle" class="text-component">MCPClient</text>
+  <text x="515" y="552" text-anchor="middle" class="text-desc">Plugins externes</text>
+
+  <rect x="585" y="515" width="120" height="55" class="component"/>
+  <text x="645" y="538" text-anchor="middle" class="text-component">HookManager</text>
+  <text x="645" y="552" text-anchor="middle" class="text-desc">Pre/PostToolUse</text>
+
+  <!-- Arrow down -->
+  <path d="M 450 585 L 450 605" class="arrow"/>
+
+  <!-- Layer 6: Security (bottom) -->
+  <rect x="50" y="610" width="800" height="75" class="layer layer-security"/>
+  <text x="75" y="640" class="icon">🔒</text>
+  <text x="100" y="640" class="text-layer" fill="#d32f2f">SECURITE</text>
+  <text x="100" y="655" class="text-desc">Protection systeme</text>
+
+  <rect x="220" y="625" width="130" height="45" class="component"/>
+  <text x="285" y="645" text-anchor="middle" class="text-component">ApprovalModes</text>
+  <text x="285" y="658" text-anchor="middle" class="text-desc">3 niveaux</text>
+
+  <rect x="370" y="625" width="110" height="45" class="component"/>
+  <text x="425" y="645" text-anchor="middle" class="text-component">Sandbox</text>
+  <text x="425" y="658" text-anchor="middle" class="text-desc">Isolation</text>
+
+  <rect x="500" y="625" width="120" height="45" class="component"/>
+  <text x="560" y="645" text-anchor="middle" class="text-component">DataRedactor</text>
+  <text x="560" y="658" text-anchor="middle" class="text-desc">Masquage secrets</text>
+
+  <rect x="640" y="625" width="120" height="45" class="component"/>
+  <text x="700" y="645" text-anchor="middle" class="text-component">AuditLogger</text>
+  <text x="700" y="658" text-anchor="middle" class="text-desc">Journalisation</text>
+
+  <!-- Side annotations -->
+  <text x="870" y="105" text-anchor="end" class="text-desc" fill="#1976d2">React 18 + Ink 4</text>
+  <text x="870" y="215" text-anchor="end" class="text-desc" fill="#f57c00">Max 30 rounds</text>
+  <text x="870" y="325" text-anchor="end" class="text-desc" fill="#c2185b">Adaptatif</text>
+  <text x="870" y="435" text-anchor="end" class="text-desc" fill="#388e3c">JetBrains 2024</text>
+  <text x="870" y="545" text-anchor="end" class="text-desc" fill="#7b1fa2">JSON-RPC 2.0</text>
+  <text x="870" y="650" text-anchor="end" class="text-desc" fill="#d32f2f">OWASP LLM</text>
+
+  <!-- Source reference -->
+  <text x="870" y="690" text-anchor="end" font-size="10" fill="#999">Ch.15 - Architecture Complete</text>
+</svg>

@@ -72,6 +72,28 @@
 
 ---
 
+## 📊 Tableau Synthétique — Chapitre 04
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Tree-of-Thought — Raisonnement Arborescent |
+| **Objectifs** | • Comprendre les limites du raisonnement linéaire<br>• Implémenter ToT avec BFS/DFS<br>• Utiliser les mots-clés think/megathink |
+| **Concepts Clés** | Chain-of-Thought, Tree-of-Thought, BFS, DFS, scoring |
+| **Mots-Clés** | `ToT`, `CoT`, `thought`, `branch`, `prune`, `evaluate` |
+| **Outils/Techniques** | TreeOfThought, Evaluator, Pruner |
+| **Fichiers Code** | `src/agent/reasoning/tot-reasoning.ts` |
+| **Références** | Tree-of-Thoughts (Yao et al., NeurIPS 2023) |
+| **Prérequis** | Ch.03 (Anatomie Agent) |
+| **Chapitres Liés** | Ch.05 (MCTS), Ch.06 (Repair) |
+
+---
+
+> 📌 **À Retenir**
+>
+> **ToT = CoT + exploration parallèle + évaluation**. Au lieu de suivre un seul chemin de raisonnement, ToT explore plusieurs hypothèses simultanément et garde les plus prometteuses.
+
+---
+
 ## 🎯 4.1 Le Problème du Raisonnement Linéaire
 
 ### 4.1.1 🔗 La Limite Fondamentale
@@ -278,16 +300,44 @@ Si vous trouvez un score > 0.95, arrêtez tout et retournez la solution ! Pas be
 
 ---
 
-## ⚠️ 4.8 Limitations : Quand Ne Pas Utiliser ToT
+## ⚠️ 4.8 Limites et Risques du ToT
 
-ToT est puissant mais coûteux.
+### 🚧 Limites Techniques
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Coût exponentiel** | B^D appels API (branching^depth) | Budget épuisé rapidement |
+| **Évaluation imparfaite** | LLM peut mal noter des bonnes pistes | Branches prometteuses abandonnées |
+| **Profondeur limitée** | Au-delà de 4-5 niveaux, qualité décline | Solutions superficielles |
+| **Pas de rollback** | Branches abandonnées = perdues | Peut manquer la bonne solution |
+| **Dépendance au prompt** | Qualité très sensible au prompt d'évaluation | Résultats inconsistants |
+
+### ⚡ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Explosion des coûts** | Haute | Élevé | Beam Search + budget strict |
+| **Paralysie d'analyse** | Moyenne | Moyen | Limite de profondeur, early stopping |
+| **Faux positifs (bonnes notes, mauvaises solutions)** | Moyenne | Élevé | Validation par exécution |
+| **Convergence prématurée** | Moyenne | Moyen | Exploration forcée (température) |
+
+### 📊 Quand NE PAS Utiliser ToT
+
+| Situation | Raison | Alternative |
+|-----------|--------|-------------|
+| Tâches simples (< 3 étapes) | Overhead >> bénéfice | Appel direct |
+| Budget très limité | Coût exponentiel | CoT simple |
+| Besoin de rapidité | Latence multipliée | Single-shot |
+| Solution unique attendue | Exploration inutile | Prompt ciblé |
+
+**Estimations de coût :**
 
 | Configuration | Appels max | Coût estimé |
 |:--------------|:----------:|:-----------:|
 | Branching=3, Depth=4 | 3⁴ = 81 | ~$0.40 |
 | Branching=4, Depth=4 | 4⁴ = 256 | ~$1.30 |
 
-> ⚠️ **Règle** : N'utilisez ToT que pour les problèmes complexes (debugging difficile, architecture). Pour "Quelle heure est-il ?", un appel direct suffit.
+> 📌 **À Retenir** : ToT est un **investissement** — utilisez-le uniquement quand la valeur du problème justifie le coût. Pour un bug critique en production, 256 appels API valent le coup. Pour formatter un fichier JSON, c'est du gaspillage.
 
 ---
 

@@ -52,6 +52,22 @@ Elle prit un marqueur rouge et commença à tracer les connexions entre les comp
 
 ---
 
+## 📊 Tableau Synthétique — Chapitre 03
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Anatomie d'un Agent Autonome |
+| **Objectifs** | • Comprendre les 6 composants d'un agent<br>• Implémenter la boucle ReAct<br>• Configurer la sécurité multi-couches |
+| **Concepts Clés** | Orchestrateur, Reasoning, Memory, Action, Learning, Security |
+| **Mots-Clés** | `agent`, `ReAct`, `tool-use`, `context-window`, `sandbox` |
+| **Outils/Techniques** | GrokAgent, ToolRegistry, SecurityManager |
+| **Fichiers Code** | `src/agent/grok-agent.ts`, `src/tools/`, `src/security/` |
+| **Références** | ReAct (Yao 2022), Cognitive Architectures (Sumers 2023) |
+| **Prérequis** | Ch.01 (LLMs), Ch.02 (Agents) |
+| **Chapitres Liés** | Ch.04 (ToT), Ch.10 (Tools), Ch.14 (Memory) |
+
+---
+
 ## 3.1 Vue d'Ensemble : Les Six Composants
 
 Un agent n'est pas simplement un LLM avec des outils. Cette vision réductrice passe à côté de l'essentiel. Un agent est une **architecture cognitive** où plusieurs systèmes spécialisés collaborent pour produire un comportement intelligent et autonome. Chaque composant a un rôle précis, et c'est leur interaction harmonieuse qui produit ce que nous percevons comme de l'intelligence artificielle appliquée.
@@ -63,6 +79,10 @@ Pour comprendre cette architecture, il faut d'abord abandonner l'idée que l'age
 L'illustration ci-dessous représente l'architecture complète d'un agent cognitif moderne. Remarquez comment l'orchestrateur occupe la position centrale, coordonnant les cinq autres composants spécialisés :
 
 ![Architecture cognitive d'un agent autonome](images/agent-architecture.svg)
+
+> 📌 **À Retenir**
+>
+> Un agent n'est pas un LLM amélioré — c'est une **architecture cognitive complète** où 6 composants spécialisés collaborent. Le LLM n'est que le "cerveau", pas l'agent entier.
 
 Cette architecture s'organise en couches logiques :
 
