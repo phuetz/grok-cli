@@ -57,3 +57,6 @@ export interface ConfirmationState {
   skipThisSession: boolean;
   pendingOperation: boolean;
 }
+
+// Cache types
+export * from './cache-types.js';
