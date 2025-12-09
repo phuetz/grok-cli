@@ -3929,7 +3929,129 @@ function isAbsolutelyForbidden(command: string): boolean {
 └── .cache/                           # Cache local au projet
     └── context-summary.json          # Résumé du contexte courant
 </code></pre>
-<h3>3.8.2 Synchronisation et Cohérence</h3>
+<h3>3.8.2 Schéma Complet de la Base de Données</h3>
+<p>La base SQLite <code>grok.db</code> contient 14 tables qui gèrent toute la persistance de l&#39;agent :</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th align="center">Icône</th>
+<th>Description</th>
+<th>Données Clés</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>memories</code></td>
+<td align="center">🧠</td>
+<td>Mémoire long terme avec embeddings vectoriels</td>
+<td>content, embedding (384d), importance, type</td>
+</tr>
+<tr>
+<td><code>sessions</code></td>
+<td align="center">📅</td>
+<td>Sessions de conversation avec coûts</td>
+<td>tokens_in/out, total_cost, tool_calls_count</td>
+</tr>
+<tr>
+<td><code>messages</code></td>
+<td align="center">💬</td>
+<td>Messages individuels par session</td>
+<td>role, content, tool_calls, tokens</td>
+</tr>
+<tr>
+<td><code>code_embeddings</code></td>
+<td align="center">🔍</td>
+<td>Embeddings vectoriels du code</td>
+<td>chunk_text, embedding, symbol_type/name</td>
+</tr>
+<tr>
+<td><code>tool_stats</code></td>
+<td align="center">📊</td>
+<td>Statistiques d&#39;utilisation des outils</td>
+<td>success/failure_count, avg_time_ms, cache_hits</td>
+</tr>
+<tr>
+<td><code>repair_learning</code></td>
+<td align="center">🔧</td>
+<td>Patterns de réparation appris</td>
+<td>error_pattern, strategy, success_rate</td>
+</tr>
+<tr>
+<td><code>analytics</code></td>
+<td align="center">📈</td>
+<td>Données analytiques agrégées</td>
+<td>date, tokens, cost, requests, errors</td>
+</tr>
+<tr>
+<td><code>conventions</code></td>
+<td align="center">📋</td>
+<td>Conventions de code par projet</td>
+<td>category, pattern, confidence, examples</td>
+</tr>
+<tr>
+<td><code>checkpoints</code></td>
+<td align="center">💾</td>
+<td>Points de sauvegarde pour undo</td>
+<td>file_count, total_size, description</td>
+</tr>
+<tr>
+<td><code>checkpoint_files</code></td>
+<td align="center">📄</td>
+<td>Fichiers individuels d&#39;un checkpoint</td>
+<td>file_path, content, content_hash</td>
+</tr>
+<tr>
+<td><code>cache</code></td>
+<td align="center">⚡</td>
+<td>Cache générique avec TTL</td>
+<td>key, value, embedding, expires_at</td>
+</tr>
+<tr>
+<td><code>prospective_tasks</code></td>
+<td align="center">📋</td>
+<td>Tâches futures avec triggers</td>
+<td>title, priority, status, trigger, progress</td>
+</tr>
+<tr>
+<td><code>goals</code></td>
+<td align="center">🎯</td>
+<td>Objectifs composés de tâches</td>
+<td>title, tasks[], progress, milestones[]</td>
+</tr>
+<tr>
+<td><code>reminders</code></td>
+<td align="center">🔔</td>
+<td>Rappels contextuels</td>
+<td>message, trigger_at, recurring, dismissed</td>
+</tr>
+</tbody></table>
+<p><strong>Caractéristiques techniques :</strong></p>
+<ul>
+<li><strong>Mode WAL</strong> (Write-Ahead Logging) pour la concurrence</li>
+<li><strong>Embeddings vectoriels</strong> (Float32Array binaire) pour la recherche sémantique</li>
+<li><strong>Colonnes calculées</strong> (GENERATED ALWAYS AS) pour les taux de succès</li>
+<li><strong>Migrations automatiques</strong> pour les évolutions de schéma</li>
+<li><strong>Index optimisés</strong> pour les requêtes fréquentes</li>
+</ul>
+<pre><code class="language-sql">-- Exemple : Requête pour trouver les mémoires les plus pertinentes
+SELECT id, content, importance, access_count
+FROM memories
+WHERE type = &#39;pattern&#39;
+  AND project_id = ?
+  AND importance &gt; 0.5
+ORDER BY importance DESC, access_count DESC
+LIMIT 10;
+
+-- Exemple : Statistiques d&#39;utilisation par outil
+SELECT tool_name,
+       total_calls,
+       success_rate,
+       avg_time_ms
+FROM tool_stats
+WHERE project_id = ?
+ORDER BY total_calls DESC;
+</code></pre>
+<h3>3.8.3 Synchronisation et Cohérence</h3>
 <p>Les différentes couches de stockage sont synchronisées pour maintenir la cohérence :</p>
 <pre><code class="language-typescript">class PersistenceManager {
   private db: Database;

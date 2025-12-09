@@ -1049,7 +1049,56 @@ Tous les composants de l'agent reposent sur une couche de persistance qui stocke
     └── context-summary.json          # Résumé du contexte courant
 ```
 
-### 3.8.2 Synchronisation et Cohérence
+### 3.8.2 Schéma Complet de la Base de Données
+
+La base SQLite `grok.db` contient 14 tables qui gèrent toute la persistance de l'agent :
+
+| Table | Icône | Description | Données Clés |
+|-------|:-----:|-------------|--------------|
+| `memories` | 🧠 | Mémoire long terme avec embeddings vectoriels | content, embedding (384d), importance, type |
+| `sessions` | 📅 | Sessions de conversation avec coûts | tokens_in/out, total_cost, tool_calls_count |
+| `messages` | 💬 | Messages individuels par session | role, content, tool_calls, tokens |
+| `code_embeddings` | 🔍 | Embeddings vectoriels du code | chunk_text, embedding, symbol_type/name |
+| `tool_stats` | 📊 | Statistiques d'utilisation des outils | success/failure_count, avg_time_ms, cache_hits |
+| `repair_learning` | 🔧 | Patterns de réparation appris | error_pattern, strategy, success_rate |
+| `analytics` | 📈 | Données analytiques agrégées | date, tokens, cost, requests, errors |
+| `conventions` | 📋 | Conventions de code par projet | category, pattern, confidence, examples |
+| `checkpoints` | 💾 | Points de sauvegarde pour undo | file_count, total_size, description |
+| `checkpoint_files` | 📄 | Fichiers individuels d'un checkpoint | file_path, content, content_hash |
+| `cache` | ⚡ | Cache générique avec TTL | key, value, embedding, expires_at |
+| `prospective_tasks` | 📋 | Tâches futures avec triggers | title, priority, status, trigger, progress |
+| `goals` | 🎯 | Objectifs composés de tâches | title, tasks[], progress, milestones[] |
+| `reminders` | 🔔 | Rappels contextuels | message, trigger_at, recurring, dismissed |
+
+**Caractéristiques techniques :**
+
+- **Mode WAL** (Write-Ahead Logging) pour la concurrence
+- **Embeddings vectoriels** (Float32Array binaire) pour la recherche sémantique
+- **Colonnes calculées** (GENERATED ALWAYS AS) pour les taux de succès
+- **Migrations automatiques** pour les évolutions de schéma
+- **Index optimisés** pour les requêtes fréquentes
+
+```sql
+-- Exemple : Requête pour trouver les mémoires les plus pertinentes
+SELECT id, content, importance, access_count
+FROM memories
+WHERE type = 'pattern'
+  AND project_id = ?
+  AND importance > 0.5
+ORDER BY importance DESC, access_count DESC
+LIMIT 10;
+
+-- Exemple : Statistiques d'utilisation par outil
+SELECT tool_name,
+       total_calls,
+       success_rate,
+       avg_time_ms
+FROM tool_stats
+WHERE project_id = ?
+ORDER BY total_calls DESC;
+```
+
+### 3.8.3 Synchronisation et Cohérence
 
 Les différentes couches de stockage sont synchronisées pour maintenir la cohérence :
 
