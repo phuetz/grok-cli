@@ -1,438 +1,246 @@
-# 🌳 Chapitre 4 : Tree-of-Thought (ToT)
+# Chapitre 4 : Tree-of-Thought — Quand le Raisonnement Linéaire Échoue
 
 ---
 
-## 🎬 Scène d'ouverture : L'Impasse du Raisonnement Linéaire
+## 1. Le Problème
 
-*Mardi, 16h47. Lina fixait son écran depuis une heure. Le même test échouait de manière intermittente — parfois il passait, parfois non. Son agent avait déjà proposé trois solutions... qui n'avaient rien résolu.*
+Votre agent propose des solutions au hasard. Il essaie une chose, ça échoue, il essaie autre chose sans rapport. Comme un gamin qui appuie sur tous les boutons.
 
-**Lina** *(fermant rageusement la quatrième suggestion)* : "C'est comme si tu tirais au hasard !"
+**L'erreur classique** : Le LLM génère token par token. S'il s'engage sur une mauvaise piste au token 50, il continue jusqu'au bout. Pas de retour en arrière possible. Résultat : 4 tentatives de fix, 4 échecs, 0 apprentissage entre les tentatives.
 
-*Marc passa la tête par la porte, attiré par le bruit.*
-
-**Marc** : "Problème ?"
-
-**Lina** : "Le pire genre. Un test flaky. L'agent me propose des solutions, mais elles sont toutes... linéaires. Il essaie une chose, ça marche pas, il essaie autre chose. Comme un gamin qui appuie sur tous les boutons."
-
-**Marc** *(entrant)* : "Montre-moi."
-
-*Lina fit défiler l'historique des suggestions de l'agent. Chaque réponse suivait le même pattern : une hypothèse, une solution, un échec, une nouvelle hypothèse sans lien avec la précédente.*
-
-**Marc** : "Il ne construit pas sur ses erreurs. Il recommence à zéro à chaque fois."
-
-**Lina** : "Exactement !"
-
-*Elle se leva et alla au tableau blanc.*
-
-**Lina** : "Regarde comment MOI je résoudrais ce problème."
-
-*Elle commença à écrire, parlant en même temps :*
-
-**Lina** : "D'abord, je liste toutes les hypothèses possibles."
-- **Hypothèse 1** : Race condition ?
-- **Hypothèse 2** : État partagé corrompu ?
-- **Hypothèse 3** : Timing du mock ?
-- **Hypothèse 4** : Fuite de mémoire entre tests ?
-
-**Lina** : "Ensuite, je les ÉVALUE. Pas au hasard — avec mon expérience."
-
-*Elle nota des scores à côté de chaque hypothèse :*
-- Race condition : **80%** *(comportement aléatoire classique)*
-- État partagé : **60%** *(possible mais les tests sont isolés)*
-- Timing mock : **40%** *(peu probable, les mocks sont synchrones)*
-- Fuite mémoire : **20%** *(les tests sont courts)*
-
-**Marc** *(comprenant)* : "Tu explores en priorité les pistes les plus prometteuses."
-
-**Lina** : "Et je DESCENDS dans chaque piste. Race condition — OK, où ? Accès concurrent à une variable ? À un fichier ? À une connexion DB ?"
-
-*Elle dessina des branches partant de "Race condition".*
-
-**Lina** : "Je génère des sous-hypothèses. J'en évalue certaines. J'en abandonne d'autres quand elles mènent nulle part."
-
-*Elle recula pour voir l'ensemble. Un arbre était apparu sur le tableau.*
-
-**Marc** *(lentement)* : "Tu ne penses pas en ligne droite."
-
-**Lina** *(les yeux brillants)* : "Je pense en **arbre**. J'explore plusieurs chemins en parallèle, j'évalue lesquels sont prometteurs, et j'abandonne les impasses. C'est ça, le raisonnement humain."
-
-*Elle se retourna vers son écran.*
-
-**Lina** : "Et si j'apprenais à mon agent à faire pareil ?"
-
-**Marc** : "Tree-of-Thought."
-
-**Lina** : "Tu connais ?"
-
-**Marc** *(souriant)* : "Shunyu Yao, Princeton, 2023. Le papier qui a changé la façon dont on fait raisonner les LLMs."
-
-*Lina attrapa son carnet.*
-
-**Lina** : "Raconte."
+```typescript
+// ❌ Raisonnement linéaire : une seule piste à la fois
+const fix1 = await llm.chat("Bug: NaN. Fix?");     // "Ajoute un try/catch"
+// Échec
+const fix2 = await llm.chat("Toujours NaN. Fix?"); // "Vérifie les types" (sans lien avec fix1)
+// Échec
+const fix3 = await llm.chat("Encore NaN. Fix?");   // "Utilise parseInt" (random)
+// L'agent ne CONSTRUIT PAS sur ses échecs
+```
 
 ---
 
-## 📊 Tableau Synthétique — Chapitre 04
-
-| Aspect | Détails |
-|--------|---------|
-| **Titre** | Tree-of-Thought — Raisonnement Arborescent |
-| **Objectifs** | • Comprendre les limites du raisonnement linéaire<br>• Implémenter ToT avec BFS/DFS<br>• Utiliser les mots-clés think/megathink |
-| **Concepts Clés** | Chain-of-Thought, Tree-of-Thought, BFS, DFS, scoring |
-| **Mots-Clés** | `ToT`, `CoT`, `thought`, `branch`, `prune`, `evaluate` |
-| **Outils/Techniques** | TreeOfThought, Evaluator, Pruner |
-| **Fichiers Code** | `src/agent/reasoning/tot-reasoning.ts` |
-| **Références** | Tree-of-Thoughts (Yao et al., NeurIPS 2023) |
-| **Prérequis** | Ch.03 (Anatomie Agent) |
-| **Chapitres Liés** | Ch.05 (MCTS), Ch.06 (Repair) |
-
----
-
-> 📌 **À Retenir**
->
-> **ToT = CoT + exploration parallèle + évaluation**. Au lieu de suivre un seul chemin de raisonnement, ToT explore plusieurs hypothèses simultanément et garde les plus prometteuses.
-
----
-
-## 🎯 4.1 Le Problème du Raisonnement Linéaire
-
-### 4.1.1 🔗 La Limite Fondamentale
-
-Les LLMs génèrent du texte **token par token**, chaque token dépendant des précédents. C'est la génération autorégressive.
-
-![Génération Autorégressive](images/autoregressive_gen.svg)
-
-Si le modèle s'engage sur une mauvaise piste au token 50, il doit continuer sur cette piste jusqu'à la fin. **Pas de retour en arrière possible.**
-
-### 4.1.2 🎮 Exemple Concret : Le Game of 24
-
-Le **Game of 24** est un benchmark classique : utiliser quatre nombres avec +, -, ×, ÷ pour obtenir 24.
-
-![Tree-of-Thought vs Linear](images/tot_vs_cot.svg)
-
-### 4.1.3 🧠 Pourquoi Ça Marche
-
-ToT imite le raisonnement humain naturel :
-
-| 🧠 Ce que fait l'humain | 🌳 Ce que fait ToT |
-|:------------------------|:-------------------|
-| "Et si j'essayais X ?" | Générer N pensées candidates |
-| "Cette piste a l'air prometteuse" | Scorer chaque pensée (0-1) |
-| "Je continue sur celle-ci" | Sélectionner les meilleures |
-| "Non, mauvaise idée, revenons" | Élaguer et backtracker |
-
-> 💡 **Insight clé** : Les humains ne pensent pas en ligne droite. Ils explorent, évaluent, abandonnent, recommencent. ToT donne cette capacité aux LLMs.
-
----
-
-## 📐 4.2 L'Algorithme Tree-of-Thought
-
-### 4.2.1 🏗️ Structure de Données
-
-Chaque pensée est un **nœud** dans un arbre :
+## 2. La Solution Rapide : ToT en 50 Lignes
 
 ```typescript
 interface ThoughtNode {
-  id: string;
-  content: string;           // Le contenu de cette pensée
-  score: number;             // Évaluation de la promesse (0-1)
-  depth: number;             // Profondeur dans l'arbre
-  parent: ThoughtNode | null;
+  content: string;
+  score: number;      // 0-1, promesse de cette piste
   children: ThoughtNode[];
-  state: 'pending' | 'expanded' | 'pruned' | 'solution';
-  metadata: {
-    generatedAt: Date;
-    evaluatedBy: 'self' | 'vote' | 'execution';
-    confidence: number;
-  };
 }
 
-interface ThoughtTree {
-  root: ThoughtNode;
-  problem: string;
-  maxDepth: number;
-  branchingFactor: number;   // Combien d'enfants par nœud
-  solutions: ThoughtNode[];  // Solutions trouvées
+async function treeOfThought(problem: string, options = {
+  branching: 3,       // Hypothèses par niveau
+  depth: 3,           // Profondeur max
+  beamWidth: 2        // Garder les N meilleures
+}): Promise<string> {
+
+  // Générer les hypothèses initiales
+  let currentLevel: ThoughtNode[] = await generateHypotheses(problem, options.branching);
+
+  // Évaluer et scorer
+  for (const node of currentLevel) {
+    node.score = await evaluate(node.content, problem);
+  }
+
+  // Beam Search : explorer niveau par niveau
+  for (let d = 0; d < options.depth; d++) {
+    // Garder les meilleures pistes
+    currentLevel.sort((a, b) => b.score - a.score);
+    const best = currentLevel.slice(0, options.beamWidth);
+
+    // Early stopping : solution trouvée ?
+    if (best[0].score > 0.95) {
+      return best[0].content;
+    }
+
+    // Développer chaque piste
+    const nextLevel: ThoughtNode[] = [];
+    for (const node of best) {
+      const children = await expand(node, problem, options.branching);
+      for (const child of children) {
+        child.score = await evaluate(child.content, problem);
+      }
+      nextLevel.push(...children);
+    }
+
+    currentLevel = nextLevel;
+  }
+
+  // Retourner la meilleure solution trouvée
+  return currentLevel.sort((a, b) => b.score - a.score)[0].content;
+}
+
+async function generateHypotheses(problem: string, n: number): Promise<ThoughtNode[]> {
+  const response = await llm.chat(`
+    Problème: ${problem}
+    Génère ${n} hypothèses DISTINCTES pour résoudre ce problème.
+    Format JSON: [{"content": "hypothèse 1"}, ...]
+  `);
+  return JSON.parse(response);
+}
+
+async function evaluate(thought: string, problem: string): Promise<number> {
+  const response = await llm.chat(`
+    Problème: ${problem}
+    Pensée: ${thought}
+    Score de 0 à 1 (0=hors sujet, 1=solution). Réponds UNIQUEMENT un nombre.
+  `);
+  return parseFloat(response);
+}
+
+async function expand(node: ThoughtNode, problem: string, n: number): Promise<ThoughtNode[]> {
+  const response = await llm.chat(`
+    Problème: ${problem}
+    Piste actuelle: ${node.content}
+    Développe ${n} sous-hypothèses pour aller plus loin.
+    Format JSON: [{"content": "sous-hypothèse 1"}, ...]
+  `);
+  return JSON.parse(response);
 }
 ```
 
-### 4.2.2 🔄 Les Quatre Phases
+---
 
-![Phases ToT](images/tot_phases.svg)
+## 3. Deep Dive : Les 3 Stratégies de Recherche
 
-1.  **Décomposer** : Casser le problème en étapes.
-2.  **Générer** : Créer plusieurs options pour la prochaine étape.
-3.  **Évaluer** : Juger chaque option.
-4.  **Sélectionner** : Garder les meilleures et recommencer.
+### BFS (Breadth-First Search)
 
-### 4.2.3 🌲 Visualisation d'un Arbre
+```
+Niveau 1: [A, B, C] → évaluer tous
+Niveau 2: [A1, A2, B1, B2, C1, C2] → évaluer tous
+...
+```
 
-![Tree-of-Thought Example](images/tot_example_tree.svg)
+**Quand l'utiliser** : Vous ne savez pas du tout où est la solution. Exploration exhaustive.
+
+**Coût** : `branching^depth` appels. Avec B=3, D=4 → 81 appels (~$0.40)
+
+### DFS (Depth-First Search)
+
+```
+A → A1 → A1a → A1a1 (impasse)
+    ↩ A1b → Solution!
+```
+
+**Quand l'utiliser** : Une solution existe sûrement dans une des branches. Économe en mémoire.
+
+**Piège** : Peut s'enliser dans une impasse pendant longtemps.
+
+### Beam Search (Recommandé)
+
+```
+Niveau 1: [A=0.8, B=0.6, C=0.4] → garder [A, B]
+Niveau 2: [A1=0.9, A2=0.7, B1=0.5, B2=0.3] → garder [A1, A2]
+...
+```
+
+**Quand l'utiliser** : Meilleur compromis qualité/coût. C'est ce que vous voulez 90% du temps.
+
+**Coût** : `branching × beamWidth × depth` appels. Avec B=3, K=2, D=4 → 24 appels (~$0.12)
 
 ---
 
-## 🧭 4.3 Les Stratégies de Recherche
+## 4. Edge Cases et Pièges
 
-Il existe plusieurs façons de parcourir l'arbre. Le choix de la stratégie impacte fortement les résultats.
-
-### 4.3.1 📊 Comparaison des Stratégies
-
-| 🧭 Stratégie | 📝 Description | ✅ Avantages | ⚠️ Inconvénients |
-|:-------------|:---------------|:-------------|:-----------------|
-| **BFS** | Explorer tous les nœuds d'un niveau avant le suivant | Ne rate pas de solution proche | Coûteux en mémoire et appels |
-| **DFS** | Explorer une branche jusqu'au bout | Économe en mémoire | Peut s'enliser dans une impasse |
-| **Beam** | Garder les K meilleurs à chaque niveau | Bon compromis | Peut élaguer une bonne branche |
-
-### 4.3.2 📐 Visualisation des Stratégies
-
-![Stratégies de Recherche](images/search_strategies.svg)
-
-### 4.3.5 🎯 Configuration Recommandée par Tâche
-
-| 🎯 Type de Tâche | 🧭 Stratégie | 🌿 Branching | 📏 Depth | 📊 Beam |
-|:-----------------|:-------------|:------------:|:--------:|:-------:|
-| Bug simple | BFS | 3 | 2 | 3 |
-| Bug complexe | Beam | 4 | 4 | 3 |
-| Refactoring | DFS | 2 | 6 | 2 |
-| Architecture | Beam | 5 | 3 | 4 |
-| Optimisation | Beam | 4 | 5 | 3 |
-
----
-
-## ⚖️ 4.4 L'Évaluation des Pensées
-
-L'évaluation est **critique** — une mauvaise évaluation mène à de mauvaises décisions d'élagage.
-
-### 4.4.1 📊 Trois Méthodes d'Évaluation
-
-| 🔧 Méthode | 📝 Description | ✅ Avantages | ⚠️ Inconvénients |
-|:-----------|:---------------|:-------------|:-----------------|
-| **Self** | Le LLM évalue ses propres pensées | Simple, un seul appel | Biais vers ses propres idées |
-| **Vote** | Plusieurs évaluations, puis moyenne | Plus robuste | Plus d'appels API |
-| **Execution** | Exécuter le code et vérifier | Objectif, précis | Seulement pour le code |
-
-### 🧪 Laboratoire : Implémenter une Auto-évaluation
-
-Voici comment implémenter une évaluation robuste avec un LLM :
+### Piège 1 : Évaluation qui favorise le verbeux
 
 ```typescript
-async function selfEvaluate(thought: ThoughtNode, problem: string): Promise<number> {
-  const prompt = `
-    Problème original : ${problem}
+// ❌ Le LLM donne des scores élevés aux réponses longues
+const thought1 = "Vérifier les null";           // Score: 0.6
+const thought2 = "Il faudrait implémenter une vérification exhaustive..."; // Score: 0.85
 
-    Pensée à évaluer : ${thought.content}
-
-    Évalue cette pensée sur une échelle de 0 à 1 :
-    - 0.0-0.2 : Hors sujet ou fausse
-    - 0.3-0.4 : Peu prometteuse
-    - 0.5-0.6 : Pertinente, mérite exploration
-    - 0.7-0.8 : Prometteuse, probablement sur la bonne piste
-    - 0.9-1.0 : Excellente, très probablement la solution
-
-    Réponds UNIQUEMENT avec un nombre flottant (ex: 0.85).
-  `;
-
-  const response = await llm.complete(prompt);
-  return parseFloat(response.trim());
-}
+// ✅ Forcer une évaluation structurée
+const prompt = `
+  Évalue sur 3 critères (0-1 chacun):
+  1. Pertinence directe au problème
+  2. Actionnable immédiatement
+  3. Probabilité de résoudre le bug
+  Score final = moyenne des 3
+`;
 ```
 
----
+**Contournement** : Utiliser des critères explicites, pas juste "note de 0 à 1".
 
-## 💻 4.5 Implémentation Grok-CLI
-
-### 4.5.1 📁 Architecture du Module
-
-```
-src/agent/reasoning/
-├── index.ts                 # Point d'entrée, export
-├── tree-of-thought.ts       # 🌳 Implémentation principale
-├── thought-generator.ts     # 🌱 Génération de pensées
-├── thought-evaluator.ts     # ⚖️ Évaluation
-├── search-strategies.ts     # 🧭 BFS, DFS, Beam
-├── types.ts                 # 📐 Types TypeScript
-└── prompts/
-    ├── decompose.ts         # Prompts de décomposition
-    ├── generate.ts          # Prompts de génération
-    └── evaluate.ts          # Prompts d'évaluation
-```
-
----
-
-## 🎬 4.6 Cas Pratiques
-
-### 4.6.1 🐛 Cas 1 : Debugging d'une Fonction
-
-**Problème** : "calculateDiscount retourne parfois NaN"
-
-L'arbre généré (simplifié) :
-1.  **Hypothèse NaN** (Score 0.9)
-    *   **Div par 0** (Score 0.85) -> **Trouvé : `total / price`** -> **Fix : `if (price === 0)`**
-    *   **Input undefined** (Score 0.7) -> Non reproduit
-
-### 4.6.2 🏗️ Cas 2 : Refactoring d'Architecture
-
-**Problème** : "Refactorer UserService"
-
-L'arbre généré :
-1.  **Stratégie Domaine** (Score 0.9) -> **Auth/Profile/Settings** -> **Plan Migration**
-2.  **Stratégie Technique** (Score 0.6) -> Controller/Service -> Élagué
-
----
-
-## ⚙️ 4.7 Optimisations et Bonnes Pratiques
-
-### 4.7.1 📊 Réduire les Appels API
-
-Au lieu d'évaluer chaque pensée individuellement, demandez au LLM d'évaluer une liste en une seule fois.
+### Piège 2 : Branches prometteuses abandonnées
 
 ```typescript
-// ✅ Évaluation batch : 1 appel pour N pensées
+// ❌ Beam=2 élimine la bonne piste à cause d'une mauvaise évaluation
+// Niveau 1: [A=0.7, B=0.65, C=0.9]  → garder [A, C]
+// Mais B était la bonne piste !
+
+// ✅ Garder un "wildcard" aléatoire
+const best = currentLevel.slice(0, beamWidth - 1);
+const random = currentLevel[Math.floor(Math.random() * currentLevel.length)];
+const selected = [...best, random];
+```
+
+**Contournement** : Ajouter de l'exploration forcée (température, wildcard).
+
+### Piège 3 : Explosion des coûts
+
+```typescript
+// ❌ Configuration agressive
+const config = { branching: 5, depth: 5, beamWidth: 4 };
+// = 5 × 4 × 5 = 100 appels par niveau × 5 niveaux = 500 appels !
+
+// ✅ Configuration raisonnable
+const config = { branching: 3, depth: 3, beamWidth: 2 };
+// = 3 × 2 × 3 = 18 appels total
+```
+
+**Contournement** : Commencer petit, augmenter si nécessaire.
+
+---
+
+## 5. Optimisation : Évaluation Batch
+
+Au lieu d'évaluer une pensée à la fois (N appels), évaluez-les toutes en un appel :
+
+```typescript
+// ❌ 6 appels pour 6 pensées
+for (const thought of thoughts) {
+  thought.score = await evaluate(thought);  // 1 appel chacun
+}
+
+// ✅ 1 appel pour 6 pensées
 async function batchEvaluate(thoughts: ThoughtNode[], problem: string): Promise<void> {
-  const prompt = `... Évalue ces ${thoughts.length} pensées ...`;
-  // ...
+  const response = await llm.chat(`
+    Problème: ${problem}
+
+    Évalue ces ${thoughts.length} pensées de 0 à 1:
+    ${thoughts.map((t, i) => `${i+1}. ${t.content}`).join('\n')}
+
+    Format JSON: [0.8, 0.6, 0.9, ...]
+  `);
+
+  const scores = JSON.parse(response);
+  thoughts.forEach((t, i) => t.score = scores[i]);
 }
 ```
 
-### 4.7.2 🏃 Early Stopping
-
-Si vous trouvez un score > 0.95, arrêtez tout et retournez la solution ! Pas besoin d'être perfectionniste si le code marche.
+**Économie** : 6x moins d'appels API. Sur un arbre complet, ça peut passer de $1.30 à $0.25.
 
 ---
 
-## ⚠️ 4.8 Limites et Risques du ToT
+## Tableau Récapitulatif : Quand Utiliser ToT
 
-### 🚧 Limites Techniques
+| Situation | Stratégie | Config | Coût estimé |
+|-----------|-----------|--------|-------------|
+| Bug simple, 1 hypothèse évidente | **Pas de ToT** | - | $0.01 |
+| Bug avec 2-3 pistes possibles | BFS shallow | B=3, D=2 | $0.05 |
+| Bug complexe, debug actif | Beam Search | B=3, D=3, K=2 | $0.15 |
+| Architecture, plusieurs alternatives | Beam large | B=4, D=4, K=3 | $0.50 |
+| Problème critique, budget illimité | BFS deep | B=4, D=5 | $2.00+ |
 
-| Limite | Description | Impact |
-|--------|-------------|--------|
-| **Coût exponentiel** | B^D appels API (branching^depth) | Budget épuisé rapidement |
-| **Évaluation imparfaite** | LLM peut mal noter des bonnes pistes | Branches prometteuses abandonnées |
-| **Profondeur limitée** | Au-delà de 4-5 niveaux, qualité décline | Solutions superficielles |
-| **Pas de rollback** | Branches abandonnées = perdues | Peut manquer la bonne solution |
-| **Dépendance au prompt** | Qualité très sensible au prompt d'évaluation | Résultats inconsistants |
-
-### ⚡ Risques Opérationnels
-
-| Risque | Probabilité | Impact | Mitigation |
-|--------|:-----------:|:------:|------------|
-| **Explosion des coûts** | Haute | Élevé | Beam Search + budget strict |
-| **Paralysie d'analyse** | Moyenne | Moyen | Limite de profondeur, early stopping |
-| **Faux positifs (bonnes notes, mauvaises solutions)** | Moyenne | Élevé | Validation par exécution |
-| **Convergence prématurée** | Moyenne | Moyen | Exploration forcée (température) |
-
-### 📊 Quand NE PAS Utiliser ToT
-
-| Situation | Raison | Alternative |
-|-----------|--------|-------------|
-| Tâches simples (< 3 étapes) | Overhead >> bénéfice | Appel direct |
-| Budget très limité | Coût exponentiel | CoT simple |
-| Besoin de rapidité | Latence multipliée | Single-shot |
-| Solution unique attendue | Exploration inutile | Prompt ciblé |
-
-**Estimations de coût :**
-
-| Configuration | Appels max | Coût estimé |
-|:--------------|:----------:|:-----------:|
-| Branching=3, Depth=4 | 3⁴ = 81 | ~$0.40 |
-| Branching=4, Depth=4 | 4⁴ = 256 | ~$1.30 |
-
-> 📌 **À Retenir** : ToT est un **investissement** — utilisez-le uniquement quand la valeur du problème justifie le coût. Pour un bug critique en production, 256 appels API valent le coup. Pour formatter un fichier JSON, c'est du gaspillage.
+**Règle** : ToT est un investissement. N'utilisez-le que si la valeur du problème justifie le coût. Pour un bug de prod critique, 50 appels valent le coup. Pour formater du JSON, c'est du gaspillage.
 
 ---
 
-## 📝 4.9 Points Clés à Retenir
+## Ce Qui Vient Ensuite
 
-*   **ToT** permet de sortir des impasses du raisonnement linéaire.
-*   **Beam Search** est souvent la meilleure stratégie pour le code (équilibre coût/qualité).
-*   **L'évaluation** est l'étape la plus difficile et la plus importante.
+ToT explore plusieurs pistes mais ne simule pas les conséquences. Le **Chapitre 5** introduit MCTS (Monte-Carlo Tree Search) : simuler des exécutions pour choisir la meilleure action.
 
 ---
 
-## 🏋️ Exercices
-
-### Exercice 1 : Dessiner un Arbre de Pensées (20 min)
-
-Pour le problème suivant, dessinez l'arbre ToT complet :
-
-> "La fonction `parseDate` retourne `Invalid Date` pour certaines entrées"
-
-1. Listez 4 hypothèses initiales (nœuds de niveau 1)
-2. Attribuez un score (0-1) à chaque hypothèse
-3. Développez les 2 meilleures en sous-hypothèses (niveau 2)
-4. Identifiez quelle branche mène probablement à la solution
-
-### Exercice 2 : Implémenter une Évaluation par Vote (30 min)
-
-Implémentez une fonction d'évaluation par vote qui appelle le LLM 3 fois et retourne la moyenne :
-
-```typescript
-interface VoteEvaluationResult {
-  scores: number[];      // Les 3 scores individuels
-  average: number;       // Moyenne
-  variance: number;      // Variance (indicateur de confiance)
-  consensus: boolean;    // true si variance < 0.1
-}
-
-async function voteEvaluate(
-  thought: ThoughtNode,
-  problem: string,
-  llm: LLMClient
-): Promise<VoteEvaluationResult> {
-  // Votre implémentation ici
-}
-```
-
-Bonus : Ajoutez un mécanisme de "tie-breaker" si la variance est trop élevée.
-
-### Exercice 3 : Choisir la Bonne Stratégie (15 min)
-
-Pour chaque scénario, indiquez la stratégie optimale (BFS, DFS, ou Beam) et justifiez :
-
-1. Trouver rapidement UN fix pour un test qui échoue
-2. Explorer toutes les façons de refactorer une classe
-3. Debugging d'un problème de performance avec budget limité
-4. Générer plusieurs alternatives d'architecture
-5. Résoudre un problème mathématique avec une seule solution
-
-### Exercice 4 : Calcul de Coût (15 min)
-
-Calculez le nombre maximum d'appels API pour ces configurations :
-
-| Configuration | Branching | Depth | Beam | Appels max ? |
-|:--------------|:---------:|:-----:|:----:|:------------:|
-| Config A | 3 | 3 | - | ? |
-| Config B | 4 | 4 | 2 | ? |
-| Config C | 5 | 5 | 3 | ? |
-
-Formules :
-- BFS/DFS : `B^D` où B=branching, D=depth
-- Beam : `B × K × D` où K=beam width
-
-### Exercice 5 : Implémentation Early Stopping (20 min)
-
-Modifiez l'algorithme Beam Search pour implémenter un early stopping intelligent :
-
-```typescript
-interface EarlyStopConfig {
-  minScore: number;           // Score minimum pour arrêter (ex: 0.95)
-  minConfidence: number;      // Confiance minimum (ex: 0.8)
-  maxConsecutiveDecline: number; // Arrêter si N niveaux sans amélioration
-}
-
-function shouldStop(
-  currentBest: ThoughtNode,
-  history: ThoughtNode[],    // Meilleurs nœuds des niveaux précédents
-  config: EarlyStopConfig
-): boolean {
-  // Votre implémentation ici
-}
-```
-
-Testez avec un cas où le score stagne à 0.7 pendant 3 niveaux.
-
----
-
-| ⬅️ Précédent | 📖 Sommaire | ➡️ Suivant |
-|:-------------|:-----------:|:-----------|
-| [Anatomie d'un Agent](03-anatomie-agent.md) | [Index](README.md) | [Monte-Carlo Tree Search](05-mcts.md) |
+[⬅️ Chapitre 3](03-anatomie-agent.md) | [📚 Table des Matières](README.md) | [➡️ Chapitre 5](05-mcts.md)

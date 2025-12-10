@@ -1,134 +1,124 @@
 # Avant-propos
 
----
+## Ce Livre N'est Pas Pour Tout le Monde
 
-## Le Declic
+Si vous cherchez une introduction aux Transformers ou l'histoire de l'IA, passez votre chemin. Ces informations sont gratuites sur YouTube, ChatGPT ou Wikipedia.
 
-*Decembre 2023, 23h47. Je fixe mon terminal depuis trois heures.*
+Ce livre est pour vous si :
 
-L'agent IA que j'avais construit venait de supprimer mon fichier de configuration. Encore. La troisieme fois cette semaine.
-
-"Il suffit de lui dire de ne pas le faire," m'avait suggere un collegue.
-
-Mais c'etait plus profond que ca. Mon agent ne *comprenait* pas ce qu'il faisait. Il executait des commandes sans contexte, sans memoire de nos echanges precedents, sans raisonnement sur les consequences. Un perroquet stochastique avec acces root.
-
-J'ai ferme mon laptop, frustre. Puis une question m'a tenu eveille toute la nuit :
-
-> **Comment construire un agent qui *pense* avant d'agir ?**
-
-Ce livre est ma reponse a cette question.
-
----
-
-## Ce Livre Est Pour Vous Si...
-
-- Vous avez deja utilise ChatGPT, Claude ou Grok et voulez aller plus loin
-- Vous etes developpeur et voulez construire vos propres agents IA
-- Vous voulez comprendre la recherche recente (Tree-of-Thought, MCTS, RAG...)
-- Vous etes frustre par les limites des chatbots : hallucinations, oublis, incapacite a agir
-
-**Ce livre n'est PAS** un tutoriel de prompt engineering ni une introduction au machine learning. C'est un guide d'architecture pour construire des systemes intelligents robustes.
+- ✅ Vous voulez construire un **agent de terminal** qui code, débugue et refactore pour vous
+- ✅ Vous êtes prêt à **coder** (TypeScript) et pas juste à lire des concepts
+- ✅ Vous voulez les **techniques avancées** : Tree-of-Thought, MCTS, RAG avec graphe de dépendances
+- ✅ Vous voulez éviter les erreurs qui m'ont coûté des semaines et des centaines de dollars
 
 ---
 
 ## Ce Que Vous Allez Construire
 
-A travers ce livre, nous construirons ensemble **Grok-CLI** — un agent IA de terminal complet avec :
+À la fin de ce livre, vous aurez construit **Grok-CLI** — un agent de terminal complet :
 
-| Capacite | Description | Chapitre |
-|----------|-------------|----------|
-| Raisonnement avance | Tree-of-Thought, Monte-Carlo Tree Search | 4-5 |
-| Auto-reparation | Correction automatique avec feedback de tests | 6 |
-| Memoire intelligente | RAG, compression de contexte, memoire persistante | 7-9, 14 |
-| 41 outils | Fichiers, recherche, bash, git, refactoring... | 10-11 |
-| Optimisations | Cache semantique (68% reduction API), parallelisation | 12-13 |
-| Securite | Confirmations, sandbox, redaction automatique | 15-16 |
+| Ce que fait Grok-CLI | Chapitre |
+|---------------------|:--------:|
+| Lit et modifie votre code intelligemment | 3, 10 |
+| Raisonne avec Tree-of-Thought et MCTS | 4, 5 |
+| Se corrige automatiquement quand les tests échouent | 6 |
+| Comprend les dépendances entre vos fichiers (pas juste du RAG basique) | 7, 8 |
+| Économise 68% de vos appels API avec du cache sémantique | 12 |
+| Route vers le bon modèle (FrugalGPT : -70% de coûts) | 13 |
+| Apprend de ses erreurs et améliore ses performances | 14 |
 
-**A la fin de ce livre**, vous aurez non seulement un agent fonctionnel, mais surtout une comprehension profonde des principes qui permettent aux agents LLM d'etre fiables et utiles.
-
----
-
-## Prerequis
-
-Pour tirer le meilleur de ce livre, vous devriez avoir :
-
-| Competence | Niveau Requis | Notes |
-|------------|---------------|-------|
-| TypeScript/JavaScript | Intermediaire | Async/await, classes, types |
-| Terminal | A l'aise | Navigation, commandes de base |
-| Concepts IA | Notions | Savoir ce qu'est un LLM |
-| Git | Basique | Clone, commit, push |
-
-**Pas besoin** d'expertise en machine learning, statistiques ou mathematiques avancees. Les concepts sont expliques au fur et a mesure.
+**Le code complet** : 25,000 lignes, 41 outils, 200+ tests, open-source.
 
 ---
 
-## L'Histoire de Lina
+## Ce Que Ce Livre Va Vous Éviter
 
-Tout au long de ce livre, vous suivrez **Lina**, une developpeuse fictive mais representative de milliers d'ingenieurs qui tentent aujourd'hui d'exploiter le potentiel des LLMs.
+### L'agent qui supprime vos fichiers
+*Décembre 2023, 23h47.* Mon agent venait de supprimer mon fichier de configuration. La troisième fois cette semaine. Il ne *comprenait* pas ce qu'il faisait. **Chapitre 16** : système de permissions et sandbox.
 
-Lina n'est pas une experte en machine learning. Elle est pragmatique, curieuse, et parfois frustree. Elle veut des **resultats**, pas des theories abstraites. Son collegue **Marc** l'accompagne, apportant tantot du scepticisme sain, tantot des idees brillantes.
+### La facture API de $847
+Un de mes agents est parti en boucle infinie. 6 heures de tokens GPT-4. **Chapitre 3** : limites d'itérations et garde-fous.
 
-A travers leur parcours, vous vivrez les memes defis, les memes "eureka", et les memes solutions que j'ai decouvertes en construisant Grok-CLI.
+### Le RAG qui retourne n'importe quoi
+Mon RAG trouvait les bons fichiers mais pas les dépendances. L'agent ne comprenait pas le contexte. **Chapitre 8** : Dependency-Aware RAG avec graphe AST.
 
-> Astuce : Les dialogues entre Lina et Marc ne sont pas juste decoratifs. Ils introduisent souvent des concepts importants de maniere accessible avant la theorie formelle.
+### Le modèle qui coûte 10x trop cher
+Tout sur GPT-4 alors que 73% des requêtes marchent avec un modèle 10x moins cher. **Chapitre 13** : FrugalGPT et model routing.
+
+---
+
+## Comment Ce Livre Est Différent
+
+| Livre classique | Ce livre |
+|-----------------|----------|
+| "L'attention est un mécanisme qui..." | **Le code qui marche** (TypeScript, testé) |
+| "Considérons l'architecture..." | **Le problème** → **La solution** |
+| "Les Transformers ont révolutionné..." | **Comment économiser 70% sur l'API** |
+| Exercice : "Réfléchissez à..." | Exercice : **Implémentez X en 30 min** |
+
+La théorie (Transformers, n-grammes) est en **annexe** pour ceux qui veulent approfondir.
+
+---
+
+## Prérequis
+
+### Obligatoire
+- TypeScript/JavaScript intermédiaire (async/await, classes, types)
+- Terminal à l'aise (navigation, commandes de base)
+- Un compte API (xAI Grok, OpenAI, ou Anthropic)
+- ~$20 de crédits pour les exercices
+
+### Ce que vous n'avez PAS besoin de savoir
+- Machine Learning / Deep Learning
+- Les maths derrière les Transformers
+- Comment entraîner un LLM
+
+Ce livre est sur l'**utilisation** des LLM pour construire des agents, pas sur leur fonctionnement interne.
 
 ---
 
 ## Structure du Livre
 
-Ce livre est organise en sept parties progressives :
+### Partie I : Démarrage Rapide (Ch. 1-3)
+**Objectif** : Un agent fonctionnel en 2 heures
+- Ch. 1 : Votre premier agent (le code minimal)
+- Ch. 2 : Les patterns d'agents (quand utiliser quoi)
+- Ch. 3 : Les 6 composants d'un agent robuste
 
-```
-PARTIE I : FONDATIONS
-  Ch.01 Comprendre les LLMs......... Transformers, attention, limites
-  Ch.02 Le Role des Agents.......... Taxonomie, de chatbot a multi-agent
-  Ch.03 Anatomie d'un Agent......... Les 6 composants essentiels
+### Partie II : Raisonnement Avancé (Ch. 4-6)
+**Objectif** : Un agent qui réfléchit avant d'agir
+- Ch. 4 : Tree-of-Thought (explorer plusieurs solutions)
+- Ch. 5 : MCTS (quand ToT ne suffit pas)
+- Ch. 6 : Auto-réparation (se corriger avec les tests)
 
-PARTIE II : RAISONNEMENT ET PLANIFICATION
-  Ch.04 Tree-of-Thought............ Exploration multi-chemins
-  Ch.05 Monte-Carlo Tree Search.... Selection, expansion, simulation
-  Ch.06 Repair et Reflexion........ Auto-correction avec tests
+### Partie III : Mémoire Intelligente (Ch. 7-9)
+**Objectif** : Un agent qui comprend le contexte
+- Ch. 7 : RAG moderne (pas le tutoriel basique)
+- Ch. 8 : RAG avec graphe de dépendances
+- Ch. 9 : Compression de contexte (économiser les tokens)
 
-PARTIE III : MEMOIRE, RAG ET CONTEXTE
-  Ch.07 RAG Moderne................ Embeddings, chunking, reranking
-  Ch.08 Dependency-Aware RAG....... Graphe de dependances
-  Ch.09 Compression de Contexte.... Priorites, observation masking
+### Partie IV : Action (Ch. 10-11)
+**Objectif** : Un agent qui agit efficacement
+- Ch. 10 : 41 outils (le catalogue complet)
+- Ch. 11 : Plugins et MCP (extensibilité)
 
-PARTIE IV : ACTION ET OUTILS
-  Ch.10 Tool-Use................... 41 outils, validation, parallelisation
-  Ch.11 Plugins et MCP............. Model Context Protocol
+### Partie V : Optimisation (Ch. 12-13)
+**Objectif** : -70% de coûts, +3x de vitesse
+- Ch. 12 : Cache sémantique (68% de réduction)
+- Ch. 13 : Model routing et parallélisation
 
-PARTIE V : OPTIMISATION
-  Ch.12 Optimisations Cognitives... Cache semantique (68% reduction)
-  Ch.13 Optimisations Systeme...... FrugalGPT, LLMCompiler, lazy loading
-
-PARTIE VI : APPRENTISSAGE
-  Ch.14 Apprentissage Persistant... 4 types de memoire, consolidation
-
-PARTIE VII : ETUDE DE CAS
-  Ch.15 Architecture Complete...... Grok-CLI de A a Z
-  Ch.16 System Prompts & Securite.. Prompt injection, defenses
-
-ANNEXES
-  Glossaire, Bibliographie, Index
-```
+### Partie VI : Production (Ch. 14-17)
+**Objectif** : Un agent déployable
+- Ch. 14 : Apprentissage persistant
+- Ch. 15 : Architecture complète
+- Ch. 16 : Sécurité (le chapitre le plus important)
+- Ch. 17 : Ce qui arrive en 2025
 
 ---
 
-## Comment Lire Ce Livre
+## Le Code Source
 
-### Option 1 : Lecture lineaire (recommande pour debutants)
-
-Suivez l'histoire de Lina du debut a la fin. Les concepts s'appuient les uns sur les autres.
-
-### Option 2 : Reference (pour developpeurs experimentes)
-
-Sautez directement aux chapitres qui vous interessent. Chaque chapitre inclut ses prerequis.
-
-### Option 3 : Hands-on
-
-Clonez Grok-CLI et experimentez en parallele de votre lecture :
+Tout le code est disponible et testé :
 
 ```bash
 git clone https://github.com/phuetz/grok-cli.git
@@ -138,109 +128,21 @@ export GROK_API_KEY=your_key
 npm run dev
 ```
 
----
-
-## Conventions du Livre
-
-### Code
-
-Tous les exemples sont en **TypeScript** et proviennent du code reel de Grok-CLI :
-
-```typescript
-// src/agent/grok-agent.ts
-export class GrokAgent {
-  private maxRounds = 30;
-
-  async process(input: string): Promise<string> {
-    // Code reel, pas de pseudo-code
-  }
-}
-```
-
-### Encadres Pedagogiques
-
-Repérez ces marqueurs tout au long du livre :
-
-> **A Retenir**
->
-> Les concepts essentiels a memoriser.
-
-> **Attention**
->
-> Pieges courants et erreurs frequentes.
-
-> **Astuce Pratique**
->
-> Conseils d'implementation concrets.
-
----
-
-## Le Code Source
-
-Tous les exemples proviennent de **Grok-CLI**, un agent open-source complet :
-
-```
-https://github.com/phuetz/grok-cli
-```
-
 | Statistique | Valeur |
 |-------------|--------|
 | Lignes de code | ~25,000 |
-| Outils integres | 41 |
+| Outils intégrés | 41 |
 | Tests | 200+ |
-| Documentation | Ce livre ! |
-
-Je vous encourage vivement a explorer le code pendant votre lecture. Rien ne remplace la pratique.
 
 ---
 
-## References Scientifiques
+## Commencez Maintenant
 
-Ce livre s'appuie sur des publications academiques recentes. Chaque technique majeure est referencee :
+Passez directement au **Chapitre 1** pour avoir un agent fonctionnel en 30 minutes.
 
-| Technique | Publication | Annee |
-|-----------|-------------|-------|
-| Tree-of-Thought | Yao et al., NeurIPS | 2023 |
-| MCTS pour code | RethinkMCTS, arXiv | 2024 |
-| ChatRepair | ISSTA (Distinguished Paper) | 2024 |
-| FrugalGPT | Stanford | 2023 |
-| LLMCompiler | UC Berkeley | 2023 |
-| Context Compression | JetBrains Research | 2024 |
-
-La bibliographie complete est disponible en annexe.
-
----
-
-## Remerciements
-
-Ce livre n'existerait pas sans :
-
-- La **communaute open-source** qui a partage recherches, idees et code
-- Les **chercheurs** derriere ToT, MCTS, FrugalGPT, LLMCompiler, ChatRepair et tant d'autres publications
-- Les **early adopters** de Grok-CLI qui ont teste, rapporte des bugs et suggere des ameliorations
-- **Ma famille** qui a supporte mes soirees de coding
-- **Vous**, lecteur, qui prenez le temps d'apprendre
-
----
-
-## Une Invitation
-
-L'intelligence artificielle evolue a une vitesse vertigineuse. Ce que vous lisez aujourd'hui sera peut-etre obsolete dans un an. Mais les **principes** — la decomposition de problemes, la memoire structuree, l'action securisee, l'apprentissage continu — ces principes resteront.
-
-Mon espoir est que ce livre vous donne non seulement des techniques concretes, mais surtout une *facon de penser* les systemes intelligents.
-
-Que vous construisiez un assistant de code, un agent de recherche, ou quelque chose que personne n'a encore imagine.
-
-**Bienvenue dans le monde des agents LLM modernes.**
-
-Pret a construire un agent qui pense ? Tournez la page.
+La théorie sur les Transformers ? Elle est en **annexe** si vous êtes curieux. Mais vous n'en avez pas besoin pour construire.
 
 ---
 
 *Patrice Huetz*
-*Decembre 2024*
-
----
-
-> *"The best way to predict the future is to invent it."*
-> — Alan Kay
+*Décembre 2024*

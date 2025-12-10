@@ -1,1575 +1,418 @@
-# Chapitre 14 — Apprentissage Persistant 🧠
+# Chapitre 14 : Mémoire Persistante — Un Agent Qui Apprend
 
 ---
 
-## 🎬 Scène d'ouverture
+## 1. Le Problème
 
-*Le lendemain de la découverte de Sophie. Bureau de Lina, 8h47.*
+Chaque session repart de zéro. L'agent oublie vos préférences, vos conventions de code, les erreurs corrigées hier. Vous répétez les mêmes instructions. Encore.
 
-*Sur son écran : le papier "MemGPT: Towards LLMs as Operating Systems". Elle n'a presque pas dormi.*
-
-**Marc** *(arrivant avec deux cafés)* : "T'es là depuis quand ?"
-
-**Lina** *(les yeux rouges mais brillants)* : "Cinq heures du mat'. Marc, ce papier... il change tout."
-
-*Elle lui tend une tasse sans même le regarder, absorbée par ses notes.*
-
-**Lina** : "Tu te souviens de la frustration principale avec les LLMs ? Chaque session repart de zéro. L'agent oublie tout. On répète les mêmes instructions, les mêmes préférences..."
-
-**Marc** : "C'est leur architecture. Fenêtre de contexte limitée."
-
-**Lina** : "Exactement ! C'est comme un humain qui n'aurait que sa mémoire de travail — pas de mémoire à long terme. Imagine quelqu'un qui oublie tout dès qu'il cligne des yeux."
-
-*Elle fait pivoter son écran.*
-
-**Lina** : "Mais regarde ce que Charles Packer et son équipe à Berkeley ont fait."
-
-### 💡 L'Histoire de MemGPT — Berkeley, 2023
-
-> *"Et si on traitait un LLM comme un système d'exploitation ?"*
-> — Charles Packer, UC Berkeley
-
-**L'idée est née d'une frustration personnelle.** Charles Packer, doctorant à Berkeley, essayait de créer un chatbot capable de conversations vraiment longues — des jours, des semaines. Mais les modèles oubliaient constamment ce qui s'était dit au début.
-
-**Le déclic est venu d'un cours sur les systèmes d'exploitation.** Dans les années 1960, les ordinateurs avaient le même problème : la RAM était trop petite pour tout garder en mémoire. La solution ? Une **hiérarchie de mémoire** avec de la mémoire virtuelle, des pages qui se chargent et se déchargent du disque.
-
-**L'analogie était parfaite** :
-- La **fenêtre de contexte** du LLM = la RAM de l'ordinateur
-- Le **stockage externe** (fichiers JSON, bases de données) = le disque dur
-- Un **système de gestion** intelligent = le gestionnaire de mémoire virtuelle de l'OS
-
-*Lina dessine sur son tableau blanc.*
-
-![Analogie MemGPT / OS](images/memgpt-os-analogy.svg)
-
-**La révolution MemGPT** : au lieu de simplement tronquer le contexte quand il devient trop long (comme font la plupart des systèmes), MemGPT donne au LLM des **outils pour gérer sa propre mémoire** :
-
-- `core_memory_append` — ajouter à la mémoire "RAM"
-- `core_memory_replace` — modifier la mémoire active
-- `archival_memory_insert` — sauvegarder sur "disque"
-- `archival_memory_search` — rechercher dans les archives
-
-**Le LLM devient son propre gestionnaire de mémoire.** Il décide ce qui est important, ce qu'il faut garder, ce qu'il faut archiver.
-
-**Marc** *(comprenant)* : "Donc l'agent peut se souvenir... indéfiniment ?"
-
-**Lina** : "En théorie, oui. Mais ce n'est pas juste du stockage. Regarde ce que Sophie a expérimenté hier."
-
-*Elle ouvre Grok-CLI avec la branche expérimentale.*
-
-```
-grok> Bonjour !
-
-Agent: Bonjour Lina ! Je vois que tu travailles sur le module de paiement
-cette semaine. Hier, tu as corrigé un bug dans la validation des cartes.
-Veux-tu que je te montre les tests qui pourraient encore échouer ?
-```
-
-**Lina** *(figée un instant)* : "Il se souvient. De la conversation d'hier. Du contexte de mon travail."
-
-**Marc** : "Impressionnant. Mais comment il sait que c'est *important* de se souvenir de ça ?"
-
-**Lina** : "C'est la partie brillante. L'agent apprend à distinguer l'éphémère du permanent. 'Bonjour' = éphémère. 'Tu préfères les commits atomiques' = permanent."
-
-*Elle tape une autre commande.*
-
-**Lina** : "Regarde ça."
-
-```
-grok> Montre-moi l'évolution de mes patterns de travail
-
-Agent: Voici ton profil d'utilisation sur les 30 derniers jours :
-
-📊 Sessions       : 47 (moyenne 45 min)
-🔧 Outil favori   : multi-edit (234 utilisations)
-📁 Fichiers freq. : src/payment/*.ts (68%)
-⏰ Heures actives : 9h-12h, 14h-18h
-🎯 Taux de succès : 94% (en hausse de +7%)
-
-💡 Insights découverts :
-├── Tu préfères les commits atomiques (1-3 fichiers)
-├── Tu exécutes les tests après chaque modification majeure
-└── Tu utilises rarement la recherche fuzzy (préférence grep exact)
-```
-
-**Marc** *(émerveillé)* : "C'est... c'est comme avoir un assistant qui apprend vraiment."
-
-**Lina** : "Et ce n'est que le début. L'équipe Berkeley a depuis créé **Letta** — une entreprise entière autour de cette idée. Ils appellent ça le 'stateful AI'."
-
-*Elle se retourne vers son écran.*
-
-**Lina** : "Alors voilà le plan. On va implémenter quatre types de mémoire — comme le cerveau humain."
-
----
-
-## 📋 Table des Matières
-
-| Section | Titre | Description |
-|:-------:|-------|-------------|
-| 14.1 | 🤔 Pourquoi l'Apprentissage ? | Limites du stateless |
-| 14.2 | 🏗️ Architecture Mémoire | Système de mémoire persistante |
-| 14.3 | 📖 Mémoire Épisodique | Se souvenir des événements |
-| 14.4 | 🧠 Mémoire Sémantique | Connaissances apprises |
-| 14.5 | ⚙️ Mémoire Procédurale | Comment faire |
-| 14.6 | 🔮 Mémoire Prospective | Tâches futures |
-| 14.7 | 🧹 Consolidation | Oubli intelligent |
-
----
-
-## 14.1 🤔 Pourquoi l'Apprentissage Persistant ?
-
-### 14.1.1 ❌ Les Limites du Stateless
-
-Par défaut, les LLMs sont *stateless* — chaque conversation repart de zéro :
-
-![Agent Stateless](images/agent-stateless.svg)
-
-### 14.1.2 ✅ L'Agent avec Mémoire Persistante
-
-![Agent avec mémoire persistante](images/agent-persistent-memory.svg)
-
-### 14.1.3 📊 Taxonomie des Mémoires
-
-| Type | Icône | Question | Exemples |
-|------|:-----:|----------|----------|
-| **Épisodique** | 📖 | "Que s'est-il passé ?" | Conversations, actions, résultats |
-| **Sémantique** | 🧠 | "Qu'ai-je appris ?" | Faits, préférences, patterns |
-| **Procédurale** | ⚙️ | "Comment faire ?" | Séquences efficaces, solutions |
-| **Prospective** | 🔮 | "Que dois-je faire ?" | Tâches planifiées, rappels |
-
-![Taxonomie des mémoires](images/memory-taxonomy.svg)
-
----
-
-## 14.2 🏗️ Architecture de la Mémoire Persistante
-
-### 14.2.1 📊 Vue d'Ensemble
-
-![Architecture mémoire persistante](images/memory-architecture.svg)
-
-### 14.2.2 🔧 Structure d'une Entrée Mémoire
+**L'erreur classique** : Les LLMs sont stateless — fenêtre de contexte limitée, aucune persistance.
 
 ```typescript
-// src/memory/memory-system.ts
+// ❌ Session 1
+user: "Je préfère les commits atomiques"
+agent: "Compris, je ferai des commits de 1-3 fichiers max"
 
-/**
- * 📊 Types de mémoire supportés
- */
-export enum MemoryType {
-  EPISODIC = 'episodic',       // 📖 Événements passés
-  SEMANTIC = 'semantic',        // 🧠 Connaissances apprises
-  PROCEDURAL = 'procedural',    // ⚙️ Comment faire
-  PROSPECTIVE = 'prospective'   // 🔮 À faire
+// Session 2 (nouvelle)
+user: "Fais un commit"
+agent: *commit de 47 fichiers* // A tout oublié
+
+// ✅ Avec mémoire persistante
+// Session 2
+user: "Fais un commit"
+agent: "Je me souviens que tu préfères les commits atomiques.
+        Je vais créer 3 commits séparés par fonctionnalité."
+```
+
+---
+
+## 2. La Solution Rapide : Système de Mémoire en 4 Types
+
+```typescript
+enum MemoryType {
+  EPISODIC = 'episodic',       // Événements passés
+  SEMANTIC = 'semantic',        // Connaissances factuelles
+  PROCEDURAL = 'procedural',    // Comment faire
+  PROSPECTIVE = 'prospective'   // Tâches futures
 }
 
-/**
- * 📦 Structure d'une entrée de mémoire
- */
 interface MemoryEntry {
-  id: string;                    // 🔑 Identifiant unique
-  type: MemoryType;              // 📊 Type de mémoire
-  content: unknown;              // 📝 Contenu
-  timestamp: number;             // ⏰ Date de création
-  importance: number;            // ⭐ Importance (0-1)
-  accessCount: number;           // 📈 Nombre d'accès
-  lastAccessed: number;          // 🕐 Dernier accès
-  metadata: Record<string, unknown>;
-  embedding?: number[];          // 🧮 Pour recherche sémantique
+  id: string;
+  type: MemoryType;
+  content: unknown;
+  timestamp: number;
+  importance: number;           // 0-1
+  accessCount: number;
+  lastAccessed: number;
+  embedding?: number[];
 }
-```
 
-### 14.2.3 🔧 Implémentation du Système de Mémoire
-
-```typescript
-// src/memory/memory-system.ts
-
-import { EventEmitter } from 'events';
-import * as fs from 'fs/promises';
-
-/**
- * 🧠 MemorySystem - Système de mémoire persistante unifié
- *
- * Fonctionnalités :
- * - Stockage persistant sur disque (JSON)
- * - Recherche par type, texte, ou similarité sémantique
- * - Consolidation automatique (oubli intelligent)
- * - Indices pour accès rapide
- */
-export class MemorySystem extends EventEmitter {
-  private memories: Map<string, MemoryEntry> = new Map();
-  private indices: {
-    byType: Map<MemoryType, Set<string>>;
-    byImportance: string[];
-    byRecency: string[];
-  };
+class MemorySystem {
+  private memories = new Map<string, MemoryEntry>();
   private storagePath: string;
-  private dirty: boolean = false;
 
-  constructor(storagePath: string) {
-    super();
-    this.storagePath = storagePath;
-    this.indices = {
-      byType: new Map(),
-      byImportance: [],
-      byRecency: []
-    };
-
-    // Initialiser les indices
-    for (const type of Object.values(MemoryType)) {
-      this.indices.byType.set(type, new Set());
-    }
-  }
-
-  /**
-   * 🚀 Initialisation et chargement
-   */
-  async initialize(): Promise<void> {
-    await this.load();
-    this.startAutoSave();
-    console.log(`🧠 [Memory] Loaded ${this.memories.size} memories`);
-  }
-
-  /**
-   * 💾 Ajoute une nouvelle mémoire
-   */
-  async remember(
-    type: MemoryType,
-    content: unknown,
-    options: RememberOptions = {}
-  ): Promise<string> {
-    const id = this.generateId();
-    const now = Date.now();
-
+  async remember(type: MemoryType, content: unknown, importance = 0.5): Promise<string> {
     const entry: MemoryEntry = {
-      id,
+      id: crypto.randomUUID(),
       type,
       content,
-      timestamp: now,
-      importance: options.importance ?? this.calculateImportance(content),
+      timestamp: Date.now(),
+      importance,
       accessCount: 0,
-      lastAccessed: now,
-      metadata: options.metadata ?? {},
-      embedding: options.embedding
+      lastAccessed: Date.now()
     };
-
-    this.memories.set(id, entry);
-    this.updateIndices(entry);
-    this.dirty = true;
-
-    this.emit('remember', entry);
-    return id;
+    this.memories.set(entry.id, entry);
+    await this.save();
+    return entry.id;
   }
 
-  /**
-   * 🔍 Rappel d'une mémoire par ID
-   */
   async recall(id: string): Promise<MemoryEntry | null> {
     const entry = this.memories.get(id);
-
     if (entry) {
-      // 📈 Mise à jour des métriques d'accès
       entry.accessCount++;
       entry.lastAccessed = Date.now();
-      this.dirty = true;
-      this.emit('recall', entry);
     }
-
     return entry ?? null;
   }
 
-  /**
-   * 🔎 Recherche dans les mémoires
-   */
-  async search(query: MemoryQuery): Promise<MemoryEntry[]> {
-    let candidates: MemoryEntry[] = [];
+  async search(query: { type?: MemoryType; text?: string; limit?: number }): Promise<MemoryEntry[]> {
+    let results = Array.from(this.memories.values());
 
-    // 📊 Filtrage par type
-    if (query.type) {
-      const typeIds = this.indices.byType.get(query.type);
-      if (typeIds) {
-        candidates = Array.from(typeIds)
-          .map(id => this.memories.get(id)!)
-          .filter(Boolean);
-      }
-    } else {
-      candidates = Array.from(this.memories.values());
-    }
-
-    // ⏰ Filtrage par période
-    if (query.since) {
-      candidates = candidates.filter(m => m.timestamp >= query.since!);
-    }
-    if (query.until) {
-      candidates = candidates.filter(m => m.timestamp <= query.until!);
-    }
-
-    // ⭐ Filtrage par importance minimale
-    if (query.minImportance) {
-      candidates = candidates.filter(m => m.importance >= query.minImportance!);
-    }
-
-    // 📝 Recherche textuelle
+    if (query.type) results = results.filter(m => m.type === query.type);
     if (query.text) {
       const searchText = query.text.toLowerCase();
-      candidates = candidates.filter(m => {
-        const content = JSON.stringify(m.content).toLowerCase();
-        return content.includes(searchText);
-      });
+      results = results.filter(m => JSON.stringify(m.content).toLowerCase().includes(searchText));
     }
 
-    // 🧮 Recherche sémantique
-    if (query.embedding) {
-      candidates = this.rankBySimilarity(candidates, query.embedding);
-    }
-
-    // 📈 Tri
-    switch (query.sortBy) {
-      case 'importance':
-        candidates.sort((a, b) => b.importance - a.importance);
-        break;
-      case 'recency':
-        candidates.sort((a, b) => b.timestamp - a.timestamp);
-        break;
-      case 'frequency':
-        candidates.sort((a, b) => b.accessCount - a.accessCount);
-        break;
-    }
-
-    // 📊 Limite
-    if (query.limit) {
-      candidates = candidates.slice(0, query.limit);
-    }
-
-    return candidates;
-  }
-
-  /**
-   * 🗑️ Oubli d'une mémoire
-   */
-  async forget(id: string): Promise<boolean> {
-    const entry = this.memories.get(id);
-    if (!entry) return false;
-
-    this.memories.delete(id);
-    this.removeFromIndices(entry);
-    this.dirty = true;
-
-    this.emit('forget', entry);
-    return true;
-  }
-
-  /**
-   * 🧹 Consolidation des mémoires (oubli intelligent)
-   */
-  async consolidate(): Promise<ConsolidationReport> {
-    const report: ConsolidationReport = {
-      memoriesAnalyzed: this.memories.size,
-      merged: 0,
-      archived: 0,
-      forgotten: 0,
-      promoted: 0
-    };
-
-    const now = Date.now();
-    const oneWeek = 7 * 24 * 60 * 60 * 1000;
-    const oneMonth = 30 * 24 * 60 * 60 * 1000;
-
-    for (const [id, entry] of this.memories) {
-      const age = now - entry.timestamp;
-      const staleness = now - entry.lastAccessed;
-
-      // 🗑️ Oubli des mémoires non importantes et jamais accédées
-      if (entry.importance < 0.2 && entry.accessCount === 0 && age > oneWeek) {
-        await this.forget(id);
-        report.forgotten++;
-        continue;
-      }
-
-      // 📦 Archivage des mémoires anciennes mais potentiellement utiles
-      if (age > oneMonth && staleness > oneWeek && entry.importance < 0.5) {
-        entry.metadata.archived = true;
-        report.archived++;
-        continue;
-      }
-
-      // ⬆️ Promotion des mémoires fréquemment accédées
-      if (entry.accessCount > 10 && entry.importance < 0.8) {
-        entry.importance = Math.min(1, entry.importance + 0.1);
-        report.promoted++;
-      }
-    }
-
-    // 🔗 Fusion des mémoires similaires
-    report.merged = await this.mergeSimilarMemories();
-
-    this.dirty = true;
-    await this.save();
-
-    return report;
-  }
-
-  /**
-   * ⭐ Calcul automatique de l'importance
-   */
-  private calculateImportance(content: unknown): number {
-    let importance = 0.5;  // Base
-    const contentStr = JSON.stringify(content);
-
-    // 🔴 Erreurs = important
-    if (contentStr.includes('error') || contentStr.includes('bug')) {
-      importance += 0.2;
-    }
-    // ✅ Succès = important
-    if (contentStr.includes('success') || contentStr.includes('fixed')) {
-      importance += 0.15;
-    }
-    // 📏 Contenu substantiel
-    if (contentStr.length > 1000) {
-      importance += 0.1;
-    }
-
-    return Math.min(1, importance);
-  }
-
-  /**
-   * 📐 Calcul de similarité cosinus
-   */
-  private cosineSimilarity(a: number[], b: number[]): number {
-    if (a.length !== b.length) return 0;
-
-    let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-
-    for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
-    }
-
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-  }
-
-  /**
-   * 📊 Statistiques
-   */
-  getStats(): MemoryStats {
-    const byType: Record<MemoryType, number> = {
-      [MemoryType.EPISODIC]: 0,
-      [MemoryType.SEMANTIC]: 0,
-      [MemoryType.PROCEDURAL]: 0,
-      [MemoryType.PROSPECTIVE]: 0
-    };
-
-    let totalImportance = 0;
-    let totalAccess = 0;
-
-    for (const entry of this.memories.values()) {
-      byType[entry.type]++;
-      totalImportance += entry.importance;
-      totalAccess += entry.accessCount;
-    }
-
-    return {
-      total: this.memories.size,
-      byType,
-      averageImportance: this.memories.size > 0
-        ? totalImportance / this.memories.size
-        : 0,
-      totalAccesses: totalAccess
-    };
+    return results
+      .sort((a, b) => b.importance - a.importance)
+      .slice(0, query.limit ?? 10);
   }
 }
 ```
 
 ---
 
-## 14.3 📖 Mémoire Épisodique : Se Souvenir des Événements
+## 3. Deep Dive : Les 4 Types de Mémoire
 
-La mémoire épisodique capture les **événements concrets** : conversations, actions, erreurs, succès.
-
-### 14.3.1 📊 Types d'Épisodes
-
-| Type | Icône | Description | Importance |
-|------|:-----:|-------------|:----------:|
-| `CONVERSATION` | 💬 | Échange utilisateur-agent | ⭐⭐ |
-| `TASK_COMPLETION` | ✅ | Tâche terminée avec succès | ⭐⭐⭐ |
-| `ERROR_OCCURRED` | ❌ | Erreur rencontrée | ⭐⭐⭐⭐ |
-| `LEARNING_MOMENT` | 💡 | Leçon apprise | ⭐⭐⭐⭐ |
-| `USER_FEEDBACK` | 👍👎 | Réaction de l'utilisateur | ⭐⭐⭐⭐⭐ |
-
-### 14.3.2 🔧 Implémentation
+### 3.1 Mémoire Épisodique — "Que s'est-il passé ?"
 
 ```typescript
-// src/memory/episodic-memory.ts
-
-/**
- * 📊 Types d'épisodes
- */
-export enum EpisodeType {
-  CONVERSATION = 'conversation',
-  TASK_COMPLETION = 'task_completion',
-  ERROR_OCCURRED = 'error_occurred',
-  LEARNING_MOMENT = 'learning_moment',
-  USER_FEEDBACK = 'user_feedback'
-}
-
-/**
- * 📦 Structure d'un épisode
- */
 interface Episode {
-  type: EpisodeType;
+  type: 'conversation' | 'task_completion' | 'error' | 'learning_moment';
   summary: string;
   details: {
     input?: string;
     output?: string;
     toolsUsed?: string[];
     filesModified?: string[];
-    duration?: number;
     success?: boolean;
     errorMessage?: string;
-  };
-  context: {
-    project?: string;
-    branch?: string;
-    workingDirectory?: string;
   };
   userReaction?: 'positive' | 'negative' | 'neutral';
 }
 
-/**
- * 📖 EpisodicMemory - Gestionnaire de mémoire épisodique
- */
-export class EpisodicMemory {
-  private memory: MemorySystem;
-  private currentSession: SessionContext | null = null;
-
-  constructor(memory: MemorySystem) {
-    this.memory = memory;
+class EpisodicMemory {
+  async recordConversation(userMsg: string, agentResponse: string, success: boolean): Promise<void> {
+    await this.memory.remember(MemoryType.EPISODIC, {
+      type: 'conversation',
+      summary: this.summarize(userMsg, agentResponse),
+      details: { input: userMsg, output: agentResponse, success }
+    }, success ? 0.6 : 0.8);  // Erreurs = plus important
   }
 
-  /**
-   * 🎬 Démarre une nouvelle session
-   */
-  startSession(context: Partial<SessionContext> = {}): string {
-    const sessionId = `session_${Date.now()}`;
-
-    this.currentSession = {
-      id: sessionId,
-      startTime: Date.now(),
-      project: context.project,
-      branch: context.branch,
-      episodes: []
-    };
-
-    return sessionId;
-  }
-
-  /**
-   * 💬 Enregistre une conversation
-   */
-  async recordConversation(
-    userMessage: string,
-    agentResponse: string,
-    toolsUsed: string[],
-    success: boolean
-  ): Promise<string> {
-    return this.recordEpisode({
-      type: EpisodeType.CONVERSATION,
-      summary: this.summarizeConversation(userMessage, agentResponse),
-      details: {
-        input: userMessage,
-        output: agentResponse,
-        toolsUsed,
-        success
-      },
-      context: {}
-    });
-  }
-
-  /**
-   * ❌ Enregistre une erreur
-   */
-  async recordError(
-    context: string,
-    errorMessage: string,
-    resolution?: string
-  ): Promise<string> {
-    return this.recordEpisode({
-      type: EpisodeType.ERROR_OCCURRED,
-      summary: `Error in ${context}: ${errorMessage.slice(0, 100)}`,
-      details: {
-        errorMessage,
-        output: resolution
-      },
-      context: {}
-    });
-  }
-
-  /**
-   * 💡 Enregistre un moment d'apprentissage
-   */
-  async recordLearningMoment(
-    lesson: string,
-    context: string,
-    confidence: number
-  ): Promise<string> {
-    return this.recordEpisode({
-      type: EpisodeType.LEARNING_MOMENT,
-      summary: lesson,
-      details: { input: context },
-      context: {}
-    });
-  }
-
-  /**
-   * 🔍 Rappel des épisodes similaires
-   */
-  async recallSimilarEpisodes(
-    currentContext: string,
-    limit: number = 5
-  ): Promise<Episode[]> {
-    const memories = await this.memory.search({
-      type: MemoryType.EPISODIC,
-      text: currentContext,
-      sortBy: 'importance',
-      limit
-    });
-
-    return memories.map(m => m.content as Episode);
-  }
-
-  /**
-   * ❌ Rappel des erreurs passées similaires
-   */
-  async recallSimilarErrors(
-    errorPattern: string,
-    limit: number = 3
-  ): Promise<Episode[]> {
-    const memories = await this.memory.search({
+  async recallSimilarErrors(errorPattern: string): Promise<Episode[]> {
+    const results = await this.memory.search({
       type: MemoryType.EPISODIC,
       text: errorPattern,
-      limit: limit * 2
-    });
-
-    return memories
-      .filter(m => (m.content as Episode).type === EpisodeType.ERROR_OCCURRED)
-      .slice(0, limit)
-      .map(m => m.content as Episode);
-  }
-
-  /**
-   * ⭐ Calcul de l'importance d'un épisode
-   */
-  private calculateEpisodeImportance(episode: Episode): number {
-    let importance = 0.5;
-
-    // ❌ Erreurs = très important
-    if (episode.type === EpisodeType.ERROR_OCCURRED) {
-      importance += 0.3;
-    }
-    // 💡 Apprentissage = important
-    if (episode.type === EpisodeType.LEARNING_MOMENT) {
-      importance += 0.25;
-    }
-    // 👍 Feedback positif
-    if (episode.userReaction === 'positive') {
-      importance += 0.2;
-    }
-    // 👎 Feedback négatif = encore plus important
-    if (episode.userReaction === 'negative') {
-      importance += 0.25;
-    }
-    // 📁 Fichiers modifiés
-    if (episode.details.filesModified?.length) {
-      importance += 0.1;
-    }
-
-    return Math.min(1, importance);
-  }
-}
-```
-
-### 14.3.3 💡 Utilisation dans l'Agent
-
-```typescript
-// Exemple d'utilisation dans l'agent
-async processMessage(message: string): Promise<string> {
-  // 🔍 Rappel du contexte similaire
-  const similarEpisodes = await this.episodicMemory.recallSimilarEpisodes(
-    message,
-    3
-  );
-
-  // 📝 Enrichissement du prompt
-  let contextHint = '';
-  if (similarEpisodes.length > 0) {
-    contextHint = `\n\nContexte historique pertinent:\n`;
-    for (const ep of similarEpisodes) {
-      contextHint += `- ${ep.summary}\n`;
-    }
-  }
-
-  // 🤖 Traitement
-  const response = await this.llm.chat(message + contextHint);
-
-  // 💾 Enregistrement de l'épisode
-  await this.episodicMemory.recordConversation(
-    message,
-    response,
-    this.lastToolsUsed,
-    true
-  );
-
-  return response;
-}
-```
-
----
-
-## 14.4 🧠 Mémoire Sémantique : Connaissances Apprises
-
-La mémoire sémantique stocke les **connaissances factuelles** extraites des expériences.
-
-### 14.4.1 📊 Types de Connaissances
-
-| Type | Icône | Exemple |
-|------|:-----:|---------|
-| **Fait Codebase** | 📁 | "Le point d'entrée est src/index.ts" |
-| **Préférence User** | 👤 | "Lina préfère les commits atomiques" |
-| **Pattern Récurrent** | 🔄 | "Les tests sont toujours lancés après edit" |
-| **Règle Projet** | 📋 | "Ce projet utilise ESLint avec semicolons" |
-
-### 14.4.2 🔧 Implémentation
-
-```typescript
-// src/memory/semantic-memory.ts
-
-/**
- * 📊 Types de faits
- */
-export enum FactType {
-  CODEBASE_FACT = 'codebase_fact',
-  USER_PREFERENCE = 'user_preference',
-  RECURRING_PATTERN = 'recurring_pattern',
-  PROJECT_RULE = 'project_rule'
-}
-
-/**
- * 📦 Structure d'un fait
- */
-interface Fact {
-  type: FactType;
-  subject: string;        // De quoi parle-t-on
-  predicate: string;      // Quelle relation
-  object: string;         // Avec quoi
-  confidence: number;     // 0-1
-  source: string;         // D'où vient cette info
-  validUntil?: number;    // Expiration optionnelle
-}
-
-/**
- * 🧠 SemanticMemory - Gestionnaire de connaissances
- */
-export class SemanticMemory {
-  private memory: MemorySystem;
-
-  constructor(memory: MemorySystem) {
-    this.memory = memory;
-  }
-
-  /**
-   * 📝 Apprend un nouveau fait
-   */
-  async learnFact(fact: Fact): Promise<string> {
-    // 🔍 Vérifier si on connaît déjà ce fait
-    const existing = await this.findSimilarFacts(fact.subject, fact.predicate);
-
-    if (existing.length > 0) {
-      // 📈 Renforcer la confiance si même fait
-      const match = existing.find(f =>
-        f.object.toLowerCase() === fact.object.toLowerCase()
-      );
-
-      if (match) {
-        return this.reinforceFact(match, fact.confidence);
-      }
-
-      // ⚠️ Conflit : nouveau fait différent
-      if (fact.confidence > existing[0].confidence) {
-        await this.forget(existing[0]);
-      } else {
-        return existing[0].id; // Garder l'ancien
-      }
-    }
-
-    // 💾 Stocker le nouveau fait
-    return this.memory.remember(MemoryType.SEMANTIC, fact, {
-      importance: fact.confidence,
-      metadata: {
-        factType: fact.type,
-        subject: fact.subject
-      }
-    });
-  }
-
-  /**
-   * 👤 Apprend une préférence utilisateur
-   */
-  async learnUserPreference(
-    preference: string,
-    value: string,
-    confidence: number = 0.7
-  ): Promise<string> {
-    return this.learnFact({
-      type: FactType.USER_PREFERENCE,
-      subject: 'user',
-      predicate: preference,
-      object: value,
-      confidence,
-      source: 'observation'
-    });
-  }
-
-  /**
-   * 📁 Apprend un fait sur le codebase
-   */
-  async learnCodebaseFact(
-    subject: string,
-    predicate: string,
-    object: string,
-    confidence: number = 0.8
-  ): Promise<string> {
-    return this.learnFact({
-      type: FactType.CODEBASE_FACT,
-      subject,
-      predicate,
-      object,
-      confidence,
-      source: 'analysis'
-    });
-  }
-
-  /**
-   * 🔍 Requête de connaissances
-   */
-  async query(
-    subject?: string,
-    predicate?: string
-  ): Promise<Fact[]> {
-    const memories = await this.memory.search({
-      type: MemoryType.SEMANTIC,
-      sortBy: 'importance'
-    });
-
-    let facts = memories.map(m => ({
-      ...m.content as Fact,
-      id: m.id
-    }));
-
-    if (subject) {
-      facts = facts.filter(f =>
-        f.subject.toLowerCase().includes(subject.toLowerCase())
-      );
-    }
-
-    if (predicate) {
-      facts = facts.filter(f =>
-        f.predicate.toLowerCase().includes(predicate.toLowerCase())
-      );
-    }
-
-    return facts;
-  }
-
-  /**
-   * 👤 Récupère les préférences utilisateur
-   */
-  async getUserPreferences(): Promise<Record<string, string>> {
-    const facts = await this.query('user');
-    const prefs: Record<string, string> = {};
-
-    for (const fact of facts) {
-      if (fact.type === FactType.USER_PREFERENCE) {
-        prefs[fact.predicate] = fact.object;
-      }
-    }
-
-    return prefs;
-  }
-
-  /**
-   * 📈 Renforce un fait existant
-   */
-  private async reinforceFact(
-    fact: Fact & { id: string },
-    additionalConfidence: number
-  ): Promise<string> {
-    const newConfidence = Math.min(1, fact.confidence + additionalConfidence * 0.2);
-
-    await this.memory.forget(fact.id);
-    return this.learnFact({
-      ...fact,
-      confidence: newConfidence
-    });
-  }
-}
-```
-
-### 14.4.3 📊 Exemple d'Apprentissage
-
-```typescript
-// Apprentissage automatique des préférences
-class PreferenceLearner {
-  private semanticMemory: SemanticMemory;
-
-  async observeUserBehavior(action: UserAction): Promise<void> {
-    // 📊 Détection de patterns
-    if (action.type === 'commit' && action.filesCount <= 3) {
-      await this.semanticMemory.learnUserPreference(
-        'commit_style',
-        'atomic',
-        0.6
-      );
-    }
-
-    if (action.type === 'test' && action.afterEveryEdit) {
-      await this.semanticMemory.learnUserPreference(
-        'testing_habit',
-        'after_each_edit',
-        0.7
-      );
-    }
-
-    if (action.type === 'search' && action.method === 'grep') {
-      await this.semanticMemory.learnUserPreference(
-        'search_preference',
-        'exact_grep',
-        0.5
-      );
-    }
-  }
-}
-```
-
----
-
-## 14.5 ⚙️ Mémoire Procédurale : Comment Faire
-
-La mémoire procédurale stocke les **séquences d'actions efficaces** — les "recettes" qui fonctionnent.
-
-### 14.5.1 📊 Structure d'une Procédure
-
-```typescript
-// src/memory/procedural-memory.ts
-
-/**
- * 📦 Structure d'une procédure
- */
-interface Procedure {
-  name: string;
-  description: string;
-  trigger: string;          // Quand l'utiliser
-  steps: ProcedureStep[];   // Étapes à suivre
-  successRate: number;      // Taux de succès historique
-  avgDuration: number;      // Durée moyenne
-  usageCount: number;       // Nombre d'utilisations
-  lastUsed: number;         // Dernière utilisation
-}
-
-interface ProcedureStep {
-  order: number;
-  action: string;           // L'action à effectuer
-  tool?: string;            // Outil à utiliser
-  params?: Record<string, unknown>;
-  expectedOutcome?: string;
-  onFailure?: 'retry' | 'skip' | 'abort';
-}
-```
-
-### 14.5.2 🔧 Implémentation
-
-```typescript
-/**
- * ⚙️ ProceduralMemory - Gestionnaire de workflows
- */
-export class ProceduralMemory {
-  private memory: MemorySystem;
-
-  constructor(memory: MemorySystem) {
-    this.memory = memory;
-  }
-
-  /**
-   * 📝 Apprend une nouvelle procédure
-   */
-  async learnProcedure(
-    name: string,
-    trigger: string,
-    steps: ProcedureStep[]
-  ): Promise<string> {
-    const procedure: Procedure = {
-      name,
-      description: `Procedure for: ${trigger}`,
-      trigger,
-      steps,
-      successRate: 1.0,   // Optimiste au départ
-      avgDuration: 0,
-      usageCount: 0,
-      lastUsed: Date.now()
-    };
-
-    return this.memory.remember(MemoryType.PROCEDURAL, procedure, {
-      importance: 0.7,
-      metadata: { procedureName: name }
-    });
-  }
-
-  /**
-   * 🔍 Trouve la meilleure procédure pour un contexte
-   */
-  async findBestProcedure(context: string): Promise<Procedure | null> {
-    const memories = await this.memory.search({
-      type: MemoryType.PROCEDURAL,
-      text: context,
-      sortBy: 'importance',
       limit: 5
     });
-
-    if (memories.length === 0) return null;
-
-    // 📊 Sélection basée sur le taux de succès et la pertinence
-    const procedures = memories.map(m => m.content as Procedure);
-
-    return procedures.reduce((best, current) => {
-      const bestScore = best.successRate * 0.7 + (best.usageCount / 100) * 0.3;
-      const currentScore = current.successRate * 0.7 + (current.usageCount / 100) * 0.3;
-      return currentScore > bestScore ? current : best;
-    });
-  }
-
-  /**
-   * 📈 Met à jour les stats après exécution
-   */
-  async recordExecution(
-    procedureId: string,
-    success: boolean,
-    duration: number
-  ): Promise<void> {
-    const entry = await this.memory.recall(procedureId);
-    if (!entry) return;
-
-    const proc = entry.content as Procedure;
-
-    // 📊 Mise à jour du taux de succès (moyenne mobile)
-    proc.successRate = (proc.successRate * proc.usageCount + (success ? 1 : 0))
-      / (proc.usageCount + 1);
-
-    // ⏱️ Mise à jour de la durée moyenne
-    proc.avgDuration = (proc.avgDuration * proc.usageCount + duration)
-      / (proc.usageCount + 1);
-
-    proc.usageCount++;
-    proc.lastUsed = Date.now();
-
-    await this.memory.forget(procedureId);
-    await this.memory.remember(MemoryType.PROCEDURAL, proc, {
-      importance: Math.min(1, 0.5 + proc.successRate * 0.5)
-    });
-  }
-
-  /**
-   * 🎓 Apprend à partir d'une séquence observée
-   */
-  async learnFromObservation(
-    actions: ObservedAction[],
-    outcome: 'success' | 'failure',
-    context: string
-  ): Promise<void> {
-    if (outcome !== 'success') return; // N'apprend que des succès
-
-    // 📊 Convertir les actions en étapes
-    const steps: ProcedureStep[] = actions.map((action, i) => ({
-      order: i + 1,
-      action: action.type,
-      tool: action.tool,
-      params: action.params
-    }));
-
-    // 🔍 Vérifier si une procédure similaire existe
-    const existing = await this.findBestProcedure(context);
-
-    if (existing && this.isSimilar(existing.steps, steps)) {
-      // ✅ Renforcer l'existante
-      await this.recordExecution(existing.name, true, 0);
-    } else {
-      // 🆕 Créer une nouvelle procédure
-      await this.learnProcedure(
-        `auto_${Date.now()}`,
-        context,
-        steps
-      );
-    }
+    return results
+      .filter(m => (m.content as Episode).type === 'error')
+      .map(m => m.content as Episode);
   }
 }
 ```
 
-### 14.5.3 📊 Exemple : Procédure de Déploiement
-
-![Procédure de déploiement](images/deploy-procedure.svg)
-
----
-
-## 14.6 🔮 Mémoire Prospective : Tâches Futures
-
-La mémoire prospective gère les **tâches planifiées**, les **objectifs** (goals), et les **rappels contextuels**. C'est le système qui permet à l'agent de se souvenir de ce qu'il doit faire dans le futur.
-
-### 14.6.1 📊 Composants de la Mémoire Prospective
-
-| Composant | Icône | Description | Exemples |
-|-----------|:-----:|-------------|----------|
-| **Tasks** | 📋 | Tâches à accomplir avec priorité et deadline | "Refactorer AuthService" |
-| **Goals** | 🎯 | Objectifs à long terme composés de tâches | "Améliorer la sécurité du projet" |
-| **Reminders** | 🔔 | Rappels temporels ou contextuels | "Rappeler les tests après modif auth.ts" |
-| **Subtasks** | ✅ | Sous-tâches d'une tâche principale | "Ajouter validation, écrire tests" |
-
-### 14.6.2 🔧 Structure des Données
+### 3.2 Mémoire Sémantique — "Qu'ai-je appris ?"
 
 ```typescript
-// src/memory/prospective-memory.ts
-
-/**
- * 📋 Structure d'une tâche prospective
- */
-interface ProspectiveTask {
-  id: string;
-  title: string;
-  description?: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'deferred';
-  trigger: TaskTrigger;
-  context?: TaskContext;
-  progress: number;           // 0-100
-  subtasks?: SubTask[];
-  dependencies?: string[];    // Task IDs
-  tags: string[];
-  projectId?: string;
-  dueAt?: Date;
-  completedAt?: Date;
+interface Fact {
+  type: 'codebase_fact' | 'user_preference' | 'recurring_pattern' | 'project_rule';
+  subject: string;      // "user"
+  predicate: string;    // "prefers"
+  object: string;       // "atomic commits"
+  confidence: number;   // 0-1
 }
 
-/**
- * 🎯 Structure d'un objectif
- */
-interface Goal {
-  id: string;
-  title: string;
-  description?: string;
-  targetDate?: Date;
-  tasks: string[];            // Task IDs contributing to this goal
-  progress: number;           // Auto-calculated from tasks
-  status: 'active' | 'achieved' | 'abandoned';
-  milestones?: Milestone[];
-}
-
-/**
- * 🔔 Structure d'un rappel
- */
-interface Reminder {
-  id: string;
-  taskId?: string;
-  message: string;
-  triggerAt: Date;
-  recurring?: {
-    interval: 'daily' | 'weekly' | 'monthly';
-    count?: number;
-  };
-  dismissed: boolean;
-}
-
-/**
- * ⚡ Types de déclencheurs
- */
-type TaskTrigger =
-  | { type: 'time'; schedule: string }      // ISO date or cron
-  | { type: 'event'; event: string }        // Event name to listen for
-  | { type: 'condition'; condition: string } // Condition to evaluate
-  | { type: 'manual'; fired: boolean };     // Manual trigger
-
-/**
- * 🔮 ProspectiveMemory - Gestionnaire de tâches futures
- */
-export class ProspectiveMemory {
-  private memory: MemorySystem;
-  private checkInterval: NodeJS.Timeout | null = null;
-
-  constructor(memory: MemorySystem) {
-    this.memory = memory;
+class SemanticMemory {
+  async learnUserPreference(preference: string, value: string): Promise<void> {
+    // Vérifier si on connaît déjà ce fait
+    const existing = await this.findFact('user', preference);
+    if (existing && existing.object === value) {
+      // Renforcer la confiance
+      existing.confidence = Math.min(1, existing.confidence + 0.1);
+    } else {
+      // Nouveau fait ou remplacement
+      await this.memory.remember(MemoryType.SEMANTIC, {
+        type: 'user_preference',
+        subject: 'user',
+        predicate: preference,
+        object: value,
+        confidence: 0.7
+      });
+    }
   }
 
-  /**
-   * 📝 Planifie une intention
-   */
-  async planIntention(
-    description: string,
-    trigger: IntentionTrigger,
-    action: string,
-    priority: 'high' | 'medium' | 'low' = 'medium'
-  ): Promise<string> {
-    const intention: Intention = {
-      id: `int_${Date.now()}`,
-      description,
-      trigger,
-      action,
-      priority,
-      createdAt: Date.now(),
-      status: 'pending'
-    };
-
-    return this.memory.remember(MemoryType.PROSPECTIVE, intention, {
-      importance: priority === 'high' ? 0.9 : priority === 'medium' ? 0.7 : 0.5,
-      metadata: {
-        triggerType: trigger.type
+  async getUserPreferences(): Promise<Record<string, string>> {
+    const facts = await this.memory.search({ type: MemoryType.SEMANTIC });
+    const prefs: Record<string, string> = {};
+    for (const f of facts.map(m => m.content as Fact)) {
+      if (f.type === 'user_preference') {
+        prefs[f.predicate] = f.object;
       }
+    }
+    return prefs;
+  }
+}
+```
+
+### 3.3 Mémoire Procédurale — "Comment faire ?"
+
+```typescript
+interface Procedure {
+  name: string;
+  trigger: string;              // Quand l'utiliser
+  steps: { action: string; tool?: string; params?: unknown }[];
+  successRate: number;
+  usageCount: number;
+}
+
+class ProceduralMemory {
+  async learnFromObservation(actions: Action[], outcome: 'success' | 'failure'): Promise<void> {
+    if (outcome !== 'success') return;  // N'apprend que des succès
+
+    const steps = actions.map((a, i) => ({ order: i, action: a.type, tool: a.tool }));
+    await this.memory.remember(MemoryType.PROCEDURAL, {
+      name: `auto_${Date.now()}`,
+      trigger: actions[0]?.context || 'unknown',
+      steps,
+      successRate: 1.0,
+      usageCount: 1
     });
   }
 
-  /**
-   * ⏰ Rappel basé sur le temps
-   */
-  async remindAt(
-    time: Date,
-    description: string,
-    action: string
-  ): Promise<string> {
-    return this.planIntention(
+  async findBestProcedure(context: string): Promise<Procedure | null> {
+    const results = await this.memory.search({
+      type: MemoryType.PROCEDURAL,
+      text: context,
+      limit: 5
+    });
+    if (!results.length) return null;
+
+    // Sélection par taux de succès
+    return results
+      .map(m => m.content as Procedure)
+      .sort((a, b) => b.successRate - a.successRate)[0];
+  }
+}
+```
+
+### 3.4 Mémoire Prospective — "Que dois-je faire ?"
+
+```typescript
+interface Intention {
+  description: string;
+  trigger: { type: 'time'; at: number } | { type: 'file'; path: string } | { type: 'event'; name: string };
+  action: string;
+  priority: 'high' | 'medium' | 'low';
+  status: 'pending' | 'triggered' | 'completed';
+}
+
+class ProspectiveMemory {
+  async remindOnFile(filePath: string, description: string, action: string): Promise<void> {
+    await this.memory.remember(MemoryType.PROSPECTIVE, {
       description,
-      { type: 'time', at: time.getTime() },
+      trigger: { type: 'file', path: filePath },
       action,
-      'medium'
-    );
+      priority: 'high',
+      status: 'pending'
+    }, 0.9);
   }
 
-  /**
-   * 📁 Rappel quand un fichier est touché
-   */
-  async remindOnFile(
-    filePath: string,
-    description: string,
-    action: string
-  ): Promise<string> {
-    return this.planIntention(
-      description,
-      { type: 'file', path: filePath },
-      action,
-      'high'
-    );
-  }
-
-  /**
-   * 🔍 Vérifie les intentions déclenchées
-   */
-  async checkTriggers(context: TriggerContext): Promise<Intention[]> {
+  async checkTriggers(context: { currentFile?: string }): Promise<Intention[]> {
+    const memories = await this.memory.search({ type: MemoryType.PROSPECTIVE });
     const triggered: Intention[] = [];
 
-    const memories = await this.memory.search({
-      type: MemoryType.PROSPECTIVE,
-      minImportance: 0.3
-    });
+    for (const m of memories) {
+      const intent = m.content as Intention;
+      if (intent.status !== 'pending') continue;
 
-    for (const mem of memories) {
-      const intention = mem.content as Intention;
-      if (intention.status !== 'pending') continue;
-
-      if (this.shouldTrigger(intention.trigger, context)) {
-        intention.status = 'triggered';
-        triggered.push(intention);
-
-        // 📈 Mise à jour du statut
-        await this.memory.forget(mem.id);
-        await this.memory.remember(MemoryType.PROSPECTIVE, intention, {
-          importance: 1.0
-        });
+      if (intent.trigger.type === 'file' && intent.trigger.path === context.currentFile) {
+        intent.status = 'triggered';
+        triggered.push(intent);
       }
     }
-
     return triggered;
   }
-
-  private shouldTrigger(trigger: IntentionTrigger, context: TriggerContext): boolean {
-    switch (trigger.type) {
-      case 'time':
-        return Date.now() >= trigger.at;
-
-      case 'context':
-        return context.currentMessage?.includes(trigger.pattern) ?? false;
-
-      case 'file':
-        return context.currentFile === trigger.path;
-
-      case 'event':
-        return context.events?.includes(trigger.name) ?? false;
-
-      default:
-        return false;
-    }
-  }
 }
-```
-
-### 14.6.2 💡 Exemple d'Utilisation
-
-```typescript
-// L'utilisateur demande un rappel
-"Rappelle-moi de faire les tests d'intégration quand je modifie auth.ts"
-
-// → L'agent crée une intention
-await prospectiveMemory.remindOnFile(
-  'src/auth/auth.ts',
-  'Lancer les tests d\'intégration',
-  'npm run test:integration'
-);
-
-// Plus tard, quand l'utilisateur édite auth.ts
-const triggered = await prospectiveMemory.checkTriggers({
-  currentFile: 'src/auth/auth.ts'
-});
-
-// → L'agent rappelle à l'utilisateur
-"💡 Rappel : Tu avais demandé de lancer les tests d'intégration
-   quand tu modifies auth.ts. Veux-tu que je les lance ?"
 ```
 
 ---
 
-## 14.7 🧹 Consolidation : Oubli Intelligent
+## 4. Edge Cases et Pièges
 
-Un agent qui n'oublie jamais finit par avoir trop de données bruitées. La **consolidation** est le processus d'oubli intelligent.
-
-### 14.7.1 📊 Règles de Consolidation
-
-| Règle | Condition | Action |
-|-------|-----------|--------|
-| **Oubli** | Importance < 0.2, jamais accédé, > 1 semaine | 🗑️ Supprimer |
-| **Archivage** | > 1 mois, non accédé > 1 semaine, importance < 0.5 | 📦 Archiver |
-| **Promotion** | Accédé > 10 fois | ⬆️ +10% importance |
-| **Fusion** | Similarité > 95% | 🔗 Fusionner |
-
-### 14.7.2 🔧 Implémentation
+### Piège 1 : Mémoire qui ne s'oublie jamais
 
 ```typescript
-/**
- * 🧹 Consolidation des mémoires
- */
-async consolidate(): Promise<ConsolidationReport> {
-  const report: ConsolidationReport = {
-    memoriesAnalyzed: this.memories.size,
-    merged: 0,
-    archived: 0,
-    forgotten: 0,
-    promoted: 0
-  };
+// ❌ Accumulation sans limite
+await memory.remember(...);  // 100K entrées après 6 mois
 
-  const now = Date.now();
+// ✅ Consolidation périodique (oubli intelligent)
+async consolidate(): Promise<{ forgotten: number; promoted: number }> {
   const oneWeek = 7 * 24 * 60 * 60 * 1000;
-  const oneMonth = 30 * 24 * 60 * 60 * 1000;
+  let forgotten = 0, promoted = 0;
 
   for (const [id, entry] of this.memories) {
-    const age = now - entry.timestamp;
-    const staleness = now - entry.lastAccessed;
+    const age = Date.now() - entry.timestamp;
+    const stale = Date.now() - entry.lastAccessed;
 
-    // 🗑️ OUBLI : non important + jamais accédé + vieux
-    if (entry.importance < 0.2 &&
-        entry.accessCount === 0 &&
-        age > oneWeek) {
-      await this.forget(id);
-      report.forgotten++;
-      continue;
+    // Oubli : non important + jamais accédé + vieux
+    if (entry.importance < 0.2 && entry.accessCount === 0 && age > oneWeek) {
+      this.memories.delete(id);
+      forgotten++;
     }
 
-    // 📦 ARCHIVAGE : ancien + non utilisé récemment
-    if (age > oneMonth &&
-        staleness > oneWeek &&
-        entry.importance < 0.5) {
-      entry.metadata.archived = true;
-      report.archived++;
-      continue;
-    }
-
-    // ⬆️ PROMOTION : fréquemment accédé
+    // Promotion : fréquemment accédé
     if (entry.accessCount > 10 && entry.importance < 0.8) {
-      entry.importance = Math.min(1, entry.importance + 0.1);
-      report.promoted++;
+      entry.importance += 0.1;
+      promoted++;
     }
   }
 
-  // 🔗 FUSION des mémoires similaires
-  report.merged = await this.mergeSimilarMemories();
-
-  return report;
+  return { forgotten, promoted };
 }
 ```
 
-### 14.7.3 📊 Visualisation de la Consolidation
+**Contournement** : Consolidation hebdomadaire avec règles d'oubli.
 
-![Rapport de consolidation](images/consolidation-report.svg)
+### Piège 2 : Apprentissage de mauvais patterns
 
----
+```typescript
+// ❌ Apprendre d'une erreur comme si c'était un succès
+await proceduralMemory.learn(actions, 'success');  // Mais l'utilisateur n'était pas content
 
-## ⚠️ 14.8 Limites et Risques
+// ✅ Feedback explicite de l'utilisateur
+async recordWithFeedback(actions: Action[], userFeedback: 'positive' | 'negative'): Promise<void> {
+  if (userFeedback === 'negative') {
+    // Ne pas apprendre, ou apprendre à éviter
+    await this.memory.remember(MemoryType.EPISODIC, {
+      type: 'learning_moment',
+      summary: `Éviter cette approche pour: ${actions[0].context}`,
+      details: { actions }
+    }, 0.8);
+    return;
+  }
+  // Apprendre normalement
+  await this.learnFromObservation(actions, 'success');
+}
+```
 
-### 🚧 Limites Techniques
+**Contournement** : Toujours lier l'apprentissage au feedback utilisateur.
 
-| Limite | Description | Mitigation |
-|--------|-------------|------------|
-| **Qualité des souvenirs** | Mémoires bruitées = suggestions inadaptées | Consolidation régulière, seuils d'importance |
-| **Biais de confirmation** | L'agent renforce ses propres erreurs | Feedback utilisateur explicite |
-| **Croissance non bornée** | Sans oubli, la base explose | Politiques d'archivage et suppression |
-| **Drift contextuel** | Préférences apprises dans un projet appliquées ailleurs | Isolation par projet |
-| **Latence de rappel** | Recherche dans 100K+ mémoires = lent | Index vectoriel, pagination |
+### Piège 3 : Recherche lente sur grosse base
 
-### ⚠️ Risques Opérationnels
+```typescript
+// ❌ Recherche linéaire O(n) sur 50K entrées
+for (const entry of this.memories.values()) {
+  if (entry.content.includes(searchText)) results.push(entry);
+}
 
-| Risque | Probabilité | Impact | Mitigation |
-|--------|:-----------:|:------:|------------|
-| **Fuite d'info personnelle** | Moyenne | Critique | Chiffrement, options d'effacement |
-| **Apprentissage de mauvais patterns** | Moyenne | Moyen | Validation humaine périodique |
-| **Surcharge cognitive** | Faible | Moyen | Limiter les rappels à 3-5 max |
-| **Perte de données** | Faible | Élevé | Backups automatiques |
-| **Conflit entre mémoires** | Moyenne | Faible | Priorité par timestamp + confidence |
+// ✅ Index vectoriel pour recherche sémantique O(1)
+class IndexedMemorySystem extends MemorySystem {
+  private vectorIndex = new VectorIndex();
 
-### 🔒 Considérations de Confidentialité
+  async remember(type: MemoryType, content: unknown, importance = 0.5): Promise<string> {
+    const id = await super.remember(type, content, importance);
+    const embedding = await this.embed(JSON.stringify(content));
+    await this.vectorIndex.add(id, embedding);
+    return id;
+  }
 
-| Donnée Stockée | Risque | Protection |
-|----------------|--------|------------|
-| Messages utilisateur | Élevé | Chiffrement AES-256 |
-| Chemins de fichiers | Moyen | Masquage des chemins absolus |
-| Contenu de code | Élevé | Option d'exclusion par pattern |
-| Erreurs rencontrées | Moyen | Anonymisation des traces |
-| Préférences utilisateur | Faible | Export/suppression RGPD |
+  async searchSemantic(query: string, limit = 10): Promise<MemoryEntry[]> {
+    const queryEmbedding = await this.embed(query);
+    const ids = await this.vectorIndex.search(queryEmbedding, limit);  // O(1)
+    return Promise.all(ids.map(id => this.recall(id)));
+  }
+}
+```
 
-### 💡 Recommandations
-
-> 📌 **À Retenir** : Une mémoire parfaite n'est pas souhaitable. L'oubli intelligent est aussi important que la mémorisation. Implémentez des politiques de rétention claires et donnez toujours à l'utilisateur le contrôle sur ses données.
-
----
-
-## 📝 Points Clés
-
-| Concept | Icône | Description | Bénéfice |
-|---------|:-----:|-------------|----------|
-| **Épisodique** | 📖 | Événements passés | Contexte historique |
-| **Sémantique** | 🧠 | Connaissances factuelles | Personnalisation |
-| **Procédurale** | ⚙️ | Workflows efficaces | Automatisation |
-| **Prospective** | 🔮 | Tâches planifiées | Proactivité |
-| **Consolidation** | 🧹 | Oubli intelligent | Performance |
-
----
-
-## 🏋️ Exercices
-
-### Exercice 1 : 📖 Journal de Session
-Implémentez un système qui génère un résumé Markdown de chaque session :
-- Tâches accomplies
-- Erreurs rencontrées
-- Fichiers modifiés
-- Leçons apprises
-
-### Exercice 2 : 🧠 Détection de Patterns
-Créez un analyseur qui détecte automatiquement les patterns d'utilisation :
-- Heures de travail préférées
-- Outils les plus utilisés
-- Types de tâches récurrentes
-
-### Exercice 3 : ⚙️ Macro Recorder
-Implémentez un système qui :
-- Observe les séquences d'actions répétées
-- Propose de les sauvegarder comme procédure
-- Permet de les rejouer avec `@macro:nom`
-
-### Exercice 4 : 🔮 Smart Reminders
-Créez un système de rappels contextuels intelligents :
-- "Rappelle-moi de..." quand un pattern est détecté
-- Rappels basés sur le temps de la journée
-- Rappels liés à des fichiers spécifiques
+**Contournement** : Index vectoriel (FAISS, Chroma) pour recherche sémantique.
 
 ---
 
-## 📚 Références
+## 5. Optimisation : Intégration dans l'Agent
 
-| Source | Description | Lien |
-|--------|-------------|------|
-| **MemGPT** | UC Berkeley, LLMs as Operating Systems | [arXiv](https://arxiv.org/abs/2310.08560) |
-| **Letta** | Stateful AI framework (MemGPT commercial) | [letta.com](https://letta.com) |
-| **Mem0** | Memory layer for AI applications | [GitHub](https://github.com/mem0ai/mem0) |
-| **LangChain Memory** | Memory patterns for LLM apps | [Docs](https://python.langchain.com/docs/modules/memory/) |
-| **Cognitive Science** | Human memory systems | [Wikipedia](https://en.wikipedia.org/wiki/Memory) |
-| **Grok-CLI** | `src/memory/` | Local |
+```typescript
+class AgentWithMemory {
+  private episodic: EpisodicMemory;
+  private semantic: SemanticMemory;
+  private procedural: ProceduralMemory;
+  private prospective: ProspectiveMemory;
 
----
+  async processMessage(message: string): Promise<string> {
+    // 1. Vérifier les rappels contextuels
+    const reminders = await this.prospective.checkTriggers({ currentMessage: message });
+    for (const r of reminders) {
+      console.log(`Reminder: ${r.description}`);
+    }
 
-## 🌅 Épilogue
+    // 2. Enrichir le contexte avec les mémoires pertinentes
+    const similarEpisodes = await this.episodic.recallSimilar(message, 3);
+    const userPrefs = await this.semantic.getUserPreferences();
+    const bestProcedure = await this.procedural.findBestProcedure(message);
 
-*Un mois plus tard. Bureau de Lina, fin de journée. Le soleil descend derrière les immeubles.*
+    // 3. Construire le prompt enrichi
+    const enrichedPrompt = this.buildPrompt(message, {
+      history: similarEpisodes,
+      preferences: userPrefs,
+      suggestedProcedure: bestProcedure
+    });
 
-**Lina** : "Tu sais, avant je devais tout réexpliquer à chaque session. Maintenant..."
+    // 4. Appeler le LLM
+    const response = await this.llm.chat(enrichedPrompt);
 
-**Agent** : "Je me souviens que tu préfères les commits atomiques, que tu lances toujours les tests après les modifications majeures, et que tu travailles principalement sur le module de paiement cette semaine."
+    // 5. Enregistrer l'épisode
+    await this.episodic.recordConversation(message, response, true);
 
-**Lina** *(souriant)* : "Exactement. C'est comme avoir un assistant qui apprend vraiment."
-
-**Agent** : "Et je me souviens aussi de l'erreur de validation de carte de la semaine dernière. Si tu travailles sur des cas similaires, je peux te prévenir des pièges."
-
-**Lina** : "C'est ça, l'apprentissage persistant. Pas juste stocker des données — mais construire une vraie compréhension au fil du temps."
-
-**Agent** : "D'ailleurs, tu m'avais demandé de te rappeler de faire les tests d'intégration quand tu modifies auth.ts. Tu viens de l'ouvrir..."
-
-**Lina** *(riant)* : "Vas-y, lance-les."
-
-*Quelques minutes plus tard. Marc entre dans le bureau, visiblement excité.*
-
-**Marc** : "Lina ! Tu as vu le message de Karim ?"
-
-*Elle secoue la tête, ouvre Slack.*
-
-**Karim** *(message)* : "@lina @marc Réunion demain 9h. Le board veut voir une démo complète de Grok-CLI. Tout le système. Architecture, features, performance. C'est notre chance de convaincre pour la série A."
-
-*Lina sent son cœur battre plus vite.*
-
-**Marc** : "On a tout. Les outils, le contexte intelligent, le raisonnement, les optimisations, la mémoire persistante... Mais on n'a jamais tout mis ensemble de manière cohérente."
-
-**Lina** *(réfléchissant)* : "On a construit les briques. Maintenant il faut montrer la maison."
-
-*Elle ouvre un nouveau fichier.*
-
-**Lina** : "OK. On va créer un diagramme d'architecture complète. Toutes les couches, tous les flux, toutes les interactions."
-
-**Marc** : "En une nuit ?"
-
-**Lina** *(souriant, avec la détermination qu'il connaît bien)* : "Pas en une nuit. On l'a déjà construite, on va juste la documenter."
-
-*Elle commence à taper.*
-
-**Lina** : "Couche 1 : Interface utilisateur. Couche 2 : Orchestration agent. Couche 3 : Raisonnement et outils..."
-
-**Agent** : "Voulez-vous que je génère automatiquement un squelette basé sur l'architecture actuelle ?"
-
-*Lina et Marc se regardent.*
-
-**Marc** : "Il apprend vraiment vite, ton agent."
-
-**Lina** : "C'est le but."
+    return response;
+  }
+}
+```
 
 ---
 
-## 🧭 Navigation
+## Tableau Récapitulatif
 
-| Précédent | Suivant |
-|:---------:|:-------:|
-| [← Chapitre 13 : Optimisations Système](13-optimisations-systeme.md) | [Chapitre 15 : Architecture Complète →](15-architecture-complete.md) |
+| Type de Mémoire | Question | Exemples | Importance |
+|-----------------|----------|----------|:----------:|
+| **Épisodique** | "Que s'est-il passé ?" | Conversations, erreurs, succès | Actions passées |
+| **Sémantique** | "Qu'ai-je appris ?" | Préférences, faits projet | Personnalisation |
+| **Procédurale** | "Comment faire ?" | Workflows, séquences | Automatisation |
+| **Prospective** | "Que dois-je faire ?" | Rappels, tâches | Proactivité |
+
+| Règle de Consolidation | Condition | Action |
+|------------------------|-----------|--------|
+| **Oubli** | importance < 0.2, 0 accès, > 1 semaine | Supprimer |
+| **Archivage** | > 1 mois, non accédé > 1 semaine | Archiver |
+| **Promotion** | accès > 10 fois | +10% importance |
 
 ---
 
-**À suivre** : *Chapitre 15 — Architecture Complète*
+## Ce Qui Vient Ensuite
 
-*Une nuit pour tout assembler. Six couches architecturales. Un agent qui peut expliquer sa propre structure. Lina et Marc vont découvrir que documenter un système, c'est aussi le comprendre vraiment — et que parfois, l'agent comprend mieux son architecture que ses créateurs.*
+L'agent a maintenant des outils, du contexte intelligent, des optimisations, et une mémoire persistante. Le **Chapitre 15** assemble tout : l'architecture complète d'un agent LLM production-ready.
+
+---
+
+[Chapitre 13](13-optimisations-systeme.md) | [Table des Matières](README.md) | [Chapitre 15](15-architecture-complete.md)
