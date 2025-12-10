@@ -10,6 +10,19 @@
 
 ---
 
+## Deux Versions Disponibles
+
+Ce livre existe en deux versions selon votre style d'apprentissage :
+
+| Version | Description | Taille | Recommandé pour |
+|---------|-------------|--------|-----------------|
+| **Pratique** (actuelle) | Code-first, exemples concrets, droit au but | ~6,000 lignes | Développeurs pressés, "je veux coder maintenant" |
+| **[Narrative](archive-narrative/README.md)** | Explications détaillées, contexte théorique, storytelling | ~20,000 lignes | Apprenants curieux, "je veux comprendre pourquoi" |
+
+**Vous êtes sur la version Pratique.** Pour la version Narrative complète : **[archive-narrative/](archive-narrative/README.md)**
+
+---
+
 ## Ce Que Vous Allez Construire
 
 À la fin de ce livre, vous aurez **Grok-CLI** — un agent de terminal complet :
