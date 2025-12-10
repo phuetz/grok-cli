@@ -105,3 +105,4 @@ temp/
 .grok/sessions/
 .grok/history/
 .grok/user-settings.json
+.jscpd/
