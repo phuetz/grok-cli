@@ -16,7 +16,7 @@ const BLOCKED_PATTERNS: RegExp[] = [
   />\s*\/dev\/sd[a-z]/i,                 // Write to disk device
   /dd\s+.*if=.*of=\/dev/i,              // dd to device
   /mkfs/i,                               // Format filesystem
-  /:()\s*{\s*:\|:&\s*};:/,              // Fork bomb
+  /:\(\)\s*\{\s*:\|:&\s*\};:/,          // Fork bomb :(){ :|:& };:
   /chmod\s+-R\s+777\s+\//i,             // chmod 777 /
   /wget.*\|\s*(ba)?sh/i,                // wget | sh
   /curl.*\|\s*(ba)?sh/i,                // curl | sh
