@@ -93,6 +93,7 @@ export class LatencyOptimizer extends EventEmitter {
   private pendingPrecomputes: Map<string, Promise<unknown>> = new Map();
   private warmupTasks: Array<() => Promise<void>> = [];
   private isWarmingUp: boolean = false;
+  private cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     super();
@@ -385,7 +386,7 @@ export class LatencyOptimizer extends EventEmitter {
    * Start periodic cleanup
    */
   private startPeriodicCleanup(): void {
-    setInterval(() => this.cleanup(), 60000); // Every minute
+    this.cleanupIntervalId = setInterval(() => this.cleanup(), 60000); // Every minute
   }
 
   /**
@@ -395,6 +396,18 @@ export class LatencyOptimizer extends EventEmitter {
     this.measurements = [];
     this.precomputeCache.clear();
     this.pendingPrecomputes.clear();
+  }
+
+  /**
+   * Dispose and clean up resources
+   */
+  dispose(): void {
+    if (this.cleanupIntervalId) {
+      clearInterval(this.cleanupIntervalId);
+      this.cleanupIntervalId = null;
+    }
+    this.reset();
+    this.removeAllListeners();
   }
 }
 

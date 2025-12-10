@@ -140,6 +140,7 @@ export class AnalyticsDashboard extends EventEmitter {
   private events: AnalyticsEvent[] = [];
   private dailyStats: LRUCache<DailyStats>;
   private currentSessionId: string | null = null;
+  private autoSaveIntervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor(config: Partial<DashboardConfig> = {}) {
     super();
@@ -245,7 +246,7 @@ export class AnalyticsDashboard extends EventEmitter {
    * Start auto-save interval
    */
   private startAutoSave(): void {
-    setInterval(() => {
+    this.autoSaveIntervalId = setInterval(() => {
       this.saveData();
       this.cleanupOldData();
     }, 60000); // Every minute
@@ -839,10 +840,18 @@ export class AnalyticsDashboard extends EventEmitter {
   }
 
   /**
-   * Dispose
+   * Dispose and clean up resources
    */
   dispose(): void {
+    if (this.autoSaveIntervalId) {
+      clearInterval(this.autoSaveIntervalId);
+      this.autoSaveIntervalId = null;
+    }
     this.saveData();
+    this.sessions.clear();
+    this.tools.clear();
+    this.dailyStats.clear();
+    this.events = [];
     this.removeAllListeners();
   }
 }

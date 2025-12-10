@@ -3,6 +3,9 @@ export interface ToolResult {
   output?: string;
   error?: string;
   data?: unknown;
+  // Alternative property names used by some tools
+  content?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Tool {

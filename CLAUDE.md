@@ -103,6 +103,35 @@ User Input → ChatInterface (Ink/React) → GrokAgent → Grok API
 - **src/utils/** - Utility modules
   - **src/utils/semantic-cache.ts** - Semantic API response caching (68% API reduction)
   - **src/utils/shell-completions.ts** - Bash/zsh/fish completion scripts
+- **src/commands/** - Slash commands system (40+ commands: /help, /model, /commit, etc.)
+  - **src/commands/slash-commands.ts** - Core slash command dispatcher
+  - **src/commands/handlers/** - Individual command implementations
+- **src/browser/** - Embedded browser UI with Puppeteer for visual rendering
+- **src/checkpoints/** - File checkpoint system for undo/restore operations
+  - **src/checkpoints/checkpoint-manager.ts** - Snapshot management and rollback
+- **src/collaboration/** - Multi-user collaboration features
+- **src/config/** - Application configuration and constants
+- **src/input/** - User input handling and key bindings
+  - **src/input/input-handler.ts** - Keyboard input processing
+- **src/integrations/** - External service integrations (GitHub, IDE)
+- **src/lsp/** - Language Server Protocol integration for IDE features
+- **src/modes/** - Agent operation modes (plan, code, ask, architect)
+- **src/observability/** - Monitoring and debugging dashboard
+  - **src/observability/dashboard.ts** - Real-time system monitoring
+- **src/offline/** - Offline mode with local LLM support
+- **src/persistence/** - Session persistence and export
+  - **src/persistence/session-store.ts** - Session state management
+- **src/personas/** - AI personality customization
+- **src/plugins/** - Plugin system and marketplace
+- **src/providers/** - Model provider abstractions (Grok, OpenAI, local)
+- **src/sandbox/** - Docker-based sandboxed execution
+- **src/services/** - Business logic services
+  - **src/services/plan-generator.ts** - Plan mode implementation
+- **src/tasks/** - Background task management
+- **src/templates/** - Prompt templates for various operations
+- **src/testing/** - Test utilities and helpers
+- **src/themes/** - UI theming system
+- **src/undo/** - Undo/redo functionality for file operations
 
 ### Key Patterns
 

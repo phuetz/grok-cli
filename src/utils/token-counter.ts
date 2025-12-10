@@ -1,15 +1,61 @@
-import { get_encoding, encoding_for_model, Tiktoken } from 'tiktoken';
+/**
+ * Token Counter with Lazy Loading
+ *
+ * Tiktoken is lazy-loaded on first use to reduce startup time (23 MB module).
+ * The module is loaded synchronously when first needed, but the application
+ * can start without it.
+ */
+
+// Lazy-loaded tiktoken module
+let tiktoken: typeof import('tiktoken') | null = null;
+let loadAttempted = false;
+
+/**
+ * Lazily load tiktoken module (synchronous after first load)
+ */
+function getTiktoken(): typeof import('tiktoken') | null {
+  if (tiktoken) return tiktoken;
+  if (loadAttempted) return null;
+
+  loadAttempted = true;
+  try {
+    // Dynamic require for lazy loading
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    tiktoken = require('tiktoken');
+  } catch {
+    // Tiktoken not available, will use estimation
+    tiktoken = null;
+  }
+  return tiktoken;
+}
 
 export class TokenCounter {
-  private encoder: Tiktoken;
+  private encoder: import('tiktoken').Tiktoken | null = null;
+  private model: string;
+  private initialized = false;
 
   constructor(model: string = 'gpt-4') {
+    this.model = model;
+  }
+
+  /**
+   * Initialize the encoder lazily
+   */
+  private ensureInitialized(): void {
+    if (this.initialized) return;
+    this.initialized = true;
+
+    const tk = getTiktoken();
+    if (!tk) return;
+
     try {
       // Try to get encoding for specific model
-      this.encoder = encoding_for_model(model as Parameters<typeof encoding_for_model>[0]);
+      this.encoder = tk.encoding_for_model(
+        this.model as Parameters<typeof tk.encoding_for_model>[0]
+      );
     } catch {
       // Fallback to cl100k_base (used by GPT-4 and most modern models)
-      this.encoder = get_encoding('cl100k_base');
+      this.encoder = tk.get_encoding('cl100k_base');
     }
   }
 
@@ -18,7 +64,13 @@ export class TokenCounter {
    */
   countTokens(text: string): number {
     if (!text) return 0;
-    return this.encoder.encode(text).length;
+    this.ensureInitialized();
+
+    if (this.encoder) {
+      return this.encoder.encode(text).length;
+    }
+    // Fallback: estimate ~4 chars per token
+    return Math.ceil(text.length / 4);
   }
 
   /**
@@ -64,7 +116,11 @@ export class TokenCounter {
    * Clean up resources
    */
   dispose(): void {
-    this.encoder.free();
+    if (this.encoder) {
+      this.encoder.free();
+      this.encoder = null;
+    }
+    this.initialized = false;
   }
 }
 
@@ -113,4 +169,23 @@ export function countTokens(text: string): number {
     defaultCounter = new TokenCounter();
   }
   return defaultCounter.countTokens(text);
+}
+
+/**
+ * Estimate tokens without loading tiktoken (fast approximation)
+ * ~4 characters per token on average
+ */
+export function estimateTokens(text: string): number {
+  if (!text) return 0;
+  return Math.ceil(text.length / 4);
+}
+
+/**
+ * Preload tiktoken module in background (optional)
+ * Call this early to warm up the module without blocking
+ */
+export function preloadTiktoken(): void {
+  setTimeout(() => {
+    getTiktoken();
+  }, 100);
 }

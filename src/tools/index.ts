@@ -1,3 +1,6 @@
+// Types
+export type { ToolResult } from "../types/index.js";
+
 // Core tools
 export { BashTool } from "./bash.js";
 export { TextEditorTool } from "./text-editor.js";
@@ -22,3 +25,9 @@ export * from "./intelligence/index.js";
 
 // Advanced Tools (hurry-mode inspired)
 export * from "./advanced/index.js";
+
+// New utility tools
+export { EnvTool, getEnvTool } from "./env-tool.js";
+export { FetchTool, getFetchTool } from "./fetch-tool.js";
+export { SQLTool, getSQLTool } from "./sql-tool.js";
+export { NotebookTool, getNotebookTool } from "./notebook-tool.js";

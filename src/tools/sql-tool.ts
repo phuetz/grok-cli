@@ -72,14 +72,16 @@ export class SQLTool {
       }
 
       // Dynamically import better-sqlite3
-      let Database: typeof import('better-sqlite3').default;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let Database: any;
       try {
-        Database = (await import('better-sqlite3')).default;
+        const sqliteModule = await import('better-sqlite3');
+        Database = sqliteModule.default || sqliteModule;
       } catch {
         return { success: false, error: 'SQLite driver not available. Install better-sqlite3.' };
       }
 
-      const db = new Database(dbPath, { readonly: action !== 'execute' });
+      const db = Database(dbPath, { readonly: action !== 'execute' });
 
       try {
         switch (action) {
@@ -110,7 +112,8 @@ export class SQLTool {
   /**
    * List all tables
    */
-  private listTables(db: import('better-sqlite3').Database): ToolResult {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private listTables(db: any): ToolResult {
     const tables = db.prepare(`
       SELECT name, type
       FROM sqlite_master
@@ -131,7 +134,8 @@ export class SQLTool {
   /**
    * Get full schema
    */
-  private getSchema(db: import('better-sqlite3').Database): ToolResult {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getSchema(db: any): ToolResult {
     const objects = db.prepare(`
       SELECT name, type, sql
       FROM sqlite_master
@@ -155,7 +159,8 @@ export class SQLTool {
   /**
    * Describe a specific table
    */
-  private describeTable(db: import('better-sqlite3').Database, table: string): ToolResult {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private describeTable(db: any, table: string): ToolResult {
     if (!table) {
       return { success: false, error: 'Table name required' };
     }
@@ -227,11 +232,8 @@ export class SQLTool {
   /**
    * Run SELECT query
    */
-  private runQuery(
-    db: import('better-sqlite3').Database,
-    query: string,
-    params?: unknown[]
-  ): ToolResult {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private runQuery(db: any, query: string, params?: unknown[]): ToolResult {
     if (!query) {
       return { success: false, error: 'Query required' };
     }
@@ -285,11 +287,8 @@ export class SQLTool {
   /**
    * Execute modification statement (INSERT, UPDATE, DELETE)
    */
-  private executeStatement(
-    db: import('better-sqlite3').Database,
-    query: string,
-    params?: unknown[]
-  ): ToolResult {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private executeStatement(db: any, query: string, params?: unknown[]): ToolResult {
     if (!query) {
       return { success: false, error: 'Query required' };
     }
