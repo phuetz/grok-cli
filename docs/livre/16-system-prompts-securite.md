@@ -454,6 +454,150 @@ class AuditLogger {
 
 ---
 
+## 8. Prompts Externes en Markdown (Inspiré de Mistral-Vibe)
+
+### Le Problème
+
+Le system prompt est codé en dur. Pour le modifier, il faut éditer le code source et recompiler. Les utilisateurs avancés veulent personnaliser le comportement sans toucher au code.
+
+### Solution : Prompts en Fichiers Markdown
+
+```
+~/.grok/prompts/
+├── default.md       # Prompt équilibré
+├── minimal.md       # Pour modèles bien alignés (Claude, GPT-4)
+├── secure.md        # Pour modèles locaux (Llama, Mistral-7B)
+├── code-reviewer.md # Spécialisé revue de code
+├── architect.md     # Spécialisé architecture
+└── custom.md        # Votre propre prompt
+```
+
+### Implémentation : PromptManager
+
+```typescript
+class PromptManager {
+  private userPromptsDir = '~/.grok/prompts';
+  private cache = new Map<string, string>();
+
+  async loadPrompt(promptId: string): Promise<string> {
+    // Priorité : user > builtin > inline
+    const userPath = path.join(this.userPromptsDir, `${promptId}.md`);
+    if (await fs.pathExists(userPath)) {
+      return fs.readFile(userPath, 'utf-8');
+    }
+    return this.getBuiltinPrompt(promptId);
+  }
+
+  async buildSystemPrompt(config: PromptConfig): Promise<string> {
+    const sections: string[] = [];
+
+    // 1. Base prompt
+    sections.push(await this.loadPrompt(config.promptId));
+
+    // 2. Contexte dynamique
+    if (config.includeOsInfo) {
+      sections.push(`<context>
+- Platform: ${process.platform}
+- Working directory: ${config.cwd}
+- Date: ${new Date().toISOString().split('T')[0]}
+</context>`);
+    }
+
+    // 3. Instructions utilisateur
+    if (config.userInstructions) {
+      sections.push(`<user_instructions>
+${config.userInstructions}
+</user_instructions>`);
+    }
+
+    return sections.join('\n\n');
+  }
+}
+```
+
+### Détection Automatique du Modèle
+
+```typescript
+// Modèles avec guardrails intégrés → prompt minimal
+const WELL_ALIGNED_MODELS = [
+  'claude-3', 'claude-4', 'gpt-4', 'gpt-4o',
+  'gemini-pro', 'mistral-large', 'devstral'
+];
+
+// Modèles locaux → prompt défensif
+const NEEDS_EXTRA_SECURITY = [
+  'llama', 'mistral-7b', 'mixtral', 'phi',
+  'qwen', 'deepseek', 'codellama', 'ollama/'
+];
+
+function autoSelectPromptId(modelName: string): string {
+  if (isWellAlignedModel(modelName)) return 'minimal';
+  if (needsExtraSecurity(modelName)) return 'secure';
+  return 'default';
+}
+```
+
+### Utilisation CLI
+
+```bash
+# Lister les prompts disponibles
+grok --list-prompts
+
+# Utiliser un prompt spécifique
+grok --system-prompt minimal
+grok --system-prompt secure
+grok --system-prompt code-reviewer
+
+# Créer un prompt personnalisé
+cat > ~/.grok/prompts/expert-python.md << 'EOF'
+<identity>
+Tu es un expert Python senior spécialisé en data science.
+</identity>
+
+<guidelines>
+- Utilise les type hints systématiquement
+- Préfère pandas/numpy aux boucles Python
+- Docstrings au format NumPy
+</guidelines>
+EOF
+
+grok --system-prompt expert-python
+```
+
+### Comparaison des Prompts
+
+| Prompt | Taille | Sécurité | Cas d'usage |
+|--------|:------:|:--------:|-------------|
+| `minimal` | ~150 mots | Guardrails modèle | Claude, GPT-4 |
+| `default` | ~400 mots | Équilibré | Usage général |
+| `secure` | ~600 mots | Maximum | Modèles locaux |
+| `code-reviewer` | ~300 mots | Standard | Revue de code |
+| `architect` | ~350 mots | Standard | Design système |
+
+### Structure d'un Prompt Personnalisé
+
+```markdown
+<identity>
+Définir le rôle et le scope de l'agent.
+</identity>
+
+<guidelines>
+Comportements spécifiques attendus :
+- Règle 1
+- Règle 2
+</guidelines>
+
+<tools>
+Comment utiliser les outils disponibles.
+</tools>
+
+<response_style>
+Format et ton des réponses.
+</response_style>
+```
+
+---
+
 ## Tableau Récapitulatif
 
 | Couche de Défense | Technique | Implémentation |
@@ -463,7 +607,9 @@ class AuditLogger {
 | **3. Command Validation** | Blocklist | Patterns dangereux |
 | **4. Output Redaction** | Credentials masking | Regex sensibles |
 | **5. Human-in-the-loop** | Confirmation UI | 3 modes d'approbation |
-| **6. Audit** | Logging | Fichier JSON |
+| **6. Tool Permissions** | ALWAYS/ASK/NEVER | Patterns allowlist/denylist |
+| **7. Audit** | Logging | Fichier JSON |
+| **8. External Prompts** | Markdown files | Adaptation par modèle |
 
 | Limite | Réalité |
 |--------|---------|
