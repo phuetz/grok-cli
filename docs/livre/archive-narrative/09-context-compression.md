@@ -1,150 +1,167 @@
-# Chapitre 9 — Context Compression & Masking
+# Chapitre 9 — Context Compression & Masking 🗜️
 
 ---
 
-> **Scène**
->
-> *Lina regarde sa facture API du mois. 847 dollars. Elle avale de travers son café.*
->
-> *"Comment c'est possible ?" Elle ouvre les logs. Le problème est clair : son agent envoie en moyenne 50,000 tokens par requête. Des fichiers entiers, des historiques de conversation interminables, des résultats d'outils verbeux.*
->
-> *"Je paie pour envoyer du bruit au modèle," réalise-t-elle. "Il n'a pas besoin des 500 lignes de logs — juste des 10 lignes pertinentes."*
->
-> *Elle a besoin de deux choses : compresser le contexte intelligent, et masquer les outputs d'outils non pertinents.*
+## 🎬 Scène d'ouverture
+
+*3h47 du matin. Le téléphone de Lina vibre. Un email de son service cloud : "Alerte budget : 90% de votre limite mensuelle atteinte."*
+
+*Elle s'assoit dans son lit, le cœur battant. On n'est que le 12 du mois.*
+
+*Le lendemain matin, elle ouvre sa facture API avec une boule au ventre.*
+
+**Lina** *(blême)* : "847 dollars... en douze jours."
+
+*Ses mains tremblent légèrement. C'est plus que son loyer. Elle plonge dans les logs, cherchant le coupable. Et elle le trouve : 50,000 tokens par requête en moyenne. Des fichiers entiers envoyés et renvoyés. Des outputs bash de 500 lignes reproduits dix fois. L'historique complet de chaque conversation, accumulé comme des couches géologiques.*
+
+**Lina** *(la voix serrée)* : "Je paie pour envoyer les mêmes 500 lignes de logs npm à chaque requête. Le modèle n'en a besoin qu'une fois."
+
+*Marc arrive avec deux cafés. Il jette un œil à l'écran et grimace.*
+
+**Marc** : "Aïe. Le piège classique. Tu sais ce qui est ironique ?"
+
+**Lina** : "Quoi ?"
+
+**Marc** : "Les chercheurs de JetBrains ont découvert quelque chose de contre-intuitif l'année dernière. Ils pensaient qu'envoyer plus de contexte améliorerait les résultats de génération de code. Ils ont testé. Et ils ont trouvé l'inverse."
+
+**Lina** *(levant les yeux)* : "L'inverse ?"
+
+**Marc** : "Moins de contexte, mais mieux ciblé, donne de **meilleurs** résultats. Pas juste moins cher — plus précis. Le modèle se perd moins."
+
+*Lina pose sa tasse. Une lueur d'espoir.*
+
+**Lina** : "Donc si je compresse intelligemment... je peux économiser ET avoir de meilleures réponses ?"
+
+**Marc** *(souriant)* : "Exactement. Ça s'appelle la **compression de contexte**. Et pour les résultats d'outils qui traînent dans l'historique, on utilise l'**observation masking** — on cache ce qui n'est plus pertinent, tout en gardant une trace qu'il existe."
+
+*Lina ferme la facture. Dans ses yeux, la panique a cédé la place à la détermination.*
+
+**Lina** : "Montre-moi. Chaque technique. Je veux diviser cette facture par trois."
+
+**Marc** : "Par trois ? On va viser mieux que ça."
 
 ---
 
-## Introduction
+## 📋 Table des matières
 
-Plus de contexte n'est pas toujours mieux. Un contexte trop long :
-- **Coûte cher** (facturation au token)
-- **Dilue l'attention** (le modèle se perd)
-- **Ralentit** (latence proportionnelle)
-
-Ce chapitre présente les techniques de **compression de contexte** et de **masquage d'observations** pour optimiser ce qui est envoyé au modèle.
-
----
-
-## 9.1 Le Problème du Contexte Volumineux
-
-### 9.1.1 Coût du contexte
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    COÛT PAR REQUÊTE                                  │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│   Modèle          Input ($/1M)    Output ($/1M)                     │
-│   ─────────────────────────────────────────────────────             │
-│   GPT-4           $30.00          $60.00                            │
-│   GPT-4-turbo     $10.00          $30.00                            │
-│   Claude 3 Opus   $15.00          $75.00                            │
-│   Grok-3          $5.00           $15.00                            │
-│                                                                      │
-│   Exemple : 50K tokens input × 100 requêtes/jour × 30 jours         │
-│   ───────────────────────────────────────────────────────           │
-│   GPT-4      : 50 × 100 × 30 × $0.03  = $4,500/mois                │
-│   Grok-3     : 50 × 100 × 30 × $0.005 = $750/mois                  │
-│                                                                      │
-│   Avec compression 60% :                                            │
-│   GPT-4      : 20 × 100 × 30 × $0.03  = $1,800/mois (-60%)         │
-│   Grok-3     : 20 × 100 × 30 × $0.005 = $300/mois  (-60%)          │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### 9.1.2 Lost in the Middle
-
-Les LLMs ont du mal à utiliser l'information au milieu de longs contextes :
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                ATTENTION DISTRIBUTION                                │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│   Attention                                                         │
-│      ▲                                                              │
-│   1.0│ ████                                              ████      │
-│      │ ████                                              ████      │
-│   0.8│ ████                                              ████      │
-│      │ ████ ████                                    ████ ████      │
-│   0.6│ ████ ████                                    ████ ████      │
-│      │ ████ ████ ████                          ████ ████ ████      │
-│   0.4│ ████ ████ ████                          ████ ████ ████      │
-│      │ ████ ████ ████ ████              ████ ████ ████ ████      │
-│   0.2│ ████ ████ ████ ████ ████    ████ ████ ████ ████ ████      │
-│      │ ████ ████ ████ ████ ████ ██ ████ ████ ████ ████ ████      │
-│   0.0└─────────────────────────────────────────────────────▶       │
-│          Début                Milieu                  Fin           │
-│                                                                      │
-│   Le modèle "oublie" ce qui est au milieu du contexte !            │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-**Implication** : Mettre les informations importantes au début et à la fin.
+| Section | Titre | Description |
+|:-------:|-------|-------------|
+| 9.1 | 💸 Le Problème du Coût | Pourquoi le contexte long est problématique |
+| 9.2 | 🗜️ Techniques de Compression | Vue d'ensemble des approches |
+| 9.3 | ⚖️ Compression Priority-Based | Garder le critique, supprimer le bruit |
+| 9.4 | 📝 Summarization Intelligente | Résumer sans perdre l'essentiel |
+| 9.5 | 🎭 Observation Masking | Cacher les outputs d'outils anciens |
+| 9.6 | 🛠️ Implémentation | Le module dans Grok-CLI |
+| 9.7 | 📊 Métriques et Monitoring | Mesurer l'efficacité |
+| 9.8 | 💼 Cas Pratiques | Exemples concrets |
 
 ---
 
-## 9.2 Techniques de Compression
+## 9.1 💸 Le Problème du Contexte Volumineux
+
+### 9.1.1 Le coût réel du contexte
+
+Chaque token envoyé à l'API coûte de l'argent. Quand votre agent envoie 50K tokens par requête, la facture grimpe vite.
+
+![Coût par requête](images/cost-per-request.svg)
+
+### 9.1.2 Lost in the Middle — La Découverte qui a Tout Changé
+
+Le coût n'est pas le seul problème. Et ce qui suit est peut-être la découverte la plus importante sur les LLMs depuis les Transformers eux-mêmes.
+
+**Été 2023, Stanford University.** Nelson Liu, un doctorant, pose une question simple à son équipe : "Est-ce que la position d'une information dans le contexte affecte sa probabilité d'être utilisée ?"
+
+L'hypothèse semblait presque triviale. Après tout, les Transformers ont des mécanismes d'attention qui sont censés regarder partout dans le contexte, non ?
+
+Pour tester, ils ont créé une expérience élégante : cacher un "fait clé" à différentes positions dans un contexte de 128K tokens, puis poser une question dont la réponse nécessite ce fait.
+
+**Les résultats ont envoyé des ondes de choc dans la communauté IA.**
+
+Quand le fait clé était au **début** du contexte : 98% de réponses correctes.
+Quand il était à la **fin** : 95% de réponses correctes.
+Quand il était **au milieu** : **45% de réponses correctes**.
+
+Le modèle "oubliait" littéralement ce qu'il avait lu au milieu du contexte. Ce phénomène, qu'ils ont baptisé **"Lost in the Middle"**, affecte tous les LLMs — GPT-4, Claude, Llama, tous.
+
+![Distribution de l'attention - Lost in the Middle](images/attention-distribution.svg)
+
+| Problème | Impact | Solution |
+|----------|--------|----------|
+| 💸 **Coût** | Factures élevées | Compression |
+| 🎯 **Attention** | Info perdue au milieu | Réorganisation |
+| ⏱️ **Latence** | Réponses lentes | Moins de tokens |
+| 🎭 **Dilution** | Modèle confus | Filtrage |
+
+---
+
+## 9.2 🗜️ Techniques de Compression
 
 ### 9.2.1 Vue d'ensemble
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                TECHNIQUES DE COMPRESSION                             │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  1. PRIORITY-BASED                                                  │
-│     └─ Garder les éléments importants, supprimer les autres         │
-│     └─ Réduction : 40-60%                                           │
-│                                                                      │
-│  2. SUMMARIZATION                                                   │
-│     └─ Résumer les parties longues                                  │
-│     └─ Réduction : 60-80%                                           │
-│                                                                      │
-│  3. SEMANTIC DEDUPLICATION                                          │
-│     └─ Éliminer les informations redondantes                        │
-│     └─ Réduction : 20-30%                                           │
-│                                                                      │
-│  4. TOKEN BUDGET                                                    │
-│     └─ Respecter une limite stricte                                 │
-│     └─ Réduction : Variable                                         │
-│                                                                      │
-│  5. OBSERVATION MASKING                                             │
-│     └─ Masquer les outputs d'outils non pertinents                  │
-│     └─ Réduction : 30-50%                                           │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+Il existe plusieurs techniques pour réduire la taille du contexte, chacune avec ses forces et faiblesses :
 
-### 9.2.2 Résultats JetBrains Research (2024)
+![Techniques de compression](images/compression-techniques.svg)
 
-| Technique | Réduction tokens | Impact succès |
-|-----------|------------------|---------------|
-| Sans compression | 0% | Baseline |
-| Priority-based | -40% | +1.2% |
-| + Summarization | -55% | +2.1% |
-| + Semantic dedup | -62% | +2.6% |
-| Observation masking | -35% | +1.8% |
-| **Combiné** | **-70%** | **+2.6%** |
+### 9.2.2 La Découverte de JetBrains (2024) — L'Histoire
 
-**Conclusion** : Moins de contexte = meilleurs résultats ET moins cher.
+> *"On pensait que plus de contexte serait toujours mieux. On avait tort."*
+> — Équipe JetBrains Research, 2024
+
+**L'histoire commence à Saint-Pétersbourg**, dans les bureaux de JetBrains — les créateurs d'IntelliJ IDEA, PyCharm, et de Kotlin. Leur équipe de recherche en IA travaillait sur un problème apparemment simple : comment améliorer la génération de code assistée par LLM dans leurs IDE ?
+
+L'hypothèse initiale semblait évidente : **plus de contexte = meilleures suggestions**. Après tout, un développeur qui voit tout le projet fait de meilleures suggestions qu'un qui ne voit qu'un fichier, non ?
+
+Ils ont donc construit un système qui envoyait au LLM :
+- Le fichier actuel complet
+- Tous les fichiers importés
+- L'historique de la session
+- La documentation du projet
+- Les tests associés
+
+**Les résultats les ont stupéfiés.**
+
+Non seulement les coûts avaient explosé, mais la **qualité des suggestions avait diminué**. Le modèle se perdait dans la masse d'information. Il ignorait parfois le code juste avant le curseur pour citer de la documentation non pertinente située 50,000 tokens plus tôt.
+
+C'est alors qu'ils ont eu l'idée de **mesurer systématiquement** l'impact de chaque type de contexte. Ils ont créé un benchmark avec des centaines de tâches de complétion de code, et ont testé différentes stratégies de compression.
+
+**Les résultats publiés en 2024 :**
+
+| Technique | Réduction tokens | Impact succès | Coût relatif |
+|-----------|:----------------:|:-------------:|:------------:|
+| Sans compression | 0% | Baseline | 100% |
+| Priority-based | -40% | +1.2% ✅ | 60% |
+| + Summarization | -55% | +2.1% ✅ | 45% |
+| + Semantic dedup | -62% | +2.6% ✅ | 38% |
+| Observation masking | -35% | +1.8% ✅ | 65% |
+| **Combiné** | **-70%** | **+2.6%** ✅ | **30%** |
+
+> 💡 **La conclusion qui a choqué la communauté** : Envoyer 70% de contexte en moins améliore la qualité de 2.6%. Ce n'est pas un compromis — c'est un gain sur les deux tableaux.
+
+**Pourquoi ?** L'étude identifie trois mécanismes :
+
+1. **Attention focalisée** : Avec moins de contexte, chaque token a plus de poids dans le calcul d'attention
+2. **Réduction du bruit** : Les informations non pertinentes ne peuvent plus "distraire" le modèle
+3. **Cohérence améliorée** : Le modèle ne se contredit plus en citant des parties obsolètes du contexte
+
+Cette découverte a depuis été confirmée par d'autres équipes (Google DeepMind, Anthropic), et a donné naissance à une nouvelle discipline : **l'ingénierie de contexte**.
 
 ---
 
-## 9.3 Compression Priority-Based
+## 9.3 ⚖️ Compression Priority-Based
 
 ### 9.3.1 Système de priorités
 
+L'idée est simple : tout le contenu n'a pas la même importance. On définit des niveaux de priorité :
+
 ```typescript
 // src/context/context-compressor.ts
+
 enum Priority {
-  CRITICAL = 4,   // Toujours garder
-  HIGH = 3,       // Garder si possible
-  MEDIUM = 2,     // Peut être résumé
-  LOW = 1,        // Peut être supprimé
-  NOISE = 0       // Supprimer
+  CRITICAL = 4,   // 🔴 Toujours garder
+  HIGH = 3,       // 🟠 Garder si possible
+  MEDIUM = 2,     // 🟡 Peut être résumé
+  LOW = 1,        // 🟢 Peut être supprimé
+  NOISE = 0       // ⚫ Supprimer systématiquement
 }
 
 interface PrioritizedContent {
@@ -157,12 +174,21 @@ interface PrioritizedContent {
 }
 ```
 
-### 9.3.2 Classification du contenu
+![Pyramide des priorités de contexte](images/priority-pyramid.svg)
+
+### 9.3.2 Classification automatique
 
 ```typescript
+// src/context/classifier.ts
+
+/**
+ * Classifie automatiquement le contenu par priorité.
+ */
 function classifyContent(content: PrioritizedContent): Priority {
   switch (content.type) {
-    // CRITICAL : Toujours nécessaire
+    // ═════════════════════════════════════════════════
+    // 🔴 CRITICAL : Toujours nécessaire
+    // ═════════════════════════════════════════════════
     case 'system_prompt':
       return Priority.CRITICAL;
     case 'current_user_message':
@@ -170,7 +196,9 @@ function classifyContent(content: PrioritizedContent): Priority {
     case 'tool_call_in_progress':
       return Priority.CRITICAL;
 
-    // HIGH : Très important
+    // ═════════════════════════════════════════════════
+    // 🟠 HIGH : Très important
+    // ═════════════════════════════════════════════════
     case 'recent_code_context':
       return Priority.HIGH;
     case 'recent_tool_result':
@@ -178,7 +206,9 @@ function classifyContent(content: PrioritizedContent): Priority {
     case 'error_message':
       return Priority.HIGH;
 
-    // MEDIUM : Important mais compressible
+    // ═════════════════════════════════════════════════
+    // 🟡 MEDIUM : Important mais compressible
+    // ═════════════════════════════════════════════════
     case 'older_conversation':
       return Priority.MEDIUM;
     case 'documentation':
@@ -186,16 +216,22 @@ function classifyContent(content: PrioritizedContent): Priority {
     case 'test_output':
       return Priority.MEDIUM;
 
-    // LOW : Peut être supprimé
+    // ═════════════════════════════════════════════════
+    // 🟢 LOW : Peut être supprimé si nécessaire
+    // ═════════════════════════════════════════════════
     case 'verbose_logs':
       return Priority.LOW;
     case 'old_conversation':
       return Priority.LOW;
 
-    // NOISE : Supprimer
+    // ═════════════════════════════════════════════════
+    // ⚫ NOISE : Supprimer systématiquement
+    // ═════════════════════════════════════════════════
     case 'progress_bars':
       return Priority.NOISE;
     case 'timestamps_repeated':
+      return Priority.NOISE;
+    case 'empty_lines':
       return Priority.NOISE;
 
     default:
@@ -207,39 +243,49 @@ function classifyContent(content: PrioritizedContent): Priority {
 ### 9.3.3 Algorithme de compression
 
 ```typescript
+// src/context/context-compressor.ts
+
 export class ContextCompressor {
   private tokenEncoder: TokenEncoder;
   private summarizer: Summarizer;
 
+  /**
+   * Compresse un ensemble de contenus pour respecter un budget tokens.
+   * Algorithme :
+   * 1. Trier par priorité (descending)
+   * 2. Supprimer le NOISE
+   * 3. Ajouter par ordre de priorité jusqu'au budget
+   * 4. Résumer les MEDIUM si nécessaire
+   * 5. Tronquer les HIGH si vraiment nécessaire
+   */
   async compress(
     contents: PrioritizedContent[],
     maxTokens: number
   ): Promise<CompressedContext> {
-    // 1. Classifier et trier par priorité
+    // 1️⃣ Classifier et trier par priorité
     const classified = contents.map(c => ({
       ...c,
       priority: classifyContent(c)
     }));
-
     classified.sort((a, b) => b.priority - a.priority);
 
-    // 2. Supprimer le NOISE
+    // 2️⃣ Supprimer le NOISE
     const withoutNoise = classified.filter(c => c.priority > Priority.NOISE);
 
-    // 3. Calculer les tokens actuels
-    let currentTokens = withoutNoise.reduce((sum, c) => sum + c.tokens, 0);
+    // 3️⃣ Calculer les tokens actuels
+    const originalTokens = withoutNoise.reduce((sum, c) => sum + c.tokens, 0);
 
-    // 4. Si sous la limite, retourner tel quel
-    if (currentTokens <= maxTokens) {
+    // 4️⃣ Si sous la limite, retourner tel quel
+    if (originalTokens <= maxTokens) {
       return {
         contents: withoutNoise,
-        originalTokens: currentTokens,
-        compressedTokens: currentTokens,
+        originalTokens,
+        compressedTokens: originalTokens,
         compressionRatio: 1.0
       };
     }
 
-    // 5. Compression itérative
+    // 5️⃣ Compression itérative
     const result: PrioritizedContent[] = [];
     let usedTokens = 0;
 
@@ -249,28 +295,30 @@ export class ContextCompressor {
       const remainingTokens = maxTokens - usedTokens;
 
       if (content.tokens <= remainingTokens) {
-        // Ça rentre, ajouter tel quel
+        // ✅ Ça rentre, ajouter tel quel
         result.push(content);
         usedTokens += content.tokens;
+
       } else if (content.priority >= Priority.HIGH) {
-        // Critique/High : tronquer plutôt que supprimer
+        // 🟠 Critique/High : tronquer plutôt que supprimer
         const truncated = await this.truncate(content, remainingTokens);
         result.push(truncated);
         usedTokens += truncated.tokens;
+
       } else if (content.priority === Priority.MEDIUM && remainingTokens > 100) {
-        // Medium : résumer
+        // 🟡 Medium : résumer
         const summarized = await this.summarize(content, remainingTokens);
         result.push(summarized);
         usedTokens += summarized.tokens;
       }
-      // LOW : skip si pas de place
+      // 🟢 LOW : skip si pas de place
     }
 
     return {
       contents: result,
-      originalTokens: currentTokens,
+      originalTokens,
       compressedTokens: usedTokens,
-      compressionRatio: usedTokens / currentTokens
+      compressionRatio: usedTokens / originalTokens
     };
   }
 
@@ -279,7 +327,7 @@ export class ContextCompressor {
     maxTokens: number
   ): Promise<PrioritizedContent> {
     const tokens = this.tokenEncoder.encode(content.content);
-    const truncatedTokens = tokens.slice(0, maxTokens - 20); // Marge pour "[truncated]"
+    const truncatedTokens = tokens.slice(0, maxTokens - 20);
     const truncatedText = this.tokenEncoder.decode(truncatedTokens);
 
     return {
@@ -310,11 +358,19 @@ export class ContextCompressor {
 
 ---
 
-## 9.4 Summarization Intelligente
+## 9.4 📝 Summarization Intelligente
 
 ### 9.4.1 Résumer la conversation
 
+Les conversations longues peuvent être résumées tout en préservant les informations clés :
+
 ```typescript
+// src/context/summarizer.ts
+
+/**
+ * Résume une conversation longue.
+ * Garde les N derniers messages intacts et résume le reste.
+ */
 async function summarizeConversation(
   messages: Message[],
   maxTokens: number
@@ -328,30 +384,44 @@ async function summarizeConversation(
     return formatMessages(recent);
   }
 
-  // Résumer les anciens
+  // Résumer les anciens messages avec un LLM
   const olderText = formatMessages(older);
   const summaryPrompt = `
-    Résume cette conversation en gardant :
-    - Les décisions prises
-    - Les fichiers modifiés
-    - Les erreurs rencontrées
-    - Les tâches complétées
+Résume cette conversation en gardant UNIQUEMENT :
+- Les décisions prises
+- Les fichiers modifiés
+- Les erreurs rencontrées
+- Les tâches complétées
 
-    Conversation :
-    ${olderText}
+Conversation à résumer :
+${olderText}
 
-    Résumé (max 200 mots) :
+Résumé (max 200 mots) :
   `;
 
   const summary = await llm.complete(summaryPrompt, { maxTokens: 300 });
 
-  return `[Résumé des messages précédents]\n${summary}\n\n[Messages récents]\n${formatMessages(recent)}`;
+  return `
+[📝 Résumé des ${older.length} messages précédents]
+${summary}
+
+[💬 Messages récents]
+${formatMessages(recent)}
+  `.trim();
 }
 ```
 
 ### 9.4.2 Résumer les résultats d'outils
 
+Chaque outil a des patterns spécifiques à résumer :
+
 ```typescript
+// src/context/tool-summarizer.ts
+
+/**
+ * Résume intelligemment le résultat d'un outil.
+ * Stratégies différentes selon le type d'outil.
+ */
 async function summarizeToolResult(
   toolName: string,
   result: string,
@@ -360,7 +430,7 @@ async function summarizeToolResult(
   const resultTokens = countTokens(result);
 
   if (resultTokens <= maxTokens) {
-    return result;
+    return result;  // Pas besoin de résumer
   }
 
   // Stratégies spécifiques par outil
@@ -371,29 +441,35 @@ async function summarizeToolResult(
       return summarizeFileContent(result, maxTokens);
     case 'search':
       return summarizeSearchResults(result, maxTokens);
+    case 'list_directory':
+      return summarizeDirectoryListing(result, maxTokens);
     default:
       return genericSummarize(result, maxTokens);
   }
 }
 
+/**
+ * Résume un output bash en gardant les erreurs et les dernières lignes.
+ */
 function summarizeBashOutput(output: string, maxTokens: number): string {
   const lines = output.split('\n');
 
-  // Priorités pour bash output
+  // Extraire par priorité
   const errorLines = lines.filter(l => l.match(/error|fail|exception/i));
   const warningLines = lines.filter(l => l.match(/warn/i));
   const lastLines = lines.slice(-20);
 
-  const prioritized = [
+  // Combiner sans doublons
+  const prioritized = [...new Set([
     ...errorLines.slice(0, 10),
     ...warningLines.slice(0, 5),
     ...lastLines
-  ];
+  ])];
 
-  const result = [...new Set(prioritized)].join('\n');
+  const result = prioritized.join('\n');
 
   if (countTokens(result) <= maxTokens) {
-    return `[Output summarized: ${lines.length} lines → ${prioritized.length} lines]\n${result}`;
+    return `[📊 Output: ${lines.length} lignes → ${prioritized.length} lignes]\n${result}`;
   }
 
   // Tronquer si encore trop long
@@ -401,63 +477,66 @@ function summarizeBashOutput(output: string, maxTokens: number): string {
 }
 ```
 
+| Outil | Stratégie de résumé | Ce qu'on garde |
+|-------|---------------------|----------------|
+| `bash` | Priorité erreurs | Errors > Warnings > Last 20 lines |
+| `read_file` | Structure + highlights | Imports, classes, fonctions clés |
+| `search` | Top N matches | Premiers résultats pertinents |
+| `list_directory` | Stats + structure | Nombre de fichiers, types |
+
 ---
 
-## 9.5 Observation Masking
+## 9.5 🎭 Observation Masking
 
 ### 9.5.1 Le problème des outputs verbeux
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                 OBSERVATION MASKING                                  │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  Sans masking :                                                     │
-│  ─────────────                                                      │
-│  Tool: list_directory("/src")                                       │
-│  Result: 200 fichiers listés (5000 tokens)                          │
-│  → Le modèle reçoit tout, même si non pertinent                     │
-│                                                                      │
-│  Question suivante : "Quelle est la fonction main ?"                │
-│  → Les 5000 tokens de listing sont inutiles                         │
-│                                                                      │
-│  Avec masking :                                                     │
-│  ──────────────                                                     │
-│  Tool: list_directory("/src")                                       │
-│  Result: [MASKED - 200 files, see previous output if needed]        │
-│  → Le modèle sait que l'info existe mais n'est pas polluée          │
-│                                                                      │
-│  Économie : ~4000 tokens par requête suivante                       │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+Quand un outil retourne un gros résultat, ce résultat reste dans le contexte pour TOUTES les requêtes suivantes — même quand il n'est plus pertinent.
+
+![Observation Masking](images/observation-masking.svg)
 
 ### 9.5.2 Critères de masquage
 
 ```typescript
+// src/context/observation-masking.ts
+
 interface MaskingCriteria {
-  // Âge du résultat
-  maxAge: number;  // Messages depuis le résultat
-
-  // Taille
-  minTokensToMask: number;  // Ne masquer que si > N tokens
-
-  // Pertinence
+  maxAge: number;              // Masquer après N messages
+  minTokensToMask: number;     // Ne masquer que si > N tokens
   relevanceThreshold: number;  // Score de pertinence minimum
-
-  // Type d'outil
   toolSpecificRules: Record<string, ToolMaskingRule>;
+}
+
+interface ToolMaskingRule {
+  alwaysMaskAfter?: number;    // Masquer après N messages
+  keepSummary?: boolean;       // Garder un résumé
+  keepMatches?: number;        // Garder les N premiers résultats
+  keepIfReferenced?: boolean;  // Garder si référencé récemment
+  maskProgressBars?: boolean;  // Masquer les barres de progression
+  keepErrors?: boolean;        // Toujours garder les erreurs
 }
 
 const DEFAULT_CRITERIA: MaskingCriteria = {
   maxAge: 5,              // Masquer après 5 messages
   minTokensToMask: 500,   // Masquer si > 500 tokens
   relevanceThreshold: 0.3,
+
   toolSpecificRules: {
-    'list_directory': { alwaysMaskAfter: 2, keepSummary: true },
-    'search': { alwaysMaskAfter: 3, keepMatches: 5 },
-    'read_file': { alwaysMaskAfter: 5, keepIfReferenced: true },
-    'bash': { maskProgressBars: true, keepErrors: true }
+    'list_directory': {
+      alwaysMaskAfter: 2,
+      keepSummary: true
+    },
+    'search': {
+      alwaysMaskAfter: 3,
+      keepMatches: 5
+    },
+    'read_file': {
+      alwaysMaskAfter: 5,
+      keepIfReferenced: true
+    },
+    'bash': {
+      maskProgressBars: true,
+      keepErrors: true
+    }
   }
 };
 ```
@@ -466,9 +545,13 @@ const DEFAULT_CRITERIA: MaskingCriteria = {
 
 ```typescript
 // src/context/observation-masking.ts
+
 export class ObservationMasker {
   private criteria: MaskingCriteria;
 
+  /**
+   * Détermine si un résultat d'outil doit être masqué.
+   */
   shouldMask(
     toolResult: ToolResult,
     currentMessageIndex: number,
@@ -477,30 +560,28 @@ export class ObservationMasker {
     const age = currentMessageIndex - toolResult.messageIndex;
     const tokens = countTokens(toolResult.output);
 
-    // Règle 1 : Trop vieux
+    // 📏 Règle 1 : Âge
     if (age > this.criteria.maxAge) {
       return { mask: true, reason: 'age', keepSummary: true };
     }
 
-    // Règle 2 : Trop petit pour valoir la peine
+    // 📏 Règle 2 : Trop petit pour valoir la peine
     if (tokens < this.criteria.minTokensToMask) {
       return { mask: false };
     }
 
-    // Règle 3 : Règles spécifiques à l'outil
+    // 📏 Règle 3 : Règles spécifiques à l'outil
     const toolRule = this.criteria.toolSpecificRules[toolResult.toolName];
-    if (toolRule) {
-      if (toolRule.alwaysMaskAfter && age > toolRule.alwaysMaskAfter) {
-        return {
-          mask: true,
-          reason: 'tool_rule',
-          keepSummary: toolRule.keepSummary,
-          keepMatches: toolRule.keepMatches
-        };
-      }
+    if (toolRule?.alwaysMaskAfter && age > toolRule.alwaysMaskAfter) {
+      return {
+        mask: true,
+        reason: 'tool_rule',
+        keepSummary: toolRule.keepSummary,
+        keepMatches: toolRule.keepMatches
+      };
     }
 
-    // Règle 4 : Pertinence par rapport au message actuel
+    // 📏 Règle 4 : Pertinence
     const relevance = this.computeRelevance(toolResult, context.currentMessage);
     if (relevance < this.criteria.relevanceThreshold) {
       return { mask: true, reason: 'low_relevance', keepSummary: true };
@@ -509,6 +590,9 @@ export class ObservationMasker {
     return { mask: false };
   }
 
+  /**
+   * Génère la version masquée d'un résultat.
+   */
   mask(toolResult: ToolResult, decision: MaskDecision): string {
     if (!decision.mask) {
       return toolResult.output;
@@ -516,9 +600,9 @@ export class ObservationMasker {
 
     const summary = this.generateSummary(toolResult, decision);
 
-    return `[MASKED: ${toolResult.toolName}]
+    return `[🎭 MASKED: ${toolResult.toolName}]
 ${summary}
-[Full output available in message #${toolResult.messageIndex}]`;
+[Full output in message #${toolResult.messageIndex}]`;
   }
 
   private generateSummary(
@@ -530,84 +614,71 @@ ${summary}
     switch (toolResult.toolName) {
       case 'list_directory':
         const fileCount = (output.match(/\n/g) || []).length;
-        return `Listed ${fileCount} files/directories`;
+        return `📁 Listed ${fileCount} files/directories`;
 
       case 'search':
         const matchCount = (output.match(/:\d+:/g) || []).length;
         if (decision.keepMatches) {
-          const firstMatches = output.split('\n').slice(0, decision.keepMatches).join('\n');
-          return `Found ${matchCount} matches. First ${decision.keepMatches}:\n${firstMatches}`;
+          const firstMatches = output
+            .split('\n')
+            .slice(0, decision.keepMatches)
+            .join('\n');
+          return `🔍 Found ${matchCount} matches:\n${firstMatches}`;
         }
-        return `Found ${matchCount} matches`;
+        return `🔍 Found ${matchCount} matches`;
 
       case 'bash':
         const lines = output.split('\n').length;
         const hasError = /error|fail/i.test(output);
-        return `Executed (${lines} lines output${hasError ? ', contains errors' : ''})`;
+        return `⚡ Executed (${lines} lines${hasError ? ', ❌ contains errors' : ''})`;
 
       case 'read_file':
         const lineCount = output.split('\n').length;
-        return `File content (${lineCount} lines)`;
+        return `📄 File content (${lineCount} lines)`;
 
       default:
         const tokens = countTokens(output);
-        return `Result (${tokens} tokens)`;
+        return `📋 Result (${tokens} tokens)`;
     }
-  }
-
-  private computeRelevance(
-    toolResult: ToolResult,
-    currentMessage: string
-  ): number {
-    // Vérifier si des mots clés du résultat sont mentionnés dans le message actuel
-    const resultWords = new Set(
-      toolResult.output.toLowerCase().split(/\s+/).filter(w => w.length > 3)
-    );
-    const messageWords = currentMessage.toLowerCase().split(/\s+/);
-
-    const overlap = messageWords.filter(w => resultWords.has(w)).length;
-    return overlap / Math.max(messageWords.length, 1);
   }
 }
 ```
 
 ---
 
-## 9.6 Implémentation Grok-CLI
+## 9.6 🛠️ Implémentation Grok-CLI
 
-### 9.6.1 Architecture
+### 9.6.1 Architecture du module
 
-```
-src/context/
-├── context-compressor.ts      # Compression principale
-├── observation-masking.ts     # Masquage des observations
-├── summarizer.ts              # Résumés intelligents
-└── token-budget.ts            # Gestion du budget tokens
-```
+![Architecture Compression](images/compression-architecture.svg)
 
 ### 9.6.2 Intégration dans l'agent
 
 ```typescript
 // src/agent/grok-agent.ts
+
 export class GrokAgent {
   private compressor: ContextCompressor;
   private masker: ObservationMasker;
   private tokenBudget: number = 100_000;
 
+  /**
+   * Construit le contexte optimisé pour une requête.
+   */
   async buildContext(messages: Message[]): Promise<Context> {
-    // 1. Classifier les messages
+    // 1️⃣ Classifier les messages
     const classified = messages.map(m => this.classifyMessage(m));
 
-    // 2. Masquer les observations anciennes/non pertinentes
+    // 2️⃣ Masquer les observations anciennes/non pertinentes
     const masked = this.applyMasking(classified);
 
-    // 3. Compresser pour respecter le budget
+    // 3️⃣ Compresser pour respecter le budget
     const compressed = await this.compressor.compress(
       masked,
       this.tokenBudget
     );
 
-    // 4. Optimiser l'ordre (important au début et à la fin)
+    // 4️⃣ Optimiser l'ordre (éviter "lost in the middle")
     const optimized = this.optimizeOrder(compressed.contents);
 
     return {
@@ -621,42 +692,16 @@ export class GrokAgent {
     };
   }
 
-  private classifyMessage(message: Message): PrioritizedContent {
-    let type: ContentType;
-    let priority: Priority;
-
-    if (message.role === 'system') {
-      type = 'system_prompt';
-      priority = Priority.CRITICAL;
-    } else if (message.role === 'user') {
-      type = message === this.currentMessage ? 'current_user_message' : 'older_conversation';
-      priority = message === this.currentMessage ? Priority.CRITICAL : Priority.MEDIUM;
-    } else if (message.role === 'tool') {
-      type = this.categorizeToolResult(message);
-      priority = this.prioritizeToolResult(message);
-    } else {
-      type = 'assistant_response';
-      priority = Priority.MEDIUM;
-    }
-
-    return {
-      content: message.content,
-      type,
-      priority,
-      tokens: countTokens(message.content),
-      timestamp: message.timestamp
-    };
-  }
-
+  /**
+   * Réorganise le contenu pour maximiser l'attention.
+   * Stratégie : CRITICAL au début, HIGH ensuite, reste intercalé.
+   */
   private optimizeOrder(contents: PrioritizedContent[]): PrioritizedContent[] {
-    // Stratégie : CRITICAL au début, puis HIGH, puis le reste intercalé
-    // pour éviter le "lost in the middle"
-
     const critical = contents.filter(c => c.priority === Priority.CRITICAL);
     const high = contents.filter(c => c.priority === Priority.HIGH);
     const rest = contents.filter(c => c.priority < Priority.HIGH);
 
-    // Intercaler le reste pour maximiser l'attention
+    // Intercaler le reste pour éviter le "lost in the middle"
     const interleavedRest: PrioritizedContent[] = [];
     const mid = Math.floor(rest.length / 2);
 
@@ -676,16 +721,17 @@ export class GrokAgent {
 
 ```typescript
 // src/context/config.ts
+
 export const COMPRESSION_CONFIG = {
-  // Budgets par défaut
+  // 📊 Budgets
   defaultTokenBudget: 100_000,
   maxTokenBudget: 128_000,
 
-  // Compression
+  // 🗜️ Compression
   enableCompression: true,
   compressionThreshold: 0.8,  // Compresser si > 80% du budget
 
-  // Masking
+  // 🎭 Masking
   enableMasking: true,
   maskingCriteria: {
     maxAge: 5,
@@ -693,12 +739,12 @@ export const COMPRESSION_CONFIG = {
     relevanceThreshold: 0.3
   },
 
-  // Summarization
+  // 📝 Summarization
   enableSummarization: true,
   summarizeConversationAfter: 10,  // messages
   maxSummaryTokens: 500,
 
-  // Priorités par type
+  // ⚖️ Priorités par type
   priorities: {
     system_prompt: Priority.CRITICAL,
     current_user_message: Priority.CRITICAL,
@@ -713,11 +759,13 @@ export const COMPRESSION_CONFIG = {
 
 ---
 
-## 9.7 Métriques et Monitoring
+## 9.7 📊 Métriques et Monitoring
 
 ### 9.7.1 Dashboard de compression
 
 ```typescript
+// src/context/metrics.ts
+
 interface CompressionMetrics {
   // Par session
   totalOriginalTokens: number;
@@ -731,62 +779,41 @@ interface CompressionMetrics {
 
   // Économies
   estimatedCostSaved: number;
-  tokensPerDollar: number;
 }
 
 function printCompressionDashboard(metrics: CompressionMetrics): void {
-  const savings = (1 - metrics.avgCompressionRatio) * 100;
-
-  console.log(`
-┌─────────────────────────────────────────────────────────────┐
-│              COMPRESSION DASHBOARD                           │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  TOKENS                                                     │
-│  ├─ Original       : ${metrics.totalOriginalTokens.toLocaleString().padStart(12)}                   │
-│  ├─ Compressed     : ${metrics.totalCompressedTokens.toLocaleString().padStart(12)}                   │
-│  └─ Ratio          : ${(metrics.avgCompressionRatio * 100).toFixed(1)}% (${savings.toFixed(1)}% saved)                │
-│                                                              │
-│  OPERATIONS                                                 │
-│  ├─ Messages       : ${metrics.messagesProcessed}                            │
-│  ├─ Summarizations : ${metrics.summarizationsPerformed}                            │
-│  └─ Masked obs.    : ${metrics.totalMaskedObservations}                            │
-│                                                              │
-│  ÉCONOMIES                                                  │
-│  └─ Estimated      : $${metrics.estimatedCostSaved.toFixed(2)}                         │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-  `);
+  // Affiche le dashboard de compression
+  // Voir images/compression-dashboard.svg pour la visualisation
 }
 ```
 
-### 9.7.2 Alertes
+### 9.7.2 Alertes de santé
 
 ```typescript
 function checkCompressionHealth(metrics: CompressionMetrics): Alert[] {
   const alerts: Alert[] = [];
 
-  // Compression trop agressive
+  // ⚠️ Compression trop agressive
   if (metrics.avgCompressionRatio < 0.3) {
     alerts.push({
       level: 'warning',
-      message: 'Compression très agressive, risque de perte d\'information'
+      message: '⚠️ Compression très agressive (< 30%), risque de perte d\'info'
     });
   }
 
-  // Pas assez de compression
+  // ℹ️ Pas assez de compression
   if (metrics.avgCompressionRatio > 0.95) {
     alerts.push({
       level: 'info',
-      message: 'Compression minimale, vérifier si le budget est adapté'
+      message: 'ℹ️ Compression minimale, budget peut-être trop élevé'
     });
   }
 
-  // Beaucoup de summarizations
+  // ⚠️ Trop de summarizations
   if (metrics.summarizationsPerformed > metrics.messagesProcessed * 0.5) {
     alerts.push({
       level: 'warning',
-      message: 'Beaucoup de summarizations, vérifier la taille des messages'
+      message: '⚠️ Beaucoup de résumés, messages peut-être trop longs'
     });
   }
 
@@ -796,106 +823,218 @@ function checkCompressionHealth(metrics: CompressionMetrics): Alert[] {
 
 ---
 
-## 9.8 Cas Pratiques
+## 9.8 💼 Cas Pratiques
 
-### 9.8.1 Cas 1 : Session longue
+### Cas 1 : Session longue
 
-```
-Session de 50 messages, 150K tokens originaux
+![Cas Session Longue](images/case-session.svg)
 
-Sans compression :
-──────────────────
-→ Dépasse la limite de contexte (128K)
-→ Erreur ou troncature brutale
+### Cas 2 : Recherche massive
 
-Avec compression :
-──────────────────
-Messages 1-40 : Résumé (1,500 tokens)
-Messages 41-50 : Complets (15,000 tokens)
-Tool results anciens : Masqués
-Code context : Conservé
+![Cas Recherche Massive](images/case-search.svg)
 
-Total : 45,000 tokens (70% réduction)
-Qualité : Préservée (info critique gardée)
-```
+### Cas 3 : Logs verbeux
 
-### 9.8.2 Cas 2 : Recherche massive
-
-```
-Tool: search("error handling")
-Result: 2,847 matches (35,000 tokens)
-
-Sans masking :
-──────────────
-→ 35K tokens dans chaque message suivant
-→ Coût × 10
-
-Avec masking intelligent :
-──────────────────────────
-Message actuel : Top 10 matches (2,000 tokens)
-Messages suivants : [MASKED: 2,847 matches, see message #5]
-
-Économie : ~33,000 tokens par message
-```
-
-### 9.8.3 Cas 3 : Logs verbeux
-
-```
-Tool: bash("npm install")
-Result: 5,000 lignes de logs (25,000 tokens)
-
-Compression :
-─────────────
-Suppression : progress bars, timestamps répétés
-Conservation : erreurs, warnings, versions
-Résultat : 500 tokens
-
-Message compressé :
-[npm install output - 5000 lines compressed]
-Installed 847 packages
-Warnings: 3 deprecation notices
-No errors
-```
+![Cas Logs Verbeux](images/case-logs.svg)
 
 ---
 
-## Résumé
-
-Dans ce chapitre, nous avons vu :
+## 📝 Points Clés
 
 | Concept | Point clé |
 |---------|-----------|
-| **Problème** | Contexte long = cher, lent, moins précis |
-| **Priority-based** | Garder le critique, compresser le reste |
-| **Summarization** | Résumer les parties longues |
-| **Observation masking** | Cacher les outputs d'outils anciens |
-| **Token budget** | Respecter une limite stricte |
+| 💸 **Problème** | Contexte long = cher, lent, imprécis |
+| ⚖️ **Priority-based** | Garder le critique, compresser le reste |
+| 📝 **Summarization** | Résumer les parties longues |
+| 🎭 **Observation masking** | Cacher les outputs d'outils anciens |
+| 📊 **Token budget** | Respecter une limite stricte |
+| 🧠 **Lost in the Middle** | Placer l'important au début/fin |
+| 📈 **Résultats** | -70% tokens, +2.6% succès |
+
+---
+
+## ⚠️ 9.8 Limites et Risques
+
+### 🚧 Limites Techniques
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Perte d'information** | Compression = suppression | Détails importants potentiellement perdus |
+| **Qualité du résumé** | Dépend du LLM de summarization | Résumés parfois incomplets |
+| **Latence ajoutée** | Classification + compression = temps | Réponse initiale plus lente |
+| **Masquage trop agressif** | Informations nécessaires cachées | Réponses incomplètes |
+| **Calibration des priorités** | Dépend du domaine/workflow | Configuration nécessaire |
+
+### ⚡ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Sur-compression** | Moyenne | Élevé | Seuil de compression conservateur (0.7) |
+| **Masquage de contexte critique** | Faible | Critique | Exceptions pour erreurs et code récent |
+| **Incohérence du résumé** | Moyenne | Moyen | Validation du résumé par le LLM |
+| **Dégradation de la qualité** | Faible | Moyen | Monitoring du taux de succès |
+
+### 📊 Quand NE PAS Compresser
+
+| Situation | Raison | Action |
+|-----------|--------|--------|
+| Contexte < 50% du budget | Pas nécessaire | Skip compression |
+| Debugging critique | Besoin de tous les détails | Mode verbose |
+| Première interaction | Pas encore de contexte | Rien à compresser |
+
+> 📌 **À Retenir** : La compression de contexte est un **compromis économique** — on échange des tokens (donc du coût et de la capacité) contre une potentielle perte d'information. L'art est de trouver le point où on gagne plus qu'on ne perd. En pratique, une compression de 50-70% améliore souvent les résultats en forçant le modèle à se concentrer sur l'essentiel.
+
+> 💡 **Astuce Pratique** : Activez le masquage des observations d'abord (gain facile, peu de risque), puis la summarization (gain modéré, risque modéré), puis la troncation (dernier recours).
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 09
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Context Compression |
+| **Problème** | Contexte explose → coûts et "Lost in the Middle" |
+| **Solution** | Classification + compression intelligente |
+| **Priorités** | CRITICAL > HIGH > MEDIUM > LOW |
+| **Techniques** | Masking, Summarization, Truncation |
+| **"Lost in the Middle"** | Placer l'important au début/fin |
 | **Résultats** | -70% tokens, +2.6% succès |
+| **Papier de Référence** | JetBrains Research (2024) |
 
 ---
 
-## Exercices
+## 🏋️ Exercices
 
-1. **Priorités** : Définissez un système de priorités pour votre cas d'usage. Quels types de contenu sont critiques ?
+### Exercice 1 : Système de priorités
+**Objectif** : Définir vos priorités
 
-2. **Masking** : Implémentez des règles de masking pour un outil spécifique de votre workflow.
+| Type de contenu | Priorité | Justification |
+|-----------------|:--------:|---------------|
+| System prompt | | |
+| Message utilisateur actuel | | |
+| Résultat d'erreur | | |
+| Logs npm | | |
+| Conversation d'hier | | |
 
-3. **Benchmark** : Mesurez l'impact de la compression sur la qualité des réponses (10 questions avec/sans).
+### Exercice 2 : Règles de masking
+**Objectif** : Implémenter des règles pour votre workflow
 
-4. **Optimisation** : Trouvez le ratio de compression optimal pour votre budget et vos besoins de qualité.
+```typescript
+const myMaskingRules: Record<string, ToolMaskingRule> = {
+  'my_custom_tool': {
+    alwaysMaskAfter: ???,
+    keepSummary: ???,
+    keepErrors: ???
+  }
+};
+```
+
+### Exercice 3 : Benchmark qualité
+**Objectif** : Mesurer l'impact sur la qualité
+
+| Question | Sans compression | Avec compression | Différence |
+|----------|:----------------:|:----------------:|:----------:|
+| Q1 | | | |
+| Q2 | | | |
+| ... | | | |
+
+### Exercice 4 : Trouver le ratio optimal
+**Objectif** : Équilibre coût/qualité
+
+| Compression | Coût | Qualité | Score |
+|:-----------:|:----:|:-------:|:-----:|
+| 0% | | | |
+| 30% | | | |
+| 50% | | | |
+| 70% | | | |
 
 ---
 
-## Pour aller plus loin
+## 📚 Références
 
-- JetBrains Research. (2024). "Context Compression for LLM-based Code Generation"
-- Liu, N., et al. (2023). "Lost in the Middle: How Language Models Use Long Contexts"
-- Grok-CLI : `src/context/context-compressor.ts`, `src/context/observation-masking.ts`
+| Type | Référence |
+|------|-----------|
+| 📄 Paper | JetBrains Research. (2024). "Context Compression for LLM-based Code Generation" |
+| 📄 Paper | Liu, N., et al. (2023). "Lost in the Middle: How Language Models Use Long Contexts" |
+| 💻 Code | Grok-CLI : `src/context/context-compressor.ts` |
+| 💻 Code | Grok-CLI : `src/context/observation-masking.ts` |
+
+---
+
+## 🌅 Épilogue — Le Prix de l'Attention
+
+*Un mois plus tard. 23h45. Lina fixe sa nouvelle facture API.*
+
+**Lina** *(un sourire se dessinant)* : "253 dollars."
+
+*Elle fait le calcul dans sa tête. 847 dollars le mois dernier. 253 maintenant. Presque 70% de moins.*
+
+**Marc** *(levant les yeux de son écran)* : "Et les réponses ?"
+
+**Lina** : "C'est ça le plus fou. Elles sont meilleures. Vraiment meilleures."
+
+*Elle pivote son écran vers lui. Un log de session, annoté.*
+
+**Lina** : "Regarde. Avant, quand je demandais de corriger un bug, l'agent citait parfois de la documentation obsolète qu'il avait lue 20 messages plus tôt. Maintenant, il va droit au code pertinent."
+
+**Marc** : "Le paradoxe de JetBrains. Moins de contexte, mais mieux ciblé. Le modèle n'a plus à choisir où regarder parmi 150,000 tokens. On a fait ce choix pour lui."
+
+*Un silence. Lina se mord la lèvre, pensive.*
+
+**Lina** : "Marc... J'ai une question qui me trotte dans la tête depuis quelques jours."
+
+**Marc** : "Hmm ?"
+
+**Lina** : "On optimise le contexte. On optimise la mémoire. On a même un RAG avec dépendances. Mais... l'agent a 41 outils à sa disposition. 41. Comment il sait lequel utiliser ?"
+
+*Marc pose son café. Son expression change — un mélange de satisfaction et d'anticipation, comme un professeur dont l'élève vient de poser exactement la bonne question.*
+
+**Marc** : "Ah. Tu touches à quelque chose de fondamental là."
+
+**Lina** : "C'est juste que... parfois je le vois hésiter. Ou pire, utiliser `bash` pour quelque chose que `read_file` ferait mieux. Ou faire trois appels séquentiels quand il pourrait paralléliser."
+
+**Marc** : "Tu as remarqué ça ?"
+
+**Lina** : "Difficile de ne pas le remarquer quand on regarde la facture en détail."
+
+*Marc se lève, va au tableau blanc, et dessine un schéma.*
+
+**Marc** : "Les outils sont le **système nerveux** de l'agent. Tout ce qu'on a construit — le reasoning, la mémoire, le contexte — tout ça converge vers un moment critique : le **tool call**."
+
+*Il trace une flèche.*
+
+**Marc** : "C'est là que l'intention devient action. Et c'est là que la plupart des agents échouent."
+
+**Lina** *(intriguée)* : "Comment ça ?"
+
+**Marc** : "Un outil mal choisi, c'est du temps perdu et de l'argent gaspillé. Un outil mal paramétré, c'est une erreur à corriger. Un outil exécuté sans validation... c'est un risque de sécurité."
+
+*Il se retourne vers elle, une lueur dans les yeux.*
+
+**Marc** : "Tu veux vraiment comprendre comment fonctionne un agent LLM ?"
+
+**Lina** : "Évidemment."
+
+**Marc** : "Alors il est temps de plonger dans le **Tool-Use**. Le vrai. Pas juste 'appeler une fonction'. On va parler de validation de schéma, de permissions, de confirmation utilisateur, d'exécution parallèle... et de ce qui se passe quand un outil échoue."
+
+*Lina ferme la facture et ouvre un nouveau fichier.*
+
+**Lina** : "Je suis prête."
+
+**Marc** *(souriant)* : "Tu vas adorer. Et détester. Probablement les deux en même temps."
+
+*Il écrit au tableau : "41 outils. 1 décision. 0 marge d'erreur."*
 
 ---
 
 *Fin de la Partie III — Mémoire, RAG et Contexte*
 
-*Prochainement : Partie IV — Action et Outils*
-*Chapitre 10 — Tool-Use et Tool-Calling*
+*Dans le prochain chapitre : Comment transformer une intention en action — sans casser quoi que ce soit.*
 
+---
+
+<div align="center">
+
+**← [Chapitre 8 : Dependency-Aware RAG](08-dependency-aware-rag.md)** | **[Sommaire](README.md)** | **[Chapitre 10 : Tool-Use](10-tool-use.md) →**
+
+</div>

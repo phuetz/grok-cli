@@ -114,31 +114,7 @@ Utilisateur: Lis le fichier config.json et affiche son contenu.
 
 La défense efficace nécessite **plusieurs couches** car aucune technique seule n'est suffisante :
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    DEFENSE IN DEPTH                         │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 1: INPUT VALIDATION                                  │
-│  - Détecter patterns d'injection ("ignore instructions")    │
-│  - Filtrer encodages suspects (base64, hex)                 │
-│  - Limiter la longueur des inputs                           │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 2: PROMPT HARDENING                                  │
-│  - Séparer clairement system/user avec des délimiteurs      │
-│  - Définir règles comme "NON-NÉGOCIABLES"                   │
-│  - Inclure instructions de détection d'injection            │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 3: OUTPUT VALIDATION                                 │
-│  - Détecter leakage du system prompt                        │
-│  - Redacter credentials dans les outputs                    │
-│  - Valider les commandes avant exécution                    │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 4: HUMAN-IN-THE-LOOP                                 │
-│  - Confirmer les opérations à risque                        │
-│  - Alerter sur comportements suspects                       │
-│  - Permettre annulation des actions                         │
-└─────────────────────────────────────────────────────────────┘
-```
+![Defense in Depth](images/svg/16-1-defense-in-depth.svg)
 
 ### 16.2.3 Techniques de Hardening
 
@@ -381,43 +357,7 @@ src/security/
 
 ### 16.6.2 Flow de Sécurité
 
-```
-User Input
-    │
-    ▼
-┌─────────────────┐
-│ Input Validation│ ← Détection injection
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ System Prompt   │ ← Règles hardcodées
-│ + Security Rules│
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   LLM Process   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Tool Validation │ ← Vérification paths, commandes
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ User Confirmation│ ← Human-in-the-loop
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Output Redaction│ ← Masquage secrets
-└────────┬────────┘
-         │
-         ▼
-   Response
-```
+![Security Flow](images/svg/16-2-security-flow.svg)
 
 ---
 
@@ -435,6 +375,58 @@ User Input
 - [ ] **Confirmation UX** : Human-in-the-loop pour opérations risquées
 - [ ] **Audit Logging** : Logger toutes les opérations sensibles
 - [ ] **Rate Limiting** : Limiter les requêtes pour ralentir les attaques
+
+---
+
+## ⚠️ 16.8 Limites et Risques
+
+### 🚧 Limites des Défenses Actuelles
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Aucune défense parfaite** | Best-of-N Jailbreak montre que toute protection est contournable | Faux sentiment de sécurité |
+| **Power-law des attaques** | Plus on essaie, plus on a de chances de réussir | Rate limiting insuffisant |
+| **Modèles locaux vulnérables** | Moins de safety training | Attaques plus faciles |
+| **Prompt leaking** | Difficile de cacher le system prompt indéfiniment | Ingénierie inverse possible |
+| **Évolution des attaques** | Nouvelles techniques apparaissent constamment | Course aux armements |
+
+### ⚡ Risques Résiduels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Injection réussie** | Faible | Critique | Défense en profondeur, monitoring |
+| **Exfiltration de données** | Faible | Critique | Isolation réseau, audit |
+| **Compromission système** | Très faible | Critique | Sandbox, least privilege |
+| **Sur-confiance utilisateur** | Moyenne | Moyen | Formation, warnings |
+| **False positives (blocage légitime)** | Moyenne | Faible | Affinage des règles, feedback |
+
+### 📊 Ce Que Vous NE POUVEZ PAS Empêcher
+
+| Attaque | Pourquoi | Ce qu'on peut faire |
+|---------|----------|---------------------|
+| Utilisateur déterminé avec accès physique | Peut modifier le code | Audit, logs immuables |
+| Attaques zero-day | Inconnues par définition | Defense-in-depth, monitoring |
+| Ingénierie sociale | Humain = maillon faible | Formation, procédures |
+| Modèle compromis à la source | Hors de notre contrôle | Vérifier les signatures, sources |
+
+> 📌 **À Retenir** : La sécurité des CLI IA est un **processus continu**, pas un produit fini. Aucune liste de blocage, aucun prompt hardening, aucune validation ne vous protègera à 100%. L'objectif n'est pas la perfection — c'est de **rendre les attaques suffisamment coûteuses** pour décourager la plupart des attaquants.
+
+> 💡 **Astuce Pratique** : Adoptez une posture de "assume breach" : même avec toutes les défenses, considérez qu'une attaque peut réussir. Mettez en place des logs, des alertes, et des procédures de réponse à incident. Le monitoring est aussi important que la prévention.
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 16
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | System Prompts et Sécurité des CLI IA |
+| **8 Composants** | Role, Structure, Tools, Planning, Env, Domain, Safety, Tone |
+| **Menace #1** | Prompt Injection (OWASP Top 10 LLM) |
+| **Défense** | Defense-in-depth : 4 couches de validation |
+| **Techniques** | Spotlighting, Instruction Defense, Détection Active |
+| **3 Modes** | Safe (tout confirmer), Default, YOLO (rien) |
+| **Validation** | Chemins, commandes, credentials, patterns |
+| **Limite clé** | Aucune défense n'est parfaite — Best-of-N Jailbreak |
 
 ---
 

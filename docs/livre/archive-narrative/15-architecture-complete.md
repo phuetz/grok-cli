@@ -1,8 +1,8 @@
-# Chapitre 15 : Architecture Complète — Grok-CLI de A à Z
+# 🏗️ Chapitre 15 : Architecture Complète — Grok-CLI de A à Z
 
 ---
 
-## Scène d'ouverture : La Vue d'Ensemble
+## 🎬 Scène d'ouverture : La Vue d'Ensemble
 
 *Un an après le premier commit...*
 
@@ -10,114 +10,100 @@ Lina se tenait devant l'écran de la salle de conférence. Derrière elle, le sc
 
 — "Et voilà où nous en sommes," dit-elle à l'équipe réunie. "Ce qui a commencé comme un simple wrapper autour de l'API Grok est devenu... ça."
 
-Elle désigna le diagramme. Les nouveaux développeurs écarquillèrent les yeux devant la complexité apparente.
+Elle désigna le diagramme. Les nouveaux développeurs écarquillèrent les yeux.
 
-— "Ne vous inquiétez pas," ajouta-t-elle avec un sourire. "Chaque pièce a une raison d'être. Et aujourd'hui, je vais vous expliquer comment tout s'assemble."
+— "Ne vous inquiétez pas," ajouta-t-elle avec un sourire. "Chaque pièce a une raison d'être. Aujourd'hui, je vais vous montrer comment tout s'assemble."
 
-Elle cliqua sur la première diapositive.
+Marcus, l'un des nouveaux, leva la main.
 
-— "Commençons par la question fondamentale : qu'est-ce qu'un agent LLM moderne ?"
+— "Par où on commence ?"
+
+— "Par le haut," répondit Lina. "Six couches. Une à la fois."
 
 ---
 
-## 15.1 Vue Aérienne de l'Architecture
+## 📋 Table des Matières
+
+| Section | Titre | Description |
+|---------|-------|-------------|
+| 15.1 | 🌍 Vue Aérienne | Les 6 couches et le flux de données |
+| 15.2 | 🖥️ Couche Interface | React/Ink, streaming, composants UI |
+| 15.3 | 🎯 Couche Orchestration | GrokAgent, boucle agentique, multi-agent |
+| 15.4 | 🧠 Couche Raisonnement | ToT, MCTS, Repair, stratégies hybrides |
+| 15.5 | 💾 Couche Contexte & Mémoire | RAG, compression, mémoire unifiée |
+| 15.6 | ⚡ Couche Actions | 41 outils, registre, MCP |
+| 15.7 | 🔒 Couche Sécurité | Permissions, sandbox, audit |
+| 15.8 | 📊 Intégration Complète | Diagramme global, configuration |
+| 15.9 | 📈 Métriques & Monitoring | Dashboard, statistiques |
+| 15.10 | 📝 Points Clés | Synthèse du chapitre |
+| 15.11 | 🔬 De la Recherche à l'Implémentation | Mapping articles → code |
+| 15.12 | 🏠 LLM Local en JavaScript | WebLLM, Transformers.js, node-llama-cpp |
+
+---
+
+## 15.1 🌍 Vue Aérienne de l'Architecture
 
 ### 15.1.1 Les Six Couches
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    ARCHITECTURE GROK-CLI                    │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                    INTERFACE (UI)                    │   │
-│  │   React/Ink • Streaming • Rendu Markdown • Thèmes   │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           │                                 │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                   ORCHESTRATION                      │   │
-│  │   GrokAgent • Boucle Agentique • Coordination       │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           │                                 │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                    RAISONNEMENT                      │   │
-│  │   ToT • MCTS • Repair • Réflexion • Planning        │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           │                                 │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                  CONTEXTE & MÉMOIRE                  │   │
-│  │   RAG • Compression • Embedding • Persistance       │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           │                                 │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                      ACTIONS                         │   │
-│  │   Tools • MCP • Plugins • Exécution Parallèle       │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           │                                 │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                     SÉCURITÉ                         │   │
-│  │   Permissions • Sandbox • Redaction • Audit         │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+L'architecture de Grok-CLI suit le principe de **séparation des responsabilités**. Chaque couche a un rôle précis et communique uniquement avec ses voisines immédiates.
+
+![Architecture Grok-CLI](images/grok-architecture-layers.svg)
+
+| Couche | Responsabilité | Composants Clés |
+|--------|----------------|-----------------|
+| 🖥️ Interface | Interaction utilisateur | ChatInterface, StreamingText, ToolProgress |
+| 🎯 Orchestration | Coordination globale | GrokAgent, MultiAgentCoordinator |
+| 🧠 Raisonnement | Stratégies de résolution | ToT, MCTS, IterativeRepair |
+| 💾 Contexte | Gestion de l'information | RAGPipeline, ContextCompressor, UnifiedMemory |
+| ⚡ Actions | Exécution des tâches | ToolRegistry, ParallelExecutor, MCPClient |
+| 🔒 Sécurité | Protection système | ApprovalModes, Sandbox, DataRedaction |
 
 ### 15.1.2 Flux de Données Principal
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    FLUX DE DONNÉES                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  User Input                                                 │
-│      │                                                      │
-│      ▼                                                      │
-│  ┌────────────┐     ┌────────────┐     ┌────────────┐      │
-│  │   Parser   │────▶│  Security  │────▶│  Context   │      │
-│  │  & Hooks   │     │   Check    │     │  Enrichment│      │
-│  └────────────┘     └────────────┘     └────────────┘      │
-│                                               │              │
-│                                               ▼              │
-│  ┌────────────┐     ┌────────────┐     ┌────────────┐      │
-│  │   Tool     │◀────│   Agent    │◀────│   Model    │      │
-│  │ Execution  │     │   Loop     │     │  Routing   │      │
-│  └────────────┘     └────────────┘     └────────────┘      │
-│       │                   │                                 │
-│       ▼                   ▼                                 │
-│  ┌────────────┐     ┌────────────┐                         │
-│  │  Results   │────▶│  Memory    │                         │
-│  │  Render    │     │  Update    │                         │
-│  └────────────┘     └────────────┘                         │
-│       │                                                     │
-│       ▼                                                     │
-│  User Output (Streaming)                                    │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+![Flux de données](images/data-flow.svg)
+
+**Étapes du flux :**
+
+1. **Parse & Hooks** — L'entrée utilisateur est analysée et les hooks pré-exécution sont déclenchés
+2. **Security Check** — Vérification des permissions et détection de patterns dangereux
+3. **Context Enrichment** — RAG, mémoires, et profil utilisateur sont ajoutés au contexte
+4. **Model Routing** — Sélection du modèle optimal (FrugalGPT)
+5. **Agent Loop** — Boucle agentique avec max 30 itérations
+6. **Tool Execution** — Exécution parallèle des outils demandés
+7. **Render Results** — Formatage et streaming vers l'utilisateur
+8. **Memory Update** — Apprentissage et mise à jour des mémoires
 
 ---
 
-## 15.2 Couche Interface (UI)
+## 15.2 🖥️ Couche Interface (UI)
 
 ### 15.2.1 Stack Technologique
+
+La couche UI utilise **React 18** avec **Ink 4** pour créer une interface terminal riche et réactive.
+
+| Technologie | Rôle | Avantage |
+|-------------|------|----------|
+| React 18 | Framework UI | Composants réutilisables, hooks |
+| Ink 4 | Rendu terminal | Flexbox pour terminal, composants natifs |
+| Streaming | Affichage progressif | Feedback immédiat, UX fluide |
+| Error Boundaries | Résilience | Crash gracieux, récupération |
 
 ```typescript
 // src/ui/chat-interface.tsx
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
 import { ErrorBoundary } from './components/error-boundary.js';
 import { StreamingText } from './components/streaming-text.js';
-import { ToolProgress } from './components/tool-progress.js';
-import { StatusBar } from './components/status-bar.js';
 
 /**
- * Interface principale du chat
+ * 🖥️ Interface principale du chat
  *
- * Stack : React 18 + Ink 4
- * - Rendu terminal avec composants React
- * - Gestion du state avec hooks
- * - Streaming natif
+ * Responsabilités :
+ * - Gestion des entrées clavier
+ * - Affichage des messages (user/assistant)
+ * - Streaming des réponses
+ * - Progression des outils
  */
 export function ChatInterface({ agent, config }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -126,14 +112,10 @@ export function ChatInterface({ agent, config }: ChatInterfaceProps) {
   const [streamingContent, setStreamingContent] = useState('');
   const { exit } = useApp();
 
-  // Gestion des entrées clavier
+  // ⌨️ Gestion des entrées clavier
   useInput((inputChar, key) => {
-    if (key.escape) {
-      exit();
-    }
-    if (key.return && !isProcessing) {
-      handleSubmit();
-    }
+    if (key.escape) exit();
+    if (key.return && !isProcessing) handleSubmit();
   });
 
   const handleSubmit = useCallback(async () => {
@@ -147,16 +129,14 @@ export function ChatInterface({ agent, config }: ChatInterfaceProps) {
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
 
     try {
-      // Streaming de la réponse
+      // 📡 Streaming de la réponse
       for await (const chunk of agent.processStream(userMessage)) {
         if (chunk.type === 'text') {
           setStreamingContent(prev => prev + chunk.content);
-        } else if (chunk.type === 'tool_start') {
-          // Affichage de la progression de l'outil
         }
       }
 
-      // Finalisation
+      // ✅ Finalisation
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: streamingContent
@@ -171,38 +151,33 @@ export function ChatInterface({ agent, config }: ChatInterfaceProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [input, agent]);
+  }, [input, agent, streamingContent]);
 
   return (
     <ErrorBoundary fallback={<ErrorFallback />}>
       <Box flexDirection="column" height="100%">
-        {/* En-tête */}
+        {/* 📊 En-tête avec status */}
         <StatusBar
           model={config.model}
           mode={config.mode}
           memorySize={agent.memorySize}
         />
 
-        {/* Zone des messages */}
-        <Box flexDirection="column" flexGrow={1} overflowY="scroll">
+        {/* 💬 Zone des messages */}
+        <Box flexDirection="column" flexGrow={1}>
           {messages.map((msg, i) => (
             <MessageBubble key={i} message={msg} />
           ))}
 
-          {/* Contenu en streaming */}
           {streamingContent && (
             <StreamingText content={streamingContent} />
           )}
         </Box>
 
-        {/* Zone de saisie */}
+        {/* ⌨️ Zone de saisie */}
         <Box borderStyle="single" paddingX={1}>
           <Text color="cyan">{'>'} </Text>
-          <TextInput
-            value={input}
-            onChange={setInput}
-            placeholder="Type your message..."
-          />
+          <TextInput value={input} onChange={setInput} />
         </Box>
       </Box>
     </ErrorBoundary>
@@ -213,37 +188,23 @@ export function ChatInterface({ agent, config }: ChatInterfaceProps) {
 ### 15.2.2 Composants Spécialisés
 
 ```typescript
-// src/ui/components/streaming-text.tsx
-
-/**
- * Affichage du texte en streaming avec rendu Markdown
- */
-export function StreamingText({ content }: { content: string }) {
-  return (
-    <Box flexDirection="column">
-      <Markdown>{content}</Markdown>
-      <BlinkingCursor />
-    </Box>
-  );
-}
-
 // src/ui/components/tool-progress.tsx
 
 /**
- * Affichage de la progression des outils
+ * ⚙️ Affichage de la progression des outils
  */
 export function ToolProgress({ tool, status, duration }: ToolProgressProps) {
-  const icon = status === 'running' ? '⟳' :
-               status === 'success' ? '✓' :
-               status === 'error' ? '✗' : '○';
-
-  const color = status === 'running' ? 'yellow' :
-                status === 'success' ? 'green' :
-                status === 'error' ? 'red' : 'gray';
+  // 🎨 Icônes et couleurs selon le status
+  const config = {
+    running: { icon: '⟳', color: 'yellow' },
+    success: { icon: '✓', color: 'green' },
+    error:   { icon: '✗', color: 'red' },
+    pending: { icon: '○', color: 'gray' }
+  }[status];
 
   return (
     <Box>
-      <Text color={color}>{icon} </Text>
+      <Text color={config.color}>{config.icon} </Text>
       <Text>{tool}</Text>
       {duration && <Text dimColor> ({duration}ms)</Text>}
     </Box>
@@ -253,12 +214,9 @@ export function ToolProgress({ tool, status, duration }: ToolProgressProps) {
 // src/ui/components/error-boundary.tsx
 
 /**
- * Capture des erreurs React pour éviter les crashs
+ * 🛡️ Capture des erreurs React pour éviter les crashs
  */
-export class ErrorBoundary extends React.Component<
-  { children: React.ReactNode; fallback: React.ReactNode },
-  { hasError: boolean; error?: Error }
-> {
+export class ErrorBoundary extends React.Component<Props, State> {
   state = { hasError: false, error: undefined };
 
   static getDerivedStateFromError(error: Error) {
@@ -280,29 +238,19 @@ export class ErrorBoundary extends React.Component<
 
 ---
 
-## 15.3 Couche Orchestration
+## 15.3 🎯 Couche Orchestration
 
 ### 15.3.1 L'Agent Central
+
+Le **GrokAgent** est le chef d'orchestre du système. Il coordonne toutes les autres couches et gère la boucle agentique principale.
+
+![Grok Agent](images/grok-agent.svg)
 
 ```typescript
 // src/agent/grok-agent.ts
 
-import { EventEmitter } from 'events';
-import { GrokClient } from '../grok/client.js';
-import { ToolRegistry } from '../tools/registry.js';
-import { ModelRouter } from '../optimization/model-routing.js';
-import { ParallelExecutor } from '../optimization/parallel-executor.js';
-import { MemorySystem } from '../memory/memory-system.js';
-import { SecurityManager } from '../security/index.js';
-
 /**
- * Agent principal - Orchestrateur central
- *
- * Responsabilités :
- * - Boucle agentique (max 30 rounds)
- * - Coordination des composants
- * - Gestion du contexte
- * - Streaming des réponses
+ * 🎯 Agent principal - Orchestrateur central
  */
 export class GrokAgent extends EventEmitter {
   private client: GrokClient;
@@ -311,54 +259,37 @@ export class GrokAgent extends EventEmitter {
   private executor: ParallelExecutor;
   private memory: MemorySystem;
   private security: SecurityManager;
-
-  private maxRounds: number;
-  private currentRound: number = 0;
-
-  constructor(config: AgentConfig) {
-    super();
-
-    this.maxRounds = config.maxRounds ?? 30;
-
-    // Initialisation des composants
-    this.client = new GrokClient(config.apiKey);
-    this.tools = new ToolRegistry();
-    this.router = new ModelRouter();
-    this.executor = new ParallelExecutor();
-    this.memory = new MemorySystem(config.memoryPath);
-    this.security = new SecurityManager(config.security);
-  }
+  private maxRounds = 30;
 
   /**
-   * Boucle agentique principale
+   * 🔄 Boucle agentique principale
    */
   async *processStream(input: string): AsyncGenerator<AgentChunk> {
-    this.currentRound = 0;
+    let currentRound = 0;
 
-    // 1. Pré-traitement
+    // 1️⃣ Vérification sécurité
     const securityCheck = await this.security.checkInput(input);
     if (!securityCheck.allowed) {
       yield { type: 'error', content: securityCheck.reason };
       return;
     }
 
-    // 2. Enrichissement du contexte
+    // 2️⃣ Enrichissement du contexte
     const context = await this.buildContext(input);
 
-    // 3. Sélection du modèle
+    // 3️⃣ Sélection du modèle (FrugalGPT)
     const routing = await this.router.selectTier({
       prompt: input,
       type: this.detectTaskType(input)
     });
+    yield { type: 'metadata', model: routing.tier };
 
-    yield { type: 'metadata', model: routing.tier, confidence: routing.confidence };
-
-    // 4. Boucle agentique
+    // 4️⃣ Boucle agentique
     let messages = this.buildInitialMessages(input, context);
     let continueLoop = true;
 
-    while (continueLoop && this.currentRound < this.maxRounds) {
-      this.currentRound++;
+    while (continueLoop && currentRound < this.maxRounds) {
+      currentRound++;
 
       // Appel au modèle
       const response = await this.client.chat({
@@ -378,12 +309,12 @@ export class GrokAgent extends EventEmitter {
       // Vérification des appels d'outils
       const toolCalls = response.toolCalls;
 
-      if (!toolCalls || toolCalls.length === 0) {
+      if (!toolCalls?.length) {
         continueLoop = false;
       } else {
-        // Exécution des outils
         yield { type: 'tools_start', count: toolCalls.length };
 
+        // Exécution parallèle
         const results = await this.executeTools(toolCalls);
 
         for (const result of results) {
@@ -395,411 +326,104 @@ export class GrokAgent extends EventEmitter {
           };
         }
 
-        // Ajout des résultats au contexte
         messages = this.appendToolResults(messages, toolCalls, results);
       }
     }
 
-    // 5. Post-traitement
+    // 5️⃣ Post-traitement et mémoire
     await this.memory.remember('episodic', {
       input,
-      rounds: this.currentRound,
+      rounds: currentRound,
       model: routing.tier
     });
 
-    yield { type: 'complete', rounds: this.currentRound };
-  }
-
-  /**
-   * Exécution des outils avec parallélisation
-   */
-  private async executeTools(toolCalls: ToolCall[]): Promise<ToolResult[]> {
-    // Vérification des permissions
-    for (const call of toolCalls) {
-      const permission = await this.security.checkTool(call);
-      if (!permission.allowed) {
-        throw new Error(`Tool ${call.name} not permitted: ${permission.reason}`);
-      }
-    }
-
-    // Exécution parallèle
-    return this.executor.executeTools(
-      toolCalls,
-      {
-        execute: async (call) => {
-          const tool = this.tools.get(call.name);
-          const startTime = Date.now();
-
-          try {
-            const result = await tool.execute(call.params);
-            return {
-              tool: call.name,
-              success: true,
-              value: result,
-              duration: Date.now() - startTime
-            };
-          } catch (error) {
-            return {
-              tool: call.name,
-              success: false,
-              error: String(error),
-              duration: Date.now() - startTime
-            };
-          }
-        }
-      }
-    );
-  }
-
-  /**
-   * Construction du contexte enrichi
-   */
-  private async buildContext(input: string): Promise<Context> {
-    const [
-      memories,
-      codebaseContext,
-      userProfile
-    ] = await Promise.all([
-      this.memory.search({ text: input, limit: 5 }),
-      this.buildCodebaseContext(input),
-      this.memory.getUserProfile()
-    ]);
-
-    return {
-      memories,
-      codebase: codebaseContext,
-      user: userProfile,
-      project: await this.detectProject()
-    };
-  }
-
-  /**
-   * Construction du contexte codebase
-   */
-  private async buildCodebaseContext(input: string): Promise<CodebaseContext> {
-    // RAG + Dependency-aware
-    const relevantFiles = await this.tools.get('search').execute({
-      query: input,
-      limit: 10
-    });
-
-    return {
-      files: relevantFiles,
-      structure: await this.getProjectStructure()
-    };
-  }
-
-  /**
-   * Messages initiaux avec contexte
-   */
-  private buildInitialMessages(
-    input: string,
-    context: Context
-  ): Message[] {
-    return [
-      {
-        role: 'system',
-        content: this.buildSystemPrompt(context)
-      },
-      {
-        role: 'user',
-        content: input
-      }
-    ];
-  }
-
-  /**
-   * Prompt système avec contexte
-   */
-  private buildSystemPrompt(context: Context): string {
-    const parts: string[] = [
-      'You are Grok-CLI, an AI-powered development assistant.',
-      '',
-      '## Current Project',
-      `Name: ${context.project.name}`,
-      `Language: ${context.project.language}`,
-      '',
-      '## User Preferences',
-      `Favorite tools: ${context.user.favoriteTools.join(', ')}`,
-      '',
-      '## Relevant Files',
-      context.codebase.files.map(f => `- ${f.path}`).join('\n')
-    ];
-
-    if (context.memories.length > 0) {
-      parts.push('', '## Recent Context');
-      parts.push(context.memories.map(m => `- ${m.summary}`).join('\n'));
-    }
-
-    return parts.join('\n');
+    yield { type: 'complete', rounds: currentRound };
   }
 }
 ```
 
 ### 15.3.2 Coordination Multi-Agent
 
-```typescript
-// src/agent/multi-agent/coordinator.ts
+Pour les tâches complexes, un **coordinateur multi-agent** décompose le travail en sous-tâches distribuées à des agents spécialisés.
 
-/**
- * Coordinateur pour les tâches complexes
- *
- * Décompose les tâches en sous-tâches
- * et les distribue à des agents spécialisés
- */
-export class MultiAgentCoordinator {
-  private agents: Map<string, SpecializedAgent> = new Map();
-  private taskQueue: TaskQueue;
+![Multi-Agent Coordinator](images/multi-agent-coordinator.svg)
 
-  constructor() {
-    this.registerDefaultAgents();
-    this.taskQueue = new TaskQueue();
-  }
-
-  /**
-   * Enregistrement des agents spécialisés
-   */
-  private registerDefaultAgents(): void {
-    this.agents.set('code', new CodeAgent());
-    this.agents.set('test', new TestAgent());
-    this.agents.set('review', new ReviewAgent());
-    this.agents.set('doc', new DocAgent());
-    this.agents.set('security', new SecurityAgent());
-  }
-
-  /**
-   * Traitement d'une tâche complexe
-   */
-  async process(task: ComplexTask): Promise<TaskResult> {
-    // 1. Décomposition
-    const subtasks = await this.decompose(task);
-
-    // 2. Ordonnancement
-    const schedule = this.buildSchedule(subtasks);
-
-    // 3. Exécution coordonnée
-    const results: Map<string, SubtaskResult> = new Map();
-
-    for (const level of schedule) {
-      // Exécution parallèle des tâches du même niveau
-      const levelResults = await Promise.all(
-        level.map(async (subtask) => {
-          const agent = this.agents.get(subtask.type);
-          if (!agent) {
-            throw new Error(`No agent for type: ${subtask.type}`);
-          }
-
-          // Injection des dépendances
-          const context = this.buildSubtaskContext(subtask, results);
-
-          return {
-            id: subtask.id,
-            result: await agent.execute(subtask, context)
-          };
-        })
-      );
-
-      for (const { id, result } of levelResults) {
-        results.set(id, result);
-      }
-    }
-
-    // 4. Agrégation
-    return this.aggregate(task, results);
-  }
-
-  /**
-   * Décomposition de la tâche
-   */
-  private async decompose(task: ComplexTask): Promise<Subtask[]> {
-    const subtasks: Subtask[] = [];
-
-    // Analyse de la tâche
-    if (task.requiresCode) {
-      subtasks.push({
-        id: 'code',
-        type: 'code',
-        description: 'Implement the requested functionality',
-        dependencies: []
-      });
-    }
-
-    if (task.requiresTests) {
-      subtasks.push({
-        id: 'test',
-        type: 'test',
-        description: 'Write tests for the implementation',
-        dependencies: ['code']
-      });
-    }
-
-    if (task.requiresReview) {
-      subtasks.push({
-        id: 'review',
-        type: 'review',
-        description: 'Review code quality and security',
-        dependencies: ['code']
-      });
-    }
-
-    if (task.requiresDocs) {
-      subtasks.push({
-        id: 'doc',
-        type: 'doc',
-        description: 'Document the changes',
-        dependencies: ['code', 'test']
-      });
-    }
-
-    return subtasks;
-  }
-
-  /**
-   * Construction du schedule (niveaux de dépendances)
-   */
-  private buildSchedule(subtasks: Subtask[]): Subtask[][] {
-    const levels: Subtask[][] = [];
-    const completed = new Set<string>();
-
-    while (completed.size < subtasks.length) {
-      const level: Subtask[] = [];
-
-      for (const subtask of subtasks) {
-        if (completed.has(subtask.id)) continue;
-
-        const depsCompleted = subtask.dependencies.every(
-          dep => completed.has(dep)
-        );
-
-        if (depsCompleted) {
-          level.push(subtask);
-        }
-      }
-
-      if (level.length === 0) {
-        throw new Error('Circular dependency detected');
-      }
-
-      for (const subtask of level) {
-        completed.add(subtask.id);
-      }
-
-      levels.push(level);
-    }
-
-    return levels;
-  }
-}
-```
+| Agent | Spécialisation | Dépendances |
+|-------|----------------|-------------|
+| 💻 Code | Implémentation | - |
+| 🧪 Test | Tests unitaires/intégration | Code |
+| 🔍 Review | Qualité et sécurité | Code |
+| 📚 Doc | Documentation | Code, Test |
+| 🔒 Security | Audit sécurité | Code, Review |
 
 ---
 
-## 15.4 Couche Raisonnement
+## 15.4 🧠 Couche Raisonnement
 
-### 15.4.1 Intégration des Stratégies
+### 15.4.1 Moteur de Raisonnement Unifié
+
+Le moteur de raisonnement sélectionne automatiquement la stratégie optimale selon la complexité du problème.
+
+![Reasoning Engine](images/reasoning-engine.svg)
+
+| Stratégie | Cas d'Usage | Chapitre |
+|-----------|-------------|----------|
+| Direct | Tâches simples (score < 0.3) | - |
+| Tree-of-Thought | Exploration, "best solution" | Ch. 4 |
+| MCTS | Grand espace de solutions | Ch. 5 |
+| Iterative Repair | Bug fix avec tests | Ch. 6 |
+| Hybrid | Complexité maximale | Combinaison |
 
 ```typescript
 // src/agent/reasoning/reasoning-engine.ts
 
-import { TreeOfThought } from './tree-of-thought.js';
-import { MCTSReasoner } from './mcts.js';
-import { IterativeRepairEngine } from '../repair/iterative-repair.js';
-
 /**
- * Moteur de raisonnement unifié
- *
- * Sélectionne et combine les stratégies selon la tâche
+ * 🧠 Moteur de raisonnement unifié
  */
 export class ReasoningEngine {
   private tot: TreeOfThought;
   private mcts: MCTSReasoner;
   private repair: IterativeRepairEngine;
 
-  constructor(config: ReasoningConfig) {
-    this.tot = new TreeOfThought(config.tot);
-    this.mcts = new MCTSReasoner(config.mcts);
-    this.repair = new IterativeRepairEngine(config.repair);
-  }
-
   /**
-   * Raisonnement adaptatif
+   * 🎯 Raisonnement adaptatif
    */
-  async reason(
-    problem: Problem,
-    strategy?: ReasoningStrategy
-  ): Promise<Solution> {
-    // Sélection automatique si non spécifié
-    const selectedStrategy = strategy ?? this.selectStrategy(problem);
+  async reason(problem: Problem, strategy?: ReasoningStrategy): Promise<Solution> {
+    const selected = strategy ?? this.selectStrategy(problem);
 
-    switch (selectedStrategy) {
+    switch (selected) {
       case 'direct':
         return this.directReasoning(problem);
-
       case 'tree-of-thought':
         return this.tot.solve(problem);
-
       case 'mcts':
         return this.mcts.search(problem);
-
       case 'iterative-repair':
         return this.repair.repair(problem);
-
       case 'hybrid':
         return this.hybridReasoning(problem);
-
-      default:
-        throw new Error(`Unknown strategy: ${selectedStrategy}`);
     }
   }
 
   /**
-   * Sélection de la stratégie
+   * 📊 Sélection automatique de stratégie
    */
   private selectStrategy(problem: Problem): ReasoningStrategy {
-    // Analyse de la complexité
     const complexity = this.assessComplexity(problem);
 
-    if (complexity.score < 0.3) {
-      return 'direct';
-    }
-
-    if (problem.hasTests && problem.type === 'bug_fix') {
-      return 'iterative-repair';
-    }
-
-    if (complexity.branchingFactor > 5) {
-      return 'mcts';
-    }
-
-    if (complexity.requiresExploration) {
-      return 'tree-of-thought';
-    }
+    if (complexity.score < 0.3) return 'direct';
+    if (problem.hasTests && problem.type === 'bug_fix') return 'iterative-repair';
+    if (complexity.branchingFactor > 5) return 'mcts';
+    if (complexity.requiresExploration) return 'tree-of-thought';
 
     return 'direct';
   }
 
   /**
-   * Raisonnement direct (baseline)
-   */
-  private async directReasoning(problem: Problem): Promise<Solution> {
-    // Génération directe sans exploration
-    const response = await this.llm.generate({
-      prompt: problem.description,
-      maxTokens: problem.maxTokens
-    });
-
-    return {
-      content: response,
-      confidence: 0.7,
-      reasoning: ['direct generation']
-    };
-  }
-
-  /**
-   * Raisonnement hybride
+   * 🔀 Raisonnement hybride (ToT + MCTS + Repair)
    */
   private async hybridReasoning(problem: Problem): Promise<Solution> {
-    // 1. Exploration initiale avec ToT
+    // 1. Exploration avec ToT
     const candidates = await this.tot.explore(problem, { maxCandidates: 3 });
 
     // 2. Sélection avec MCTS
@@ -812,327 +436,109 @@ export class ReasoningEngine {
 
     return best;
   }
-
-  /**
-   * Évaluation de la complexité
-   */
-  private assessComplexity(problem: Problem): ComplexityAssessment {
-    let score = 0;
-    let branchingFactor = 1;
-    let requiresExploration = false;
-
-    // Indicateurs de complexité
-    if (problem.description.length > 500) score += 0.2;
-    if (problem.description.includes('architecture')) score += 0.3;
-    if (problem.description.includes('multiple')) score += 0.2;
-    if (problem.filesInvolved > 3) score += 0.2;
-
-    // Facteur de branchement
-    if (problem.type === 'design') branchingFactor = 5;
-    if (problem.type === 'refactoring') branchingFactor = 3;
-
-    // Besoin d'exploration
-    if (problem.type === 'optimization') requiresExploration = true;
-    if (problem.description.includes('best')) requiresExploration = true;
-
-    return {
-      score: Math.min(1, score),
-      branchingFactor,
-      requiresExploration
-    };
-  }
 }
-
-type ReasoningStrategy =
-  | 'direct'
-  | 'tree-of-thought'
-  | 'mcts'
-  | 'iterative-repair'
-  | 'hybrid';
 ```
 
 ---
 
-## 15.5 Couche Contexte et Mémoire
+## 15.5 💾 Couche Contexte & Mémoire
 
 ### 15.5.1 Pipeline RAG Complet
 
-```typescript
-// src/context/rag-pipeline.ts
+Le pipeline RAG intègre la récupération avec dépendances (Ch. 8), la compression (Ch. 9), et le cache sémantique (Ch. 12).
 
-import { DependencyAwareRAG } from './dependency-aware-rag.js';
-import { ContextCompressor } from './context-compressor.js';
-import { SemanticCache } from '../utils/semantic-cache.js';
+![RAG Pipeline](images/rag-pipeline.svg)
 
-/**
- * Pipeline RAG complet
- *
- * 1. Récupération (Retrieval)
- * 2. Augmentation (Augmentation)
- * 3. Génération (Generation)
- */
-export class RAGPipeline {
-  private retriever: DependencyAwareRAG;
-  private compressor: ContextCompressor;
-  private cache: SemanticCache;
+### 15.5.2 Mémoire Unifiée
 
-  constructor(config: RAGConfig) {
-    this.retriever = new DependencyAwareRAG(config);
-    this.compressor = new ContextCompressor(config.compression);
-    this.cache = new SemanticCache(config.cachePath);
-  }
-
-  /**
-   * Récupération du contexte pour une requête
-   */
-  async getContext(query: string): Promise<RetrievedContext> {
-    // 1. Vérification du cache
-    const cached = await this.cache.get(query);
-    if (cached) {
-      return cached;
-    }
-
-    // 2. Récupération avec dépendances
-    const rawContext = await this.retriever.retrieve(query, {
-      maxFiles: 20,
-      includeImports: true,
-      includeCallers: true
-    });
-
-    // 3. Compression
-    const compressed = await this.compressor.compress(rawContext, {
-      targetTokens: 4000,
-      preservePriority: ['definitions', 'relevant_code']
-    });
-
-    // 4. Mise en cache
-    await this.cache.set(query, compressed);
-
-    return compressed;
-  }
-
-  /**
-   * Recherche de fichiers avec embedding
-   */
-  async searchFiles(
-    query: string,
-    options: SearchOptions
-  ): Promise<FileMatch[]> {
-    // Embedding de la requête
-    const queryEmbedding = await this.embedQuery(query);
-
-    // Recherche dans l'index
-    const matches = await this.retriever.searchByEmbedding(
-      queryEmbedding,
-      options.limit
-    );
-
-    // Expansion par dépendances
-    const expanded = await this.expandWithDependencies(matches);
-
-    return expanded;
-  }
-
-  /**
-   * Expansion par dépendances
-   */
-  private async expandWithDependencies(
-    matches: FileMatch[]
-  ): Promise<FileMatch[]> {
-    const expanded: FileMatch[] = [...matches];
-    const seen = new Set(matches.map(m => m.path));
-
-    for (const match of matches) {
-      // Récupération des dépendances
-      const deps = await this.retriever.getDependencies(match.path);
-
-      for (const dep of deps) {
-        if (!seen.has(dep.path)) {
-          seen.add(dep.path);
-          expanded.push({
-            ...dep,
-            score: match.score * 0.7  // Score réduit pour les dépendances
-          });
-        }
-      }
-    }
-
-    return expanded.sort((a, b) => b.score - a.score);
-  }
-}
-```
-
-### 15.5.2 Gestionnaire de Mémoire Unifié
+La mémoire unifie les 4 types (Ch. 14) : épisodique, sémantique, procédurale, prospective.
 
 ```typescript
 // src/memory/unified-memory.ts
 
-import { MemorySystem } from './memory-system.js';
-import { EpisodicMemory } from './episodic-memory.js';
-import { SemanticMemory } from './semantic-memory.js';
-import { ProceduralMemory } from './procedural-memory.js';
-
 /**
- * Gestionnaire de mémoire unifié
- *
- * Point d'entrée unique pour toutes les opérations mémoire
+ * 💾 Gestionnaire de mémoire unifié
  */
 export class UnifiedMemory {
-  private system: MemorySystem;
-  private episodic: EpisodicMemory;
-  private semantic: SemanticMemory;
-  private procedural: ProceduralMemory;
-
-  constructor(storagePath: string) {
-    this.system = new MemorySystem(storagePath);
-    this.episodic = new EpisodicMemory(this.system);
-    this.semantic = new SemanticMemory(this.system);
-    this.procedural = new ProceduralMemory(this.system);
-  }
+  private episodic: EpisodicMemory;   // Conversations, erreurs
+  private semantic: SemanticMemory;   // Faits, préférences
+  private procedural: ProceduralMemory; // Workflows
+  private prospective: ProspectiveMemory; // Rappels
 
   /**
-   * Rappel contextuel unifié
+   * 🔍 Rappel contextuel unifié
    */
   async recall(context: string): Promise<UnifiedRecall> {
-    const [episodes, facts, procedures] = await Promise.all([
-      this.episodic.recallSimilarEpisodes(context, 3),
+    const [episodes, facts, procedure] = await Promise.all([
+      this.episodic.recallSimilar(context, 3),
       this.semantic.getFactsAbout(context),
-      this.procedural.findApplicableProcedure(context)
+      this.procedural.findApplicable(context)
     ]);
 
     return {
       episodes,
       facts,
-      suggestedProcedure: procedures,
-      summary: this.summarize(episodes, facts, procedures)
+      suggestedProcedure: procedure,
+      summary: this.summarize(episodes, facts, procedure)
     };
   }
 
   /**
-   * Apprentissage unifié
+   * 📝 Apprentissage unifié
    */
   async learn(event: LearningEvent): Promise<void> {
     // Enregistrement épisodique
-    await this.episodic.recordEpisode(event);
+    await this.episodic.record(event);
 
     // Extraction de faits
-    await this.semantic.learnFromEpisodes([event]);
+    await this.semantic.learnFromEpisode(event);
 
     // Apprentissage procédural si applicable
     if (event.toolSequence && event.success) {
-      await this.procedural.learnFromToolSequence(
+      await this.procedural.learnFromSequence(
         event.toolSequence,
-        event.context,
-        event.success
+        event.context
       );
     }
-  }
-
-  /**
-   * Génération de résumé
-   */
-  private summarize(
-    episodes: Episode[],
-    facts: Fact[],
-    procedure: Procedure | null
-  ): string {
-    const parts: string[] = [];
-
-    if (episodes.length > 0) {
-      parts.push(`Recent: ${episodes[0].summary}`);
-    }
-
-    if (facts.length > 0) {
-      const topFact = facts[0];
-      parts.push(`Known: ${topFact.subject} ${topFact.predicate} ${topFact.object}`);
-    }
-
-    if (procedure) {
-      parts.push(`Suggested: ${procedure.name}`);
-    }
-
-    return parts.join(' | ') || 'No relevant context';
   }
 }
 ```
 
 ---
 
-## 15.6 Couche Actions (Outils)
+## 15.6 ⚡ Couche Actions (Outils)
 
 ### 15.6.1 Registre d'Outils
+
+Le registre centralise les **41 outils** intégrés avec validation, métriques, et définitions API.
+
+![Tool Registry](images/tool-registry.svg)
+
+| Catégorie | Outils | Exemples |
+|-----------|--------|----------|
+| 📁 Fichiers | 8 | Read, Write, Edit, MultiEdit, Delete, Move, Copy, Mkdir |
+| 🔍 Recherche | 6 | Glob, Grep, SymbolSearch, FindReferences, FindDefinition |
+| ⚙️ Exécution | 4 | Bash, TestRunner, Npm, Git |
+| 📊 Analyse | 5 | DependencyAnalyzer, ASTParser, TypeChecker, Linter |
+| 🛠️ Refactoring | 6 | RenameSymbol, ExtractMethod, InlineVariable, MoveFile |
+| 🔌 Intégration | 12+ | MCP servers, plugins dynamiques |
 
 ```typescript
 // src/tools/registry.ts
 
 /**
- * Registre centralisé des outils
- *
- * - Enregistrement dynamique
- * - Définitions pour l'API
- * - Validation des paramètres
- * - Métriques d'utilisation
+ * ⚡ Registre centralisé des outils
  */
 export class ToolRegistry {
   private tools: Map<string, Tool> = new Map();
   private metrics: Map<string, ToolMetrics> = new Map();
 
   constructor() {
-    this.registerBuiltinTools();
+    this.registerBuiltinTools();  // 41 outils
   }
 
   /**
-   * Enregistrement des outils intégrés
-   */
-  private registerBuiltinTools(): void {
-    // Outils de fichiers
-    this.register(new ReadTool());
-    this.register(new WriteTool());
-    this.register(new EditTool());
-    this.register(new MultiEditTool());
-
-    // Outils de recherche
-    this.register(new GlobTool());
-    this.register(new GrepTool());
-    this.register(new SymbolSearchTool());
-
-    // Outils d'exécution
-    this.register(new BashTool());
-    this.register(new TestRunnerTool());
-
-    // Outils d'analyse
-    this.register(new DependencyAnalyzerTool());
-    this.register(new RefactoringTool());
-
-    // Total : 41 outils intégrés
-  }
-
-  /**
-   * Enregistrement d'un outil
-   */
-  register(tool: Tool): void {
-    this.tools.set(tool.name, tool);
-    this.metrics.set(tool.name, {
-      calls: 0,
-      successes: 0,
-      totalDuration: 0,
-      lastUsed: 0
-    });
-  }
-
-  /**
-   * Récupération d'un outil
-   */
-  get(name: string): Tool {
-    const tool = this.tools.get(name);
-    if (!tool) {
-      throw new Error(`Tool not found: ${name}`);
-    }
-    return tool;
-  }
-
-  /**
-   * Définitions pour l'API (format OpenAI/Grok)
+   * 📋 Définitions pour l'API (format OpenAI/Grok)
    */
   getDefinitions(): ToolDefinition[] {
     return Array.from(this.tools.values()).map(tool => ({
@@ -1146,7 +552,7 @@ export class ToolRegistry {
   }
 
   /**
-   * Exécution avec métriques
+   * 🚀 Exécution avec métriques
    */
   async execute(name: string, params: unknown): Promise<ToolResult> {
     const tool = this.get(name);
@@ -1154,25 +560,17 @@ export class ToolRegistry {
     const startTime = Date.now();
 
     try {
-      // Validation des paramètres
       const validated = tool.validate(params);
-
-      // Exécution
       const result = await tool.execute(validated);
 
-      // Mise à jour des métriques
       metrics.calls++;
       metrics.successes++;
       metrics.totalDuration += Date.now() - startTime;
-      metrics.lastUsed = Date.now();
 
       return { success: true, value: result };
 
     } catch (error) {
       metrics.calls++;
-      metrics.totalDuration += Date.now() - startTime;
-      metrics.lastUsed = Date.now();
-
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)
@@ -1181,132 +579,54 @@ export class ToolRegistry {
   }
 
   /**
-   * Statistiques globales
+   * 📊 Statistiques globales
    */
   getStats(): ToolStats {
-    const stats: ToolStats = {
-      totalTools: this.tools.size,
-      totalCalls: 0,
-      successRate: 0,
-      averageDuration: 0,
-      topTools: []
-    };
+    const topTools = [...this.metrics.entries()]
+      .sort((a, b) => b[1].calls - a[1].calls)
+      .slice(0, 10)
+      .map(([name, m]) => ({
+        name,
+        calls: m.calls,
+        successRate: m.calls > 0 ? m.successes / m.calls : 0,
+        avgDuration: m.calls > 0 ? m.totalDuration / m.calls : 0
+      }));
 
-    const toolMetrics: Array<[string, ToolMetrics]> = [];
-
-    for (const [name, metrics] of this.metrics) {
-      stats.totalCalls += metrics.calls;
-      toolMetrics.push([name, metrics]);
-    }
-
-    // Tri par utilisation
-    toolMetrics.sort((a, b) => b[1].calls - a[1].calls);
-
-    stats.topTools = toolMetrics.slice(0, 10).map(([name, m]) => ({
-      name,
-      calls: m.calls,
-      successRate: m.calls > 0 ? m.successes / m.calls : 0,
-      avgDuration: m.calls > 0 ? m.totalDuration / m.calls : 0
-    }));
-
-    // Calculs globaux
-    const totalSuccesses = toolMetrics.reduce((sum, [, m]) => sum + m.successes, 0);
-    const totalDuration = toolMetrics.reduce((sum, [, m]) => sum + m.totalDuration, 0);
-
-    stats.successRate = stats.totalCalls > 0 ? totalSuccesses / stats.totalCalls : 0;
-    stats.averageDuration = stats.totalCalls > 0 ? totalDuration / stats.totalCalls : 0;
-
-    return stats;
-  }
-}
-```
-
-### 15.6.2 Interface d'Outil Standard
-
-```typescript
-// src/tools/base-tool.ts
-
-/**
- * Interface de base pour tous les outils
- */
-export abstract class BaseTool implements Tool {
-  abstract name: string;
-  abstract description: string;
-  abstract schema: JSONSchema;
-
-  /**
-   * Validation des paramètres
-   */
-  validate(params: unknown): Record<string, unknown> {
-    const errors = validateSchema(this.schema, params);
-
-    if (errors.length > 0) {
-      throw new Error(`Validation failed: ${errors.join(', ')}`);
-    }
-
-    return params as Record<string, unknown>;
-  }
-
-  /**
-   * Exécution de l'outil
-   */
-  abstract execute(params: Record<string, unknown>): Promise<unknown>;
-
-  /**
-   * Description pour le prompt
-   */
-  getPromptDescription(): string {
-    return `${this.name}: ${this.description}`;
-  }
-}
-
-// Exemple d'implémentation
-export class ReadTool extends BaseTool {
-  name = 'Read';
-  description = 'Read the contents of a file';
-
-  schema = {
-    type: 'object',
-    properties: {
-      path: { type: 'string', description: 'File path to read' },
-      lines: { type: 'number', description: 'Max lines to read' }
-    },
-    required: ['path']
-  };
-
-  async execute(params: { path: string; lines?: number }): Promise<string> {
-    const content = await fs.readFile(params.path, 'utf-8');
-
-    if (params.lines) {
-      return content.split('\n').slice(0, params.lines).join('\n');
-    }
-
-    return content;
+    return { totalTools: this.tools.size, topTools };
   }
 }
 ```
 
 ---
 
-## 15.7 Couche Sécurité
+## 15.7 🔒 Couche Sécurité
 
 ### 15.7.1 Gestionnaire de Sécurité Unifié
+
+La sécurité est intégrée à chaque niveau avec 4 composants principaux.
+
+![Security Manager](images/security-manager.svg)
+
+| Composant | Responsabilité | Configuration |
+|-----------|----------------|---------------|
+| 🚦 Approval Modes | 3 niveaux de permission | `.grok/approval-mode.json` |
+| 📦 Sandbox | Isolation des commandes | Conteneur/chroot |
+| 🔐 Data Redaction | Masquage données sensibles | Patterns regex |
+| 📋 Audit Logger | Journalisation complète | `.grok/audit.log` |
+
+**Les 3 modes d'approbation :**
+
+| Mode | Outils Lecture | Outils Écriture | Bash |
+|------|----------------|-----------------|------|
+| 🔴 read-only | ✅ Auto | ❌ Bloqué | ❌ Bloqué |
+| 🟡 auto | ✅ Auto | ⚠️ Règles | ⚠️ Règles |
+| 🟢 full-access | ✅ Auto | ✅ Auto | ✅ Auto |
 
 ```typescript
 // src/security/index.ts
 
-import { ApprovalModeManager } from './approval-modes.js';
-import { SandboxManager } from './sandbox.js';
-import { DataRedactor } from './data-redaction.js';
-import { AuditLogger } from './audit.js';
-
 /**
- * Gestionnaire de sécurité centralisé
- *
- * - Modes d'approbation (read-only, auto, full-access)
- * - Sandbox pour les commandes dangereuses
- * - Redaction des données sensibles
- * - Journalisation d'audit
+ * 🔒 Gestionnaire de sécurité centralisé
  */
 export class SecurityManager {
   private approval: ApprovalModeManager;
@@ -1314,74 +634,38 @@ export class SecurityManager {
   private redactor: DataRedactor;
   private audit: AuditLogger;
 
-  constructor(config: SecurityConfig) {
-    this.approval = new ApprovalModeManager(config.approvalMode);
-    this.sandbox = new SandboxManager(config.sandbox);
-    this.redactor = new DataRedactor(config.redaction);
-    this.audit = new AuditLogger(config.auditPath);
-  }
-
   /**
-   * Vérification d'une entrée utilisateur
-   */
-  async checkInput(input: string): Promise<SecurityCheck> {
-    // Redaction préventive
-    const redacted = this.redactor.redact(input);
-
-    // Détection de patterns dangereux
-    const dangerousPatterns = this.detectDangerousPatterns(input);
-
-    if (dangerousPatterns.length > 0) {
-      await this.audit.log('dangerous_input', { patterns: dangerousPatterns });
-
-      return {
-        allowed: false,
-        reason: `Dangerous patterns detected: ${dangerousPatterns.join(', ')}`
-      };
-    }
-
-    return { allowed: true };
-  }
-
-  /**
-   * Vérification d'un appel d'outil
+   * 🔍 Vérification d'un appel d'outil
    */
   async checkTool(toolCall: ToolCall): Promise<SecurityCheck> {
     const mode = this.approval.getCurrentMode();
 
-    // Mode read-only : bloquer les outils d'écriture
+    // 🔴 Mode read-only : bloquer les écritures
     if (mode === 'read-only' && this.isWriteTool(toolCall.name)) {
       return {
         allowed: false,
-        reason: `Tool ${toolCall.name} not allowed in read-only mode`,
+        reason: `Tool ${toolCall.name} blocked in read-only mode`,
         requiresApproval: true
       };
     }
 
-    // Mode auto : vérifier les règles
+    // 🟡 Mode auto : vérifier les règles
     if (mode === 'auto') {
-      const autoAllowed = this.approval.checkAutoRules(toolCall);
-      if (!autoAllowed.allowed) {
-        return {
-          allowed: false,
-          reason: autoAllowed.reason,
-          requiresApproval: true
-        };
+      const autoCheck = this.approval.checkAutoRules(toolCall);
+      if (!autoCheck.allowed) {
+        return { ...autoCheck, requiresApproval: true };
       }
     }
 
-    // Vérification du sandbox pour Bash
+    // 📦 Sandbox pour Bash
     if (toolCall.name === 'Bash') {
       const sandboxCheck = await this.sandbox.check(toolCall.params.command);
       if (!sandboxCheck.allowed) {
-        return {
-          allowed: false,
-          reason: sandboxCheck.reason
-        };
+        return sandboxCheck;
       }
     }
 
-    // Journalisation
+    // 📋 Journalisation
     await this.audit.log('tool_check', {
       tool: toolCall.name,
       allowed: true
@@ -1391,28 +675,12 @@ export class SecurityManager {
   }
 
   /**
-   * Redaction des résultats
-   */
-  redactOutput(output: string): string {
-    return this.redactor.redact(output);
-  }
-
-  /**
-   * Changement de mode
-   */
-  async setMode(mode: ApprovalMode): Promise<void> {
-    await this.approval.setMode(mode);
-    await this.audit.log('mode_change', { mode });
-  }
-
-  /**
-   * Détection des patterns dangereux
+   * ⚠️ Détection des patterns dangereux
    */
   private detectDangerousPatterns(input: string): string[] {
     const patterns = [
       { regex: /rm\s+-rf\s+\//, name: 'recursive delete root' },
       { regex: /:\(\)\{\s*:\|:\s*&\s*\}/, name: 'fork bomb' },
-      { regex: />\s*\/dev\/sda/, name: 'disk overwrite' },
       { regex: /curl.*\|\s*bash/, name: 'remote script execution' }
     ];
 
@@ -1420,158 +688,38 @@ export class SecurityManager {
       .filter(p => p.regex.test(input))
       .map(p => p.name);
   }
-
-  /**
-   * Vérification si outil d'écriture
-   */
-  private isWriteTool(name: string): boolean {
-    const writeTools = ['Write', 'Edit', 'MultiEdit', 'Bash', 'Delete', 'Move'];
-    return writeTools.includes(name);
-  }
-
-  /**
-   * Statistiques de sécurité
-   */
-  async getStats(): Promise<SecurityStats> {
-    const auditStats = await this.audit.getStats();
-
-    return {
-      currentMode: this.approval.getCurrentMode(),
-      ...auditStats
-    };
-  }
-}
-
-type ApprovalMode = 'read-only' | 'auto' | 'full-access';
-
-interface SecurityCheck {
-  allowed: boolean;
-  reason?: string;
-  requiresApproval?: boolean;
 }
 ```
 
 ---
 
-## 15.8 Diagramme d'Intégration Complet
+## 15.8 📊 Diagramme d'Intégration Complet
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        GROK-CLI ARCHITECTURE COMPLETE                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                            USER INTERFACE                              │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
-│  │  │ ChatInterface│  │ StatusBar   │  │ ToolProgress│  │ ErrorBoundary│   │  │
-│  │  └──────┬──────┘  └─────────────┘  └─────────────┘  └─────────────┘   │  │
-│  └─────────│─────────────────────────────────────────────────────────────┘  │
-│            │                                                                 │
-│            ▼                                                                 │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                           ORCHESTRATION                                │  │
-│  │                                                                        │  │
-│  │    ┌──────────────────────────────────────────────────────────┐       │  │
-│  │    │                      GrokAgent                            │       │  │
-│  │    │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐     │       │  │
-│  │    │  │ Process │  │ Execute │  │ Stream  │  │ Memory  │     │       │  │
-│  │    │  │ Message │─▶│  Tools  │─▶│ Response│─▶│ Update  │     │       │  │
-│  │    │  └─────────┘  └─────────┘  └─────────┘  └─────────┘     │       │  │
-│  │    └──────────────────────────────────────────────────────────┘       │  │
-│  │                              │                                         │  │
-│  │    ┌─────────────────────────┼─────────────────────────┐              │  │
-│  │    │    MultiAgentCoordinator│                         │              │  │
-│  │    │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐       │              │  │
-│  │    │  │Code │ │Test │ │Review│ │Doc  │ │Sec  │       │              │  │
-│  │    │  │Agent│ │Agent│ │Agent│ │Agent│ │Agent│       │              │  │
-│  │    │  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘       │              │  │
-│  │    └─────────────────────────────────────────────────┘              │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│            │                                                                 │
-│            ▼                                                                 │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                            REASONING                                   │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
-│  │  │ Tree-of-    │  │    MCTS     │  │  Iterative  │  │   Hybrid    │   │  │
-│  │  │  Thought    │  │  Reasoner   │  │   Repair    │  │  Reasoning  │   │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘   │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│            │                                                                 │
-│            ▼                                                                 │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                        CONTEXT & MEMORY                                │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
-│  │  │ Dependency  │  │   Context   │  │   Semantic  │  │   Unified   │   │  │
-│  │  │  Aware RAG  │  │ Compressor  │  │    Cache    │  │   Memory    │   │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘   │  │
-│  │                                                                        │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                    │  │
-│  │  │  Episodic   │  │  Semantic   │  │ Procedural  │                    │  │
-│  │  │   Memory    │  │   Memory    │  │   Memory    │                    │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘                    │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│            │                                                                 │
-│            ▼                                                                 │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                            ACTIONS                                     │  │
-│  │  ┌───────────────────────────────────────────────────────────────┐    │  │
-│  │  │                      Tool Registry (41 tools)                  │    │  │
-│  │  │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐    │    │  │
-│  │  │  │Read │ │Write│ │Edit │ │Bash │ │Glob │ │Grep │ │Symbol│    │    │  │
-│  │  │  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘    │    │  │
-│  │  └───────────────────────────────────────────────────────────────┘    │  │
-│  │                                                                        │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                    │  │
-│  │  │   Parallel  │  │     MCP     │  │   Plugin    │                    │  │
-│  │  │  Executor   │  │   Client    │  │   Loader    │                    │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘                    │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│            │                                                                 │
-│            ▼                                                                 │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                            SECURITY                                    │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
-│  │  │  Approval   │  │   Sandbox   │  │    Data     │  │    Audit    │   │  │
-│  │  │   Modes     │  │   Manager   │  │  Redaction  │  │   Logger    │   │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘   │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│            │                                                                 │
-│            ▼                                                                 │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                          OPTIMIZATION                                  │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
-│  │  │   Model     │  │    Lazy     │  │   Latency   │  │   Request   │   │  │
-│  │  │   Routing   │  │   Loading   │  │  Optimizer  │  │  Batching   │   │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘   │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+![Architecture Complète](images/complete-architecture.svg)
 
 ---
 
-## 15.9 Configuration et Démarrage
+## 15.9 📈 Configuration et Démarrage
 
 ### 15.9.1 Fichiers de Configuration
 
-```typescript
-// Structure de configuration
+| Fichier | Portée | Contenu |
+|---------|--------|---------|
+| `.grok/settings.json` | Projet | Modèle, rounds, mémoire, outils |
+| `~/.grok/user-settings.json` | Utilisateur | Thème, éditeur, préférences |
+| `.grok/mcp.json` | Projet | Serveurs MCP |
+| `.grok/hooks.json` | Projet | Hooks d'événements |
+| `.grok/approval-mode.json` | Projet | Mode de sécurité actuel |
 
-// .grok/settings.json - Paramètres projet
+```json
+// .grok/settings.json
 {
   "model": "grok-3",
   "maxRounds": 30,
   "approvalMode": "auto",
   "memory": {
     "enabled": true,
-    "path": ".grok/memory.json",
     "consolidation": "daily"
-  },
-  "tools": {
-    "bash": {
-      "timeout": 30000,
-      "sandbox": true
-    }
   },
   "optimization": {
     "modelRouting": true,
@@ -1579,219 +727,617 @@ interface SecurityCheck {
     "caching": true
   }
 }
-
-// ~/.grok/user-settings.json - Préférences utilisateur
-{
-  "theme": "dark",
-  "editor": "code",
-  "streaming": true,
-  "verbose": false
-}
-
-// .grok/mcp.json - Configuration MCP
-{
-  "servers": [
-    {
-      "name": "github",
-      "transport": "stdio",
-      "command": "node",
-      "args": ["./mcp-servers/github/index.js"]
-    }
-  ]
-}
-
-// .grok/hooks.json - Hooks d'événements
-{
-  "preToolUse": ["validate-paths"],
-  "postToolUse": ["log-to-file"],
-  "onError": ["notify-slack"]
-}
 ```
 
 ### 15.9.2 Séquence de Démarrage
 
+![Startup Sequence](images/startup-sequence.svg)
+
+### 15.9.3 Dashboard de Métriques
+
+![Dashboard Metrics](images/dashboard-metrics.svg)
+
+---
+
+## ⚠️ 15.10 Limites et Risques de l'Architecture
+
+### 🚧 Limites Architecturales
+
+| Limite | Description | Mitigation |
+|--------|-------------|------------|
+| **Complexité émergente** | 6 couches = nombreuses interactions non prévues | Tests d'intégration exhaustifs |
+| **Single point of failure** | GrokAgent centralise tout | Graceful degradation, circuit breakers |
+| **Couplage vertical** | Changement de couche = cascade de modifications | Interfaces stables, versioning |
+| **Overhead mémoire** | Chaque couche maintient son état | Lazy loading, garbage collection |
+| **Latence bout-en-bout** | Traversée des 6 couches à chaque requête | Optimisation hot paths, caching |
+
+### ⚠️ Risques Systémiques
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Cascade d'erreurs** | Moyenne | Élevé | Isolation des erreurs par couche |
+| **Deadlocks multi-agents** | Faible | Critique | Timeouts, détection de cycles |
+| **Épuisement de ressources** | Moyenne | Élevé | Quotas, monitoring proactif |
+| **Incohérence d'état** | Moyenne | Moyen | Transactions, snapshots |
+| **Régression de performance** | Moyenne | Moyen | Benchmarks CI/CD |
+
+### 📊 Compromis Architecturaux
+
+| Choix | Avantage | Inconvénient |
+|-------|----------|--------------|
+| 6 couches distinctes | Modularité, testabilité | Overhead, complexité |
+| Multi-agent | Parallélisme, spécialisation | Coordination, latence |
+| Mémoire unifiée | Contexte riche | Consommation RAM |
+| 41 outils intégrés | Polyvalence | Surface d'attaque |
+| 3 modes d'approbation | Flexibilité sécurité | Complexité UX |
+
+### 🎯 Anti-Patterns à Éviter
+
+| Anti-Pattern | Symptôme | Solution |
+|--------------|----------|----------|
+| **God Agent** | Un agent fait tout | Décomposition en spécialistes |
+| **Callback Hell** | Enchaînement de callbacks | Async/await, orchestrateur |
+| **Premature Optimization** | Cache partout | Mesurer d'abord, optimiser après |
+| **Security Afterthought** | Sécurité ajoutée en fin | Security by design |
+| **Monolithic Memory** | Une seule table de mémoire | 4 types spécialisés |
+
+### 💡 Recommandations
+
+> ⚠️ **Attention** : L'architecture parfaite n'existe pas. Chaque projet a ses contraintes. Cette architecture est un point de départ, pas une fin. Adaptez les couches à vos besoins réels plutôt que d'implémenter aveuglément.
+
+> 📌 **À Retenir** : Une bonne architecture d'agent n'est pas celle qui a le plus de fonctionnalités — c'est celle qui permet d'**ajouter des fonctionnalités facilement** tout en restant maintenable. Les 6 couches ne sont pas un dogme : c'est un guide. Si votre cas d'usage est simple, fusionnez des couches. Si c'est complexe, subdivisez.
+
+> 💡 **Astuce Pratique** : Commencez avec les couches 1-2-5-6 (Interface, Orchestration, Actions, Sécurité). Ajoutez le Raisonnement (3) quand les tâches deviennent complexes, et le Contexte (4) quand le projet grandit. Évitez de tout implémenter d'un coup.
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 15
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Architecture Complète de Grok-CLI |
+| **6 Couches** | Interface, Orchestration, Raisonnement, Contexte, Actions, Sécurité |
+| **Orchestrateur** | GrokAgent avec boucle agentique (max 30 rounds) |
+| **Multi-Agent** | Décomposition en sous-tâches spécialisées |
+| **Raisonnement** | Sélection auto ToT/MCTS/Repair selon complexité |
+| **Mémoire** | 4 types : épisodique, sémantique, procédurale, prospective |
+| **Outils** | 41 outils avec registre centralisé et métriques |
+| **Sécurité** | 3 modes (read-only, auto, full-access) |
+| **Démarrage** | 40ms visible, preload async |
+| **Recherche** | 10+ articles académiques implémentés |
+
+---
+
+## 📝 15.11 Points Clés du Chapitre
+
+| Concept | Description | Impact |
+|---------|-------------|--------|
+| 🏗️ 6 Couches | Interface, Orchestration, Raisonnement, Contexte, Actions, Sécurité | Séparation des responsabilités |
+| 🎯 GrokAgent | Orchestrateur central avec boucle agentique | Max 30 rounds, streaming |
+| 👥 Multi-Agent | Décomposition en sous-tâches spécialisées | Parallélisme, expertise |
+| 🧠 Raisonnement | Sélection automatique ToT/MCTS/Repair | Adaptation à la complexité |
+| 💾 Mémoire Unifiée | 4 types : épisodique, sémantique, procédurale, prospective | Apprentissage continu |
+| ⚡ 41 Outils | Registre centralisé avec métriques | Extensibilité, monitoring |
+| 🔒 3 Modes | read-only, auto, full-access | Sécurité par défaut |
+| 🚀 Démarrage | 40ms visible, preload async | UX fluide |
+
+![Récapitulatif Architecture](images/architecture-summary.svg)
+
+---
+
+## 🔬 15.11 De la Recherche à l'Implémentation
+
+Un aspect clé de Grok-CLI est son ancrage dans la **recherche académique récente**. Chaque optimisation majeure est inspirée d'un article scientifique.
+
+### 15.11.1 Tableau de Mapping Recherche → Code
+
+![Mapping Recherche](images/research-mapping.svg)
+
+| Technique | Article de Recherche | Fichier Grok-CLI | Amélioration |
+|-----------|---------------------|------------------|--------------|
+| **Context Compression** | JetBrains Research (2024) | `context-compressor.ts` | -7% coûts, +2.6% succès |
+| **Iterative Repair** | ChatRepair (ISSTA 2024, Distinguished Paper) | `iterative-repair.ts` | Boucle feedback tests |
+| **Dependency-Aware RAG** | CodeRAG (arXiv 2024) | `dependency-aware-rag.ts` | Graphe de dépendances |
+| **Observation Masking** | JetBrains / AgentCoder | `observation-masking.ts` | Filtrage sémantique |
+| **Semantic Caching** | API optimization research | `semantic-cache.ts` | 68% réduction API |
+| **Model Routing** | FrugalGPT (Stanford 2023) | `model-routing.ts` | 30-70% réduction coûts |
+| **Parallel Execution** | LLMCompiler (Berkeley 2023) | `parallel-executor.ts` | 2.5-4.6x speedup |
+| **MCTS Reasoning** | RethinkMCTS (arXiv 2024) | `mcts-reasoning.ts` | Correction d'erreurs |
+| **Tree-of-Thought** | Yao et al. (NeurIPS 2023) | `tot-reasoning.ts` | Exploration multi-chemins |
+| **ReAct Pattern** | Yao et al. (2022) | `grok-agent.ts` | Boucle Reason + Act |
+
+### 15.11.2 Comment Lire un Article et l'Implémenter
+
+![Processus Article vers Implémentation](images/article-to-implementation.svg)
+
+### 15.11.3 Exemple : Implémenter FrugalGPT
+
+L'article **FrugalGPT** (Chen et al., Stanford 2023) propose de router les requêtes vers le modèle le moins cher capable de les traiter.
+
+**Extrait de l'article :**
+> "FrugalGPT can match GPT-4's performance with up to 98% cost reduction by learning to route queries to appropriate LLMs."
+
+**Implémentation dans Grok-CLI :**
+
 ```typescript
-// src/index.ts
+// src/optimization/model-routing.ts
 
-import { moduleRegistry } from './performance/module-registry.js';
-import { SecurityManager } from './security/index.js';
-
-async function main() {
-  const startTime = Date.now();
-
-  console.log('Grok-CLI starting...');
-
-  // Phase 1 : Configuration (5ms)
-  const config = await loadConfig();
-
-  // Phase 2 : Sécurité (10ms)
-  const security = new SecurityManager(config.security);
-
-  // Phase 3 : Interface minimale (20ms)
-  const { ChatInterface } = await import('./ui/chat-interface.js');
-
-  // Phase 4 : Agent (5ms)
-  const { MemoryAwareAgent } = await import('./agent/memory-aware-agent.js');
-  const agent = new MemoryAwareAgent(config);
-  await agent.initialize();
-
-  // Temps visible : ~37ms
-  console.log(`Ready in ${Date.now() - startTime}ms`);
-
-  // Phase 5 : Préchargement arrière-plan
-  setImmediate(() => {
-    moduleRegistry.triggerPreload('session.start');
-  });
-
-  // Phase 6 : Boucle principale
-  const ui = new ChatInterface({ agent, config });
-  await ui.start();
-
-  // Arrêt propre
-  process.on('SIGINT', async () => {
-    await agent.shutdown();
-    process.exit(0);
-  });
+interface ModelTier {
+  name: string;
+  cost: number;        // $ per 1M tokens
+  capability: number;  // 0-100 score
+  latency: number;     // ms average
 }
 
-main().catch(error => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
+const MODEL_TIERS: ModelTier[] = [
+  { name: 'grok-2-mini', cost: 0.5, capability: 70, latency: 200 },
+  { name: 'grok-2', cost: 2, capability: 85, latency: 500 },
+  { name: 'grok-3', cost: 10, capability: 95, latency: 1000 },
+];
+
+export function routeToOptimalModel(task: TaskAnalysis): string {
+  // Complexité estimée par heuristiques
+  const complexity = estimateComplexity(task);
+
+  // Sélectionner le modèle le moins cher suffisant
+  for (const tier of MODEL_TIERS) {
+    if (tier.capability >= complexity.requiredCapability) {
+      return tier.name;
+    }
+  }
+
+  return MODEL_TIERS[MODEL_TIERS.length - 1].name; // Fallback au meilleur
+}
 ```
 
 ---
 
-## 15.10 Métriques et Monitoring
+## 🏠 15.12 LLM Local en JavaScript/TypeScript
 
-### 15.10.1 Tableau de Bord
+Grok-CLI utilise principalement l'API Grok (cloud), mais peut également fonctionner avec des **LLM locaux** pour la confidentialité ou le mode hors-ligne.
+
+### 15.12.1 Solutions Disponibles
+
+![LLM Local JavaScript](images/local-js-llm.svg)
+
+| Solution | Type | Usage | Performance |
+|----------|------|-------|-------------|
+| **node-llama-cpp** | Node.js native | Production serveur | ⭐⭐⭐⭐ Excellente |
+| **Transformers.js** | ONNX/WASM | Embeddings, petits modèles | ⭐⭐⭐ Bonne |
+| **WebLLM** | WebGPU browser | Applications web | ⭐⭐⭐ Variable |
+| **Ollama + API** | HTTP localhost | Polyvalent | ⭐⭐⭐⭐ Excellente |
+
+### 15.12.2 node-llama-cpp : LLM Natif pour Node.js
+
+```bash
+# Installation (dépendance optionnelle dans Grok-CLI)
+npm install node-llama-cpp
+
+# Télécharger un modèle GGUF
+mkdir -p ~/.grok/models
+wget -P ~/.grok/models/ https://huggingface.co/lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+```
+
+**Implémentation réelle** (extrait de `src/providers/local-llm-provider.ts`) :
 
 ```typescript
-// src/commands/stats-command.ts
+// src/providers/local-llm-provider.ts
 
-export async function handleStatsCommand(
-  agent: MemoryAwareAgent,
-  args: string[]
-): Promise<string> {
-  const subcommand = args[0] || 'summary';
+export type LocalProviderType = 'ollama' | 'local-llama' | 'webllm';
 
-  switch (subcommand) {
-    case 'summary':
-      return await formatSummary(agent);
+export interface LocalLLMMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
 
-    case 'tools':
-      return await formatToolStats(agent);
+export interface LocalLLMResponse {
+  content: string;
+  tokensUsed: number;
+  model: string;
+  provider: LocalProviderType;
+  generationTime: number;
+}
 
-    case 'memory':
-      return await formatMemoryStats(agent);
+/**
+ * Native Node.js LLM provider using node-llama-cpp
+ *
+ * Advantages:
+ * - No external dependencies (Ollama not required)
+ * - Direct C++ bindings = lowest latency
+ * - Fine-grained control over model parameters
+ * - Supports CUDA, Metal, and CPU inference
+ */
+export class NodeLlamaCppProvider extends EventEmitter implements LocalLLMProvider {
+  readonly type: LocalProviderType = 'local-llama';
+  readonly name = 'node-llama-cpp';
 
-    case 'performance':
-      return await formatPerformanceStats(agent);
+  private model: unknown = null;
+  private context: unknown = null;
+  private ready = false;
+  private modelsDir: string;
 
-    case 'security':
-      return await formatSecurityStats(agent);
+  constructor() {
+    super();
+    this.modelsDir = path.join(os.homedir(), '.grok', 'models');
+  }
 
-    default:
-      return 'Usage: /stats [summary|tools|memory|performance|security]';
+  async initialize(config: LocalProviderConfig): Promise<void> {
+    await fs.ensureDir(this.modelsDir);
+
+    const modelPath = config.modelPath ||
+      path.join(this.modelsDir, 'llama-3.1-8b-q4_k_m.gguf');
+
+    if (!await fs.pathExists(modelPath)) {
+      throw new Error(`Model not found at ${modelPath}`);
+    }
+
+    // Dynamic import of node-llama-cpp
+    const { LlamaModel, LlamaContext } = await import('node-llama-cpp');
+
+    this.model = new LlamaModel({
+      modelPath,
+      gpuLayers: config.gpuLayers ?? 0, // 0 = auto-detect
+    });
+
+    this.context = new LlamaContext({
+      model: this.model as any,
+      contextSize: config.contextSize ?? 4096,
+    });
+
+    this.ready = true;
+  }
+
+  async complete(
+    messages: LocalLLMMessage[],
+    options?: Partial<LocalProviderConfig>
+  ): Promise<LocalLLMResponse> {
+    const startTime = Date.now();
+    const { LlamaChatSession } = await import('node-llama-cpp');
+
+    const session = new LlamaChatSession({
+      context: this.context as any,
+      systemPrompt: messages.find(m => m.role === 'system')?.content,
+    });
+
+    let response = '';
+    for (const msg of messages) {
+      if (msg.role === 'user') {
+        response = await session.prompt(msg.content, {
+          maxTokens: options?.maxTokens ?? 2048,
+          temperature: options?.temperature ?? 0.7,
+        });
+      }
+    }
+
+    return {
+      content: response,
+      tokensUsed: Math.ceil(response.length / 4),
+      model: this.config?.modelPath || 'unknown',
+      provider: this.type,
+      generationTime: Date.now() - startTime,
+    };
+  }
+}
+```
+
+### 15.12.3 WebLLM : LLM dans le Navigateur
+
+Pour les applications web ou Electron, **WebLLM** permet d'exécuter des LLM directement avec WebGPU.
+
+**Implémentation réelle** (extrait de `src/providers/local-llm-provider.ts`) :
+
+```typescript
+/**
+ * Browser-based LLM provider using WebLLM
+ *
+ * Advantages:
+ * - Runs in browser with WebGPU
+ * - Zero server requirements
+ * - Can be used in Electron apps
+ * - Progressive model download with caching
+ */
+export class WebLLMProvider extends EventEmitter implements LocalLLMProvider {
+  readonly type: LocalProviderType = 'webllm';
+  readonly name = 'WebLLM';
+
+  private engine: unknown = null;
+  private ready = false;
+
+  async initialize(config: LocalProviderConfig): Promise<void> {
+    // Dynamic import of WebLLM
+    const webllm = await import('@mlc-ai/web-llm');
+
+    const model = config.model || 'Llama-3.1-8B-Instruct-q4f16_1-MLC';
+    this.engine = new webllm.MLCEngine();
+
+    // Progress callback for model download
+    const initProgress = (progress: { progress: number; text: string }) => {
+      this.emit('progress', progress);
+    };
+
+    await (this.engine as any).reload(model, { initProgressCallback: initProgress });
+    this.ready = true;
+  }
+
+  async isAvailable(): Promise<boolean> {
+    // Check if WebGPU is available
+    if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
+      const adapter = await (navigator as any).gpu.requestAdapter();
+      return adapter !== null;
+    }
+    return false;
+  }
+
+  async complete(
+    messages: LocalLLMMessage[],
+    options?: Partial<LocalProviderConfig>
+  ): Promise<LocalLLMResponse> {
+    const startTime = Date.now();
+
+    const response = await (this.engine as any).chat.completions.create({
+      messages: messages.map(m => ({ role: m.role, content: m.content })),
+      max_tokens: options?.maxTokens ?? 2048,
+      temperature: options?.temperature ?? 0.7,
+      stream: false,
+    });
+
+    return {
+      content: response.choices[0]?.message?.content || '',
+      tokensUsed: response.usage?.total_tokens || 0,
+      model: this.config?.model || 'unknown',
+      provider: this.type,
+      generationTime: Date.now() - startTime,
+    };
+  }
+
+  async *stream(messages: LocalLLMMessage[], options?: Partial<LocalProviderConfig>) {
+    const response = await (this.engine as any).chat.completions.create({
+      messages: messages.map(m => ({ role: m.role, content: m.content })),
+      stream: true,
+    });
+
+    for await (const chunk of response) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) yield content;
+    }
+  }
+
+  getModels(): string[] {
+    return [
+      'Llama-3.1-8B-Instruct-q4f16_1-MLC',
+      'Llama-3.1-70B-Instruct-q4f16_1-MLC',
+      'Mistral-7B-Instruct-v0.3-q4f16_1-MLC',
+      'Phi-3.5-mini-instruct-q4f16_1-MLC',
+      'Qwen2.5-7B-Instruct-q4f16_1-MLC',
+    ];
+  }
+}
+```
+
+### 15.12.4 LocalProviderManager : Gestion Unifiée
+
+**Implémentation réelle** (extrait de `src/providers/local-llm-provider.ts`) :
+
+```typescript
+/**
+ * Manager for local LLM providers
+ * Handles provider selection, fallback, and unified interface.
+ */
+export class LocalProviderManager extends EventEmitter {
+  private providers: Map<LocalProviderType, LocalLLMProvider> = new Map();
+  private activeProvider: LocalProviderType | null = null;
+
+  /**
+   * Register and initialize a provider
+   */
+  async registerProvider(type: LocalProviderType, config: LocalProviderConfig): Promise<void> {
+    const provider = this.createProvider(type);
+
+    provider.on('progress', (progress) => {
+      this.emit('progress', { provider: type, ...progress });
+    });
+
+    await provider.initialize(config);
+    this.providers.set(type, provider);
+
+    if (!this.activeProvider) {
+      this.activeProvider = type;
+    }
+  }
+
+  /**
+   * Auto-detect best available provider
+   */
+  async autoDetectProvider(): Promise<LocalProviderType | null> {
+    // Priority: Ollama > node-llama-cpp > WebLLM
+    const ollama = new OllamaProvider();
+    if (await ollama.isAvailable()) return 'ollama';
+
+    const nodeLlama = new NodeLlamaCppProvider();
+    if (await nodeLlama.isAvailable()) return 'local-llama';
+
+    const webllm = new WebLLMProvider();
+    if (await webllm.isAvailable()) return 'webllm';
+
+    return null;
+  }
+
+  /**
+   * Complete with active provider (with automatic fallback)
+   */
+  async complete(
+    messages: LocalLLMMessage[],
+    options?: Partial<LocalProviderConfig>
+  ): Promise<LocalLLMResponse> {
+    const provider = this.getActiveProvider();
+    if (!provider) throw new Error('No local provider available');
+
+    try {
+      return await provider.complete(messages, options);
+    } catch (error) {
+      // Try fallback providers
+      for (const [type, fallbackProvider] of this.providers) {
+        if (type !== this.activeProvider && fallbackProvider.isReady()) {
+          this.emit('provider:fallback', { from: this.activeProvider, to: type });
+          return await fallbackProvider.complete(messages, options);
+        }
+      }
+      throw error;
+    }
   }
 }
 
-async function formatSummary(agent: MemoryAwareAgent): Promise<string> {
-  const perf = agent.performanceManager.generateReport();
-  const mem = await agent.getMemoryStats();
-  const tools = agent.tools.getStats();
+/**
+ * Auto-configure best available local provider
+ */
+export async function autoConfigureLocalProvider(
+  preferredProvider?: LocalProviderType
+): Promise<LocalProviderManager> {
+  const manager = getLocalProviderManager();
 
-  return `
-┌${'─'.repeat(60)}┐
-│ GROK-CLI DASHBOARD                                         │
-├${'─'.repeat(60)}┤
-│ Session                                                    │
-│   Duration: ${formatDuration(perf.summary.sessionDuration)}
-│   Requests: ${perf.summary.totalRequests}
-│   Cost: $${perf.summary.totalCost.toFixed(4)}
-├${'─'.repeat(60)}┤
-│ Performance                                                │
-│   Avg Latency: ${perf.latency.percentiles.p50}ms (P50)
-│   Cache Hit: ${(perf.summary.cacheHitRate * 100).toFixed(1)}%
-│   Cost Reduction: ${perf.optimization.costReduction.toFixed(0)}%
-├${'─'.repeat(60)}┤
-│ Tools                                                      │
-│   Total Calls: ${tools.totalCalls}
-│   Success Rate: ${(tools.successRate * 100).toFixed(1)}%
-│   Top: ${tools.topTools.slice(0, 3).map(t => t.name).join(', ')}
-├${'─'.repeat(60)}┤
-│ Memory                                                     │
-│   Total: ${mem.total} memories
-│   Confidence: ${(mem.userConfidence * 100).toFixed(0)}%
-└${'─'.repeat(60)}┘
-  `.trim();
+  if (preferredProvider) {
+    try {
+      await manager.registerProvider(preferredProvider, {});
+      return manager;
+    } catch {
+      console.warn(`Provider ${preferredProvider} not available`);
+    }
+  }
+
+  const detected = await manager.autoDetectProvider();
+  if (detected) {
+    await manager.registerProvider(detected, {});
+    return manager;
+  }
+
+  throw new Error('No local LLM provider available');
+}
+```
+
+**Intégration dans offline-mode.ts** :
+
+```typescript
+// src/offline/offline-mode.ts (extrait)
+
+export interface OfflineConfig {
+  localLLMProvider: 'ollama' | 'llamacpp' | 'local-llama' | 'webllm' | 'none';
+  localLLMModel: string;
+  localLLMModelPath?: string;      // Pour node-llama-cpp
+  localLLMGpuLayers?: number;      // Accélération GPU
+}
+
+async callLocalLLM(prompt: string, options: {...}): Promise<string | null> {
+  // Use new provider system for local-llama and webllm
+  if (this.config.localLLMProvider === 'local-llama' ||
+      this.config.localLLMProvider === 'webllm') {
+    return await this.callNewProvider(prompt, model, options);
+  }
+
+  // Legacy provider support (ollama, llamacpp HTTP)
+  switch (this.config.localLLMProvider) {
+    case 'ollama': return this.callOllama(prompt, model, options);
+    case 'llamacpp': return this.callLlamaCpp(prompt, model, options);
+  }
+}
+```
+
+**Configuration** (`.grok/settings.json`) :
+
+```json
+{
+  "offline": {
+    "localLLMEnabled": true,
+    "localLLMProvider": "local-llama",
+    "localLLMModel": "llama-3.1-8b-q4_k_m.gguf",
+    "localLLMModelPath": "~/.grok/models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+    "localLLMGpuLayers": 35
+  }
+}
+```
+
+### 15.12.5 Comparaison des Approches
+
+| Critère | API Cloud | Ollama | node-llama-cpp | WebLLM |
+|---------|-----------|--------|----------------|--------|
+| **Setup** | 5 min | 15 min | 30 min | 10 min |
+| **Qualité** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
+| **Latence** | 200-2000ms | 50-500ms | 50-300ms | 100-800ms |
+| **Confidentialité** | ⚠️ Cloud | ✅ Local | ✅ Local | ✅ Local |
+| **Coût** | $/token | Gratuit | Gratuit | Gratuit |
+| **GPU requis** | Non | Recommandé | Recommandé | WebGPU |
+| **Mode hors-ligne** | ❌ | ✅ | ✅ | ✅ |
+| **Environnement** | Tout | Serveur | Node.js | Browser |
+| **Dépendances** | API key | Daemon | CMake, C++ | WebGPU |
+
+**Fichiers implémentés dans Grok-CLI** :
+
+| Fichier | Providers | Rôle |
+|---------|-----------|------|
+| `src/providers/local-llm-provider.ts` | node-llama-cpp, WebLLM, Ollama | Abstraction unifiée |
+| `src/offline/offline-mode.ts` | Tous | Intégration mode hors-ligne |
+| `package.json` | - | Dépendances optionnelles |
+
+**Dépendances optionnelles** (installées à la demande) :
+
+```json
+{
+  "optionalDependencies": {
+    "@mlc-ai/web-llm": "^0.2.78",
+    "node-llama-cpp": "^3.3.0"
+  }
 }
 ```
 
 ---
 
-## 15.11 Points Clés du Chapitre
+## 🏋️ Exercices
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│       RÉCAPITULATIF : ARCHITECTURE GROK-CLI                 │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. SIX COUCHES D'ARCHITECTURE                              │
-│     ├─ Interface (React/Ink)                                │
-│     ├─ Orchestration (GrokAgent)                            │
-│     ├─ Raisonnement (ToT/MCTS/Repair)                       │
-│     ├─ Contexte & Mémoire (RAG/Persistence)                 │
-│     ├─ Actions (41 outils + MCP)                            │
-│     └─ Sécurité (Permissions/Sandbox/Audit)                 │
-│                                                             │
-│  2. PRINCIPES DE DESIGN                                     │
-│     ├─ Modularité (composants indépendants)                 │
-│     ├─ Extensibilité (plugins, MCP)                         │
-│     ├─ Observabilité (métriques, logs)                      │
-│     ├─ Sécurité par défaut (3 modes)                        │
-│     └─ Performance (lazy loading, cache)                    │
-│                                                             │
-│  3. FLUX DE DONNÉES                                         │
-│     ├─ Input → Security → Context → Model                   │
-│     ├─ Model → Tools → Parallel Execution                   │
-│     ├─ Results → Memory → Streaming Output                  │
-│     └─ Boucle agentique (max 30 rounds)                     │
-│                                                             │
-│  4. OPTIMISATIONS                                           │
-│     ├─ Démarrage : 3s → 37ms                                │
-│     ├─ Coûts : -68% (routing + cache)                       │
-│     ├─ Latence : -64% (parallélisation)                     │
-│     └─ Mémoire : apprentissage continu                      │
-│                                                             │
-│  5. EXTENSIBILITÉ                                           │
-│     ├─ Nouveaux outils via ToolRegistry                     │
-│     ├─ Serveurs MCP (stdio/HTTP)                            │
-│     ├─ Agents spécialisés (PDF, Excel, SQL)                 │
-│     └─ Hooks pour événements                                │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+### Exercice 1 : Ajouter un Nouvel Outil
+Créez un outil `JsonValidator` qui valide un fichier JSON contre un schéma.
+
+### Exercice 2 : Agent Spécialisé
+Implémentez un agent spécialisé pour l'analyse de performance (profiling).
+
+### Exercice 3 : Hook Personnalisé
+Créez un hook `postToolUse` qui mesure la durée des outils et alerte si > 5s.
+
+### Exercice 4 : Mode de Sécurité
+Ajoutez un mode `team` avec approbation multi-utilisateur.
+
+### Exercice 5 : Dashboard Étendu
+Étendez le dashboard avec des graphiques de tendance (latence, coûts).
 
 ---
 
-## Épilogue : Le Voyage Continue
+## 📚 Références
 
-Lina ferma la dernière diapositive. L'équipe restait silencieuse, absorbant l'immensité de ce qu'ils venaient de voir.
+| Source | Description |
+|--------|-------------|
+| React + Ink | [Ink Documentation](https://github.com/vadimdemedes/ink) |
+| OpenAI Tool Use | [Function Calling Guide](https://platform.openai.com/docs/guides/function-calling) |
+| MCP Protocol | [Model Context Protocol Spec](https://spec.modelcontextprotocol.io) |
+| AgentBench | Benchmark agents LLM (2024) |
+| Claude Code | Architecture de référence |
 
-— "C'est... beaucoup," admit Marcus, l'un des nouveaux développeurs.
+---
+
+## 🌅 Épilogue : Le Voyage Continue
+
+Lina ferma la dernière diapositive. L'équipe restait silencieuse.
+
+— "C'est... beaucoup," admit Marcus.
 
 Lina sourit.
 
-— "Ça l'est. Mais souviens-toi : tout a commencé par quelques lignes de code. Un appel API. Une boucle while. Ce n'est que l'accumulation de petites décisions, chaque jour, qui a créé cet ensemble."
+— "Ça l'est. Mais souviens-toi : tout a commencé par quelques lignes de code. Un appel API. Une boucle while. Ce n'est que l'accumulation de petites décisions qui a créé cet ensemble."
 
 Elle regarda par la fenêtre.
 
-— "Et ce n'est pas fini. Il y a encore tant à améliorer. De nouveaux modèles arrivent. De nouvelles techniques de raisonnement émergent. Les utilisateurs trouvent des cas d'usage auxquels nous n'avions jamais pensé."
+— "Et ce n'est pas fini. De nouveaux modèles arrivent. De nouvelles techniques émergent. Les utilisateurs trouvent des cas d'usage auxquels nous n'avions jamais pensé."
 
 Elle se tourna vers l'équipe.
 
-— "L'architecture que vous voyez n'est pas une destination. C'est un instantané d'un voyage en cours. Demain, nous ajouterons quelque chose de nouveau. Nous corrigerons un bug. Nous optimiserons une fonction. Et dans un an, le schéma sur ce mur sera différent."
+— "L'architecture que vous voyez n'est pas une destination. C'est un instantané d'un voyage en cours. Demain, nous ajouterons quelque chose de nouveau. Dans un an, le schéma sera différent."
 
 Elle fit une pause.
 
@@ -1799,23 +1345,21 @@ Elle fit une pause.
 
 ---
 
-## Conclusion du Livre
+## 🎓 Conclusion du Livre
 
-À travers ces quinze chapitres, nous avons parcouru le voyage complet de construction d'un agent LLM moderne. De la compréhension des fondamentaux des transformers jusqu'à l'architecture complète d'un système de production, chaque étape a construit sur la précédente.
+À travers ces quinze chapitres, nous avons parcouru le voyage complet de construction d'un agent LLM moderne.
 
-Les leçons clés :
+**Les 5 leçons clés :**
 
-1. **Les LLMs ne sont que le début** — La vraie valeur vient de l'architecture qui les entoure : outils, mémoire, raisonnement, sécurité.
+| # | Leçon | Application |
+|---|-------|-------------|
+| 1 | Les LLMs ne sont que le début | La valeur vient de l'architecture : outils, mémoire, raisonnement |
+| 2 | L'itération bat la perfection | Chaque fonctionnalité résout un problème réel |
+| 3 | La recherche informe la pratique | ToT, MCTS, ChatRepair, FrugalGPT = solutions concrètes |
+| 4 | La sécurité n'est pas optionnelle | Intégrée dès le début, pas en afterthought |
+| 5 | L'apprentissage est continu | Comme l'agent lui-même |
 
-2. **L'itération bat la perfection** — Grok-CLI n'est pas né complet. Chaque fonctionnalité a été ajoutée pour résoudre un problème réel.
-
-3. **La recherche informe la pratique** — Les publications scientifiques (ToT, MCTS, ChatRepair, FrugalGPT) ne sont pas que théoriques. Elles offrent des solutions concrètes aux problèmes réels.
-
-4. **La sécurité n'est pas optionnelle** — Un agent puissant sans garde-fous est un risque. La sécurité doit être intégrée dès le début.
-
-5. **L'apprentissage est continu** — Comme l'agent lui-même, les développeurs doivent continuer à apprendre, à s'adapter, à évoluer.
-
-Le code de Grok-CLI est open-source. Explorez-le. Modifiez-le. Construisez dessus. Et peut-être qu'un jour, vous ajouterez le prochain chapitre à cette histoire.
+Le code de Grok-CLI est open-source. Explorez-le. Modifiez-le. Construisez dessus.
 
 *Fin.*
 
@@ -1823,6 +1367,6 @@ Le code de Grok-CLI est open-source. Explorez-le. Modifiez-le. Construisez dessu
 
 *Merci d'avoir lu "Construire un Agent LLM Moderne — De la Théorie à Grok-CLI".*
 
-*Pour contribuer au projet : github.com/grok-cli*
-*Pour des questions : discussions sur le repository*
-*Pour signaler des erreurs : issues sur le repository*
+---
+
+[⬅️ Chapitre 14 : Apprentissage Persistant](14-apprentissage-persistant.md) | [📚 Table des Matières](README.md)

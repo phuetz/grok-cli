@@ -1,30 +1,51 @@
-# Chapitre 8 — Dependency-Aware RAG
+# Chapitre 8 — Dependency-Aware RAG 🕸️
 
 ---
 
-> **Scène**
->
-> *Lina a implémenté le RAG basique. Ça marche mieux qu'avant, mais quelque chose cloche.*
->
-> *"Explique la fonction processPayment," demande-t-elle à son agent.*
->
-> *L'agent retourne le code de processPayment, parfait. Mais quand elle pose une question de suivi — "Quel est le format du PaymentResult ?" — l'agent est perdu. Le type PaymentResult est défini dans un autre fichier, et le RAG ne l'a pas récupéré.*
->
-> *"Le RAG trouve le fichier demandé, mais pas ses dépendances," réalise-t-elle. "Pour comprendre processPayment, il faut aussi comprendre PaymentRequest, PaymentResult, et le service Stripe."*
->
-> *Elle a besoin d'un RAG qui comprend le graphe de dépendances.*
+## 🎬 Scène d'ouverture
+
+*Lina a implémenté le RAG basique du chapitre précédent. Les résultats sont meilleurs, mais quelque chose la frustre.*
+
+**Lina** : "Explique la fonction `processPayment`."
+
+*L'agent retourne le code de processPayment — parfait. Mais quand elle pose une question de suivi...*
+
+**Lina** : "Quel est le format du type `PaymentResult` ?"
+
+*L'agent hésite, puis répond avec des informations génériques qui ne correspondent pas à son code.*
+
+**Lina** *(frustrée)* : "Mais PaymentResult est défini juste à côté, dans `types.ts` ! Pourquoi il ne le trouve pas ?"
+
+**Marc** : "Ton RAG trouve le fichier que tu demandes, mais il ne comprend pas les **relations** entre les fichiers. `processPayment` importe `PaymentResult`, mais le RAG ne suit pas cet import."
+
+**Lina** : "Donc il me faut un RAG qui comprend le graphe de dépendances du code ?"
+
+**Marc** : "Exactement. On appelle ça **Dependency-Aware RAG**. Au lieu de chercher des fichiers isolés, on suit les liens : imports, types référencés, fonctions appelées..."
+
+*Lina sort son carnet et commence à dessiner un graphe avec des flèches entre les fichiers.*
 
 ---
 
-## Introduction
+## 📋 Table des matières
 
-Le RAG classique traite chaque fichier comme une unité isolée. Mais le code n'est pas isolé — il forme un réseau de dépendances. **Dependency-Aware RAG** enrichit le retrieval en suivant automatiquement les imports, les types référencés, et les fonctions appelées.
+| Section | Titre | Description |
+|:-------:|-------|-------------|
+| 8.1 | 🚫 Le Problème du Contexte Isolé | Pourquoi le RAG classique échoue |
+| 8.2 | 🕸️ Architecture du Graphe | Structure de données et visualisation |
+| 8.3 | 🔨 Construction du Graphe | Analyse des imports et types |
+| 8.4 | 🔍 Retrieval avec Dépendances | Algorithme d'expansion |
+| 8.5 | 🎯 Stratégies d'Expansion | Adapter selon le contexte |
+| 8.6 | 🛠️ Implémentation | Le module dans Grok-CLI |
+| 8.7 | ⚡ Optimisations | Cache et mise à jour incrémentale |
+| 8.8 | 💼 Cas Pratiques | Exemples concrets d'utilisation |
 
 ---
 
-## 8.1 Le Problème du Contexte Isolé
+## 8.1 🚫 Le Problème du Contexte Isolé
 
 ### 8.1.1 Exemple concret
+
+Considérons ce code TypeScript typique :
 
 ```typescript
 // src/payments/processor.ts
@@ -39,124 +60,118 @@ export async function processPayment(request: PaymentRequest): Promise<PaymentRe
 }
 ```
 
-**RAG classique** : Retourne uniquement `processor.ts`
+**Le RAG classique retourne uniquement `processor.ts`**. Mais pour vraiment comprendre ce code, il nous faut aussi :
 
-**Problème** : Pour comprendre ce code, il faut aussi :
-- `types.ts` (PaymentRequest, PaymentResult)
-- `stripe.ts` (StripeClient.charge)
-- `validation.ts` (validateAmount)
+| Fichier | Contenu nécessaire | Pourquoi |
+|---------|-------------------|----------|
+| `types.ts` | PaymentRequest, PaymentResult | Comprendre les structures de données |
+| `stripe.ts` | StripeClient.charge | Comprendre l'implémentation |
+| `validation.ts` | validateAmount | Comprendre les règles métier |
 
-### 8.1.2 Impact sur la qualité
+### 8.1.2 Impact sur la qualité des réponses
 
-```
-Question : "Quels champs contient PaymentRequest ?"
-
-Avec RAG classique :
-─────────────────────
-Contexte : processor.ts uniquement
-Réponse LLM : "PaymentRequest contient probablement amount, currency..."
-→ HALLUCINATION (invente les champs)
-
-Avec Dependency-Aware RAG :
-───────────────────────────
-Contexte : processor.ts + types.ts
-Réponse LLM : "PaymentRequest contient amount (number), currency (string),
-              customerId (string), metadata (Record<string, unknown>)"
-→ CORRECT (basé sur le vrai code)
-```
+![Comparaison RAG classique vs Dependency-Aware](images/rag-comparison.svg)
 
 ---
 
-## 8.2 Architecture du Dependency Graph
+## 8.2 🕸️ Architecture du Dependency Graph
 
 ### 8.2.1 Structure de données
 
+Le graphe de dépendances représente les relations entre les différentes entités du code :
+
 ```typescript
+// src/context/dependency-graph/types.ts
+
 interface DependencyNode {
+  // 🏷️ Identité
   id: string;
   filePath: string;
   type: 'file' | 'function' | 'class' | 'type' | 'variable';
   name: string;
 
-  // Relations sortantes (ce que ce nœud utilise)
-  imports: DependencyEdge[];
-  calls: DependencyEdge[];
-  references: DependencyEdge[];
+  // ➡️ Relations sortantes (ce que ce nœud UTILISE)
+  imports: DependencyEdge[];      // import X from Y
+  calls: DependencyEdge[];        // appelle fonction X
+  references: DependencyEdge[];   // référence type X
 
-  // Relations entrantes (ce qui utilise ce nœud)
-  importedBy: DependencyEdge[];
-  calledBy: DependencyEdge[];
-  referencedBy: DependencyEdge[];
+  // ⬅️ Relations entrantes (ce qui UTILISE ce nœud)
+  importedBy: DependencyEdge[];   // importé par Y
+  calledBy: DependencyEdge[];     // appelé par Y
+  referencedBy: DependencyEdge[]; // référencé par Y
 }
 
 interface DependencyEdge {
   source: string;  // ID du nœud source
   target: string;  // ID du nœud cible
-  type: 'import' | 'call' | 'type_reference' | 'extends' | 'implements';
+  type: EdgeType;
   line?: number;   // Ligne où la relation apparaît
 }
+
+type EdgeType =
+  | 'import'          // import statement
+  | 'call'            // function call
+  | 'type_reference'  // type annotation
+  | 'extends'         // class extends
+  | 'implements';     // class implements
 
 interface DependencyGraph {
   nodes: Map<string, DependencyNode>;
   edges: DependencyEdge[];
 
-  // Méthodes de traversal
+  // 🔍 Méthodes de traversal
   getOutgoing(nodeId: string): DependencyNode[];
   getIncoming(nodeId: string): DependencyNode[];
   getTransitiveDeps(nodeId: string, maxDepth: number): DependencyNode[];
 }
 ```
 
-### 8.2.2 Visualisation
+### 8.2.2 Visualisation du graphe
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    DEPENDENCY GRAPH                                  │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│                      ┌─────────────────┐                            │
-│                      │  processor.ts   │                            │
-│                      │ processPayment  │                            │
-│                      └────────┬────────┘                            │
-│                               │                                      │
-│              ┌────────────────┼────────────────┐                    │
-│              │                │                │                     │
-│              ▼                ▼                ▼                     │
-│     ┌────────────┐   ┌────────────┐   ┌────────────┐               │
-│     │  types.ts  │   │ stripe.ts  │   │validation.ts│               │
-│     │ PaymentReq │   │StripeClient│   │validateAmount│              │
-│     │ PaymentRes │   └────────────┘   └────────────┘               │
-│     └────────────┘          │                                        │
-│                             │                                        │
-│                             ▼                                        │
-│                    ┌────────────┐                                   │
-│                    │ config.ts  │                                   │
-│                    │ STRIPE_KEY │                                   │
-│                    └────────────┘                                   │
-│                                                                      │
-│   Légende :                                                         │
-│   ──▶ import/dépendance                                             │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Dependency Graph](images/dependency-graph-viz.svg)
+
+| Type de relation | Direction | Exemple | Importance |
+|------------------|-----------|---------|:----------:|
+| `import` | A → B | `import X from './B'` | ⭐⭐⭐⭐⭐ |
+| `type_reference` | A → B | `function f(): TypeFromB` | ⭐⭐⭐⭐ |
+| `extends` | A → B | `class A extends B` | ⭐⭐⭐⭐⭐ |
+| `implements` | A → B | `class A implements B` | ⭐⭐⭐⭐ |
+| `call` | A → B | `B.method()` | ⭐⭐⭐ |
+| `calledBy` | B ← A | Inverse de call | ⭐⭐ |
 
 ---
 
-## 8.3 Construction du Graphe
+## 8.3 🔨 Construction du Graphe
 
 ### 8.3.1 Analyse des imports
+
+L'analyse des imports utilise le compilateur TypeScript pour parser l'AST :
 
 ```typescript
 // src/context/dependency-graph/import-analyzer.ts
 import * as ts from 'typescript';
+import * as path from 'path';
+import * as fs from 'fs';
+
+interface ImportInfo {
+  type: 'default' | 'named' | 'namespace';
+  name: string;
+  alias?: string;
+  source: string;
+  line: number;
+}
 
 export class ImportAnalyzer {
+  /**
+   * Analyse un fichier et extrait tous ses imports.
+   * Supporte : default, named, namespace imports.
+   */
   analyzeFile(filePath: string, content: string): ImportInfo[] {
     const sourceFile = ts.createSourceFile(
       filePath,
       content,
       ts.ScriptTarget.Latest,
-      true
+      true  // setParentNodes
     );
 
     const imports: ImportInfo[] = [];
@@ -165,19 +180,22 @@ export class ImportAnalyzer {
       if (ts.isImportDeclaration(node)) {
         const importPath = (node.moduleSpecifier as ts.StringLiteral).text;
         const importClause = node.importClause;
+        const line = sourceFile.getLineAndCharacterOfPosition(
+          node.getStart()
+        ).line + 1;
 
         if (importClause) {
-          // Default import
+          // 1️⃣ Default import: import X from './Y'
           if (importClause.name) {
             imports.push({
               type: 'default',
               name: importClause.name.text,
               source: importPath,
-              line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1
+              line
             });
           }
 
-          // Named imports
+          // 2️⃣ Named imports: import { X, Y } from './Z'
           if (importClause.namedBindings) {
             if (ts.isNamedImports(importClause.namedBindings)) {
               for (const element of importClause.namedBindings.elements) {
@@ -186,18 +204,18 @@ export class ImportAnalyzer {
                   name: element.name.text,
                   alias: element.propertyName?.text,
                   source: importPath,
-                  line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1
+                  line
                 });
               }
             }
 
-            // Namespace import (import * as X)
+            // 3️⃣ Namespace import: import * as X from './Y'
             if (ts.isNamespaceImport(importClause.namedBindings)) {
               imports.push({
                 type: 'namespace',
                 name: importClause.namedBindings.name.text,
                 source: importPath,
-                line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1
+                line
               });
             }
           }
@@ -208,14 +226,19 @@ export class ImportAnalyzer {
     return imports;
   }
 
-  resolveImportPath(importPath: string, fromFile: string): string {
-    // Gestion des chemins relatifs
+  /**
+   * Résout un chemin d'import en chemin absolu de fichier.
+   * Gère : chemins relatifs, extensions, index files, aliases.
+   */
+  resolveImportPath(importPath: string, fromFile: string): string | null {
+    // Chemins relatifs (./X ou ../X)
     if (importPath.startsWith('.')) {
       const dir = path.dirname(fromFile);
       let resolved = path.resolve(dir, importPath);
 
-      // Ajouter l'extension si nécessaire
-      for (const ext of ['.ts', '.tsx', '.js', '.jsx', '/index.ts', '/index.js']) {
+      // Essayer différentes extensions
+      const extensions = ['.ts', '.tsx', '.js', '.jsx', '/index.ts', '/index.js'];
+      for (const ext of extensions) {
         const withExt = resolved + ext;
         if (fs.existsSync(withExt)) {
           return withExt;
@@ -223,8 +246,14 @@ export class ImportAnalyzer {
       }
     }
 
-    // Gestion des alias (tsconfig paths)
+    // Gestion des aliases tsconfig (ex: @/ → src/)
     return this.resolveAlias(importPath);
+  }
+
+  private resolveAlias(importPath: string): string | null {
+    // Lire tsconfig.json et résoudre les paths aliases
+    // Implementation omise pour la lisibilité
+    return null;
   }
 }
 ```
@@ -233,30 +262,46 @@ export class ImportAnalyzer {
 
 ```typescript
 // src/context/dependency-graph/type-analyzer.ts
+
+interface TypeReference {
+  type: 'type_reference' | 'extends' | 'implements';
+  name: string;
+  line: number;
+}
+
 export class TypeAnalyzer {
+  /**
+   * Analyse un fichier et extrait les références de types :
+   * - Type annotations (: SomeType)
+   * - Extends clauses
+   * - Implements clauses
+   */
   analyzeTypeReferences(sourceFile: ts.SourceFile): TypeReference[] {
     const references: TypeReference[] = [];
 
     const visit = (node: ts.Node) => {
-      // Type annotations
+      // Type annotations : function f(): ReturnType
       if (ts.isTypeReferenceNode(node)) {
         const typeName = this.getTypeName(node.typeName);
         references.push({
           type: 'type_reference',
           name: typeName,
-          line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1
+          line: this.getLine(sourceFile, node)
         });
       }
 
-      // Extends/implements
+      // Extends/Implements : class A extends B implements C
       if (ts.isClassDeclaration(node) && node.heritageClauses) {
         for (const clause of node.heritageClauses) {
-          const keyword = clause.token === ts.SyntaxKind.ExtendsKeyword ? 'extends' : 'implements';
+          const relationType = clause.token === ts.SyntaxKind.ExtendsKeyword
+            ? 'extends'
+            : 'implements';
+
           for (const type of clause.types) {
             references.push({
-              type: keyword,
+              type: relationType,
               name: this.getTypeName(type.expression),
-              line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1
+              line: this.getLine(sourceFile, node)
             });
           }
         }
@@ -278,6 +323,10 @@ export class TypeAnalyzer {
     }
     return 'unknown';
   }
+
+  private getLine(sourceFile: ts.SourceFile, node: ts.Node): number {
+    return sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1;
+  }
 }
 ```
 
@@ -285,27 +334,38 @@ export class TypeAnalyzer {
 
 ```typescript
 // src/context/dependency-graph/graph-builder.ts
+
 export class DependencyGraphBuilder {
   private importAnalyzer = new ImportAnalyzer();
   private typeAnalyzer = new TypeAnalyzer();
 
+  /**
+   * Construit le graphe de dépendances complet pour un projet.
+   * Processus en 2 phases :
+   * 1. Créer les nœuds (fichiers)
+   * 2. Analyser et créer les relations (edges)
+   */
   async buildGraph(projectRoot: string): Promise<DependencyGraph> {
     const graph: DependencyGraph = {
       nodes: new Map(),
-      edges: []
+      edges: [],
+      getOutgoing: (id) => this.getOutgoingNodes(graph, id),
+      getIncoming: (id) => this.getIncomingNodes(graph, id),
+      getTransitiveDeps: (id, depth) => this.getTransitive(graph, id, depth)
     };
 
-    // Trouver tous les fichiers source
+    // 📁 Trouver tous les fichiers source
     const files = await glob('**/*.{ts,tsx,js,jsx}', {
       cwd: projectRoot,
-      ignore: ['node_modules/**', 'dist/**']
+      ignore: ['node_modules/**', 'dist/**', 'build/**']
     });
 
-    // Phase 1 : Créer les nœuds (fichiers)
-    for (const file of files) {
-      const fullPath = path.join(projectRoot, file);
-      const content = await fs.readFile(fullPath, 'utf-8');
+    console.log(`🔍 Analysing ${files.length} files...`);
 
+    // ═══════════════════════════════════════════════════════════
+    // PHASE 1 : Créer les nœuds
+    // ═══════════════════════════════════════════════════════════
+    for (const file of files) {
       const node: DependencyNode = {
         id: file,
         filePath: file,
@@ -318,56 +378,111 @@ export class DependencyGraphBuilder {
         calledBy: [],
         referencedBy: []
       };
-
       graph.nodes.set(file, node);
     }
 
-    // Phase 2 : Analyser les relations
+    // ═══════════════════════════════════════════════════════════
+    // PHASE 2 : Analyser les relations
+    // ═══════════════════════════════════════════════════════════
     for (const file of files) {
       const fullPath = path.join(projectRoot, file);
       const content = await fs.readFile(fullPath, 'utf-8');
 
-      // Imports
+      // Analyser les imports
       const imports = this.importAnalyzer.analyzeFile(file, content);
       for (const imp of imports) {
-        const targetPath = this.importAnalyzer.resolveImportPath(imp.source, fullPath);
-        const relativePath = path.relative(projectRoot, targetPath);
+        const targetPath = this.importAnalyzer.resolveImportPath(
+          imp.source,
+          fullPath
+        );
 
-        if (graph.nodes.has(relativePath)) {
-          const edge: DependencyEdge = {
-            source: file,
-            target: relativePath,
-            type: 'import',
-            line: imp.line
-          };
+        if (targetPath) {
+          const relativePath = path.relative(projectRoot, targetPath);
 
-          graph.edges.push(edge);
-          graph.nodes.get(file)!.imports.push(edge);
-          graph.nodes.get(relativePath)!.importedBy.push(edge);
+          if (graph.nodes.has(relativePath)) {
+            const edge: DependencyEdge = {
+              source: file,
+              target: relativePath,
+              type: 'import',
+              line: imp.line
+            };
+
+            graph.edges.push(edge);
+            graph.nodes.get(file)!.imports.push(edge);
+            graph.nodes.get(relativePath)!.importedBy.push(edge);
+          }
         }
       }
 
-      // Types
-      const sourceFile = ts.createSourceFile(file, content, ts.ScriptTarget.Latest, true);
+      // Analyser les types (extends, implements, type references)
+      const sourceFile = ts.createSourceFile(
+        file,
+        content,
+        ts.ScriptTarget.Latest,
+        true
+      );
       const typeRefs = this.typeAnalyzer.analyzeTypeReferences(sourceFile);
-      // ... ajouter les edges pour les références de types
+
+      for (const ref of typeRefs) {
+        // Résoudre le type vers son fichier source
+        const targetFile = this.resolveTypeToFile(ref.name, file, graph);
+        if (targetFile) {
+          const edge: DependencyEdge = {
+            source: file,
+            target: targetFile,
+            type: ref.type,
+            line: ref.line
+          };
+
+          graph.edges.push(edge);
+          graph.nodes.get(file)!.references.push(edge);
+          graph.nodes.get(targetFile)!.referencedBy.push(edge);
+        }
+      }
     }
 
+    console.log(`✅ Graph built: ${graph.nodes.size} nodes, ${graph.edges.length} edges`);
     return graph;
+  }
+
+  private getOutgoingNodes(graph: DependencyGraph, nodeId: string): DependencyNode[] {
+    const node = graph.nodes.get(nodeId);
+    if (!node) return [];
+
+    const targets = new Set<string>();
+    [...node.imports, ...node.calls, ...node.references].forEach(e => {
+      targets.add(e.target);
+    });
+
+    return Array.from(targets)
+      .map(id => graph.nodes.get(id))
+      .filter((n): n is DependencyNode => n !== undefined);
   }
 }
 ```
 
 ---
 
-## 8.4 Retrieval avec Dépendances
+## 8.4 🔍 Retrieval avec Dépendances
 
 ### 8.4.1 Algorithme d'expansion
 
+L'expansion suit les dépendances en **BFS** (Breadth-First Search) avec une profondeur limitée :
+
+![Algorithme d'expansion](images/expansion-algorithm.svg)
+
 ```typescript
 // src/context/dependency-aware-rag.ts
+
+interface DependencyRetrievalOptions {
+  maxDepth?: number;       // Profondeur max d'expansion (défaut: 2)
+  maxExpansion?: number;   // Nombre max de chunks ajoutés (défaut: 10)
+  includeTypes?: boolean;  // Inclure les définitions de types
+  includeCallers?: boolean; // Inclure les appelants (inverse)
+}
+
 export class DependencyAwareRAG {
-  private baseRetriever: CodebaseRetriever;
+  private baseRetriever: HybridRetriever;
   private graph: DependencyGraph;
 
   async retrieve(
@@ -381,62 +496,70 @@ export class DependencyAwareRAG {
       includeCallers = false
     } = options;
 
-    // 1. Retrieval de base
-    const baseResults = await this.baseRetriever.retrieve(query, {
-      topK: 5
-    });
+    // 1️⃣ Retrieval de base
+    const baseResults = await this.baseRetriever.retrieve(query, { topK: 5 });
 
-    // 2. Expansion par dépendances
+    // 2️⃣ Expansion BFS
     const expanded = new Set<string>();
-    const toExpand = baseResults.map(r => ({ chunk: r, depth: 0 }));
+    const queue = baseResults.map(r => ({ chunk: r, depth: 0 }));
     const allChunks: RetrievedChunk[] = [...baseResults];
 
-    while (toExpand.length > 0 && expanded.size < maxExpansion) {
-      const { chunk, depth } = toExpand.shift()!;
+    while (queue.length > 0 && expanded.size < maxExpansion) {
+      const { chunk, depth } = queue.shift()!;
 
+      // Skip si déjà visité ou profondeur max atteinte
       if (expanded.has(chunk.id) || depth >= maxDepth) {
         continue;
       }
       expanded.add(chunk.id);
 
-      // Obtenir les dépendances
+      // Obtenir le nœud dans le graphe
       const node = this.graph.nodes.get(chunk.filePath);
       if (!node) continue;
 
-      // Imports directs
+      // ➡️ Suivre les imports directs
       for (const edge of node.imports) {
         const depChunks = await this.getChunksFromFile(edge.target);
         for (const depChunk of depChunks) {
           if (!expanded.has(depChunk.id)) {
-            depChunk.expansionSource = chunk.id;
-            depChunk.expansionReason = 'import';
-            depChunk.relevanceScore = chunk.relevanceScore * 0.8; // Décroissance
+            depChunk.metadata = {
+              expansionSource: chunk.id,
+              expansionReason: 'import',
+              expansionDepth: depth + 1
+            };
+            depChunk.relevanceScore = chunk.relevanceScore * 0.8;
             allChunks.push(depChunk);
-            toExpand.push({ chunk: depChunk, depth: depth + 1 });
+            queue.push({ chunk: depChunk, depth: depth + 1 });
           }
         }
       }
 
-      // Types référencés (si demandé)
+      // 📝 Suivre les références de types
       if (includeTypes) {
-        for (const edge of node.references.filter(e => e.type === 'type_reference')) {
-          const typeChunk = await this.findTypeDefinition(edge.target);
-          if (typeChunk && !expanded.has(typeChunk.id)) {
-            typeChunk.expansionSource = chunk.id;
-            typeChunk.expansionReason = 'type';
-            allChunks.push(typeChunk);
+        for (const edge of node.references) {
+          if (['type_reference', 'extends', 'implements'].includes(edge.type)) {
+            const typeChunk = await this.findTypeDefinition(edge.target);
+            if (typeChunk && !expanded.has(typeChunk.id)) {
+              typeChunk.metadata = {
+                expansionSource: chunk.id,
+                expansionReason: edge.type
+              };
+              allChunks.push(typeChunk);
+            }
           }
         }
       }
 
-      // Appelants (si demandé)
+      // ⬅️ Suivre les appelants (relation inverse)
       if (includeCallers) {
         for (const edge of node.calledBy) {
           const callerChunks = await this.getChunksFromFile(edge.source);
           for (const callerChunk of callerChunks) {
             if (!expanded.has(callerChunk.id)) {
-              callerChunk.expansionSource = chunk.id;
-              callerChunk.expansionReason = 'caller';
+              callerChunk.metadata = {
+                expansionSource: chunk.id,
+                expansionReason: 'calledBy'
+              };
               allChunks.push(callerChunk);
             }
           }
@@ -444,66 +567,136 @@ export class DependencyAwareRAG {
       }
     }
 
-    // 3. Dédupliquer et trier
+    // 3️⃣ Dédupliquer et trier par score
     return this.deduplicateAndSort(allChunks);
-  }
-
-  private deduplicateAndSort(chunks: RetrievedChunk[]): RetrievedChunk[] {
-    const seen = new Map<string, RetrievedChunk>();
-
-    for (const chunk of chunks) {
-      const existing = seen.get(chunk.id);
-      if (!existing || chunk.relevanceScore > existing.relevanceScore) {
-        seen.set(chunk.id, chunk);
-      }
-    }
-
-    return Array.from(seen.values())
-      .sort((a, b) => b.relevanceScore - a.relevanceScore);
   }
 }
 ```
 
 ### 8.4.2 Scoring des dépendances
 
-Les dépendances ne sont pas toutes égales :
+Les dépendances n'ont pas toutes la même importance. Un système de poids permet de prioriser :
 
 ```typescript
-interface DependencyWeight {
-  type: string;
-  weight: number;
-}
+// src/context/expansion/scoring.ts
 
-const DEPENDENCY_WEIGHTS: DependencyWeight[] = [
-  { type: 'import', weight: 0.9 },        // Import direct très pertinent
-  { type: 'type_reference', weight: 0.85 }, // Types souvent critiques
-  { type: 'extends', weight: 0.95 },      // Héritage très important
-  { type: 'implements', weight: 0.9 },    // Interface implémentée
-  { type: 'call', weight: 0.7 },          // Appel de fonction
-  { type: 'calledBy', weight: 0.5 }       // Appelant (moins pertinent)
-];
+const DEPENDENCY_WEIGHTS: Record<string, number> = {
+  'import':         0.90,  // Import direct : très pertinent
+  'extends':        0.95,  // Héritage : critique pour comprendre
+  'implements':     0.90,  // Interface : important
+  'type_reference': 0.85,  // Référence de type : souvent nécessaire
+  'call':           0.70,  // Appel de fonction : contexte utile
+  'calledBy':       0.50   // Appelant : moins pertinent
+};
 
+/**
+ * Calcule le score d'un chunk après expansion.
+ * Le score décroît avec la profondeur et selon le type de relation.
+ */
 function scoreExpansion(
   baseScore: number,
   depth: number,
   edgeType: string
 ): number {
-  const weight = DEPENDENCY_WEIGHTS.find(w => w.type === edgeType)?.weight ?? 0.5;
-  const depthDecay = Math.pow(0.8, depth);  // Décroissance exponentielle
+  const weight = DEPENDENCY_WEIGHTS[edgeType] ?? 0.5;
+  const depthDecay = Math.pow(0.8, depth);  // -20% par niveau
 
   return baseScore * weight * depthDecay;
 }
 ```
 
+![Decroissance du score](images/score-decay.svg)
+
 ---
 
-## 8.5 Stratégies d'Expansion
+## 8.5 🎯 Stratégies d'Expansion
 
-### 8.5.1 Expansion sélective
+### 8.5.1 Expansion adaptative selon la query
 
-Ne pas tout inclure — sélectionner intelligemment :
+Différents types de questions appellent différentes stratégies :
 
 ```typescript
+// src/context/expansion/strategies.ts
+
+interface ExpansionStrategy {
+  maxDepth: number;
+  includeTypes: boolean;
+  includeCallers: boolean;
+  prioritize: string[];  // Types d'edges à prioriser
+}
+
+/**
+ * Détermine la meilleure stratégie d'expansion selon la question.
+ */
+function getExpansionStrategy(query: string): ExpansionStrategy {
+  const q = query.toLowerCase();
+
+  // 📝 Questions sur les types/structures
+  if (q.match(/type|interface|schema|format|structure|shape/)) {
+    return {
+      maxDepth: 1,
+      includeTypes: true,
+      includeCallers: false,
+      prioritize: ['type_reference', 'extends', 'implements']
+    };
+  }
+
+  // 🔄 Questions sur le flux/architecture
+  if (q.match(/flow|calls|uses|how.*works|architecture|where.*used/)) {
+    return {
+      maxDepth: 2,
+      includeTypes: true,
+      includeCallers: true,  // Important pour comprendre le flux
+      prioritize: ['call', 'calledBy', 'import']
+    };
+  }
+
+  // 🔧 Questions sur l'implémentation
+  if (q.match(/implement|code|function|method|how to/)) {
+    return {
+      maxDepth: 2,
+      includeTypes: true,
+      includeCallers: false,
+      prioritize: ['import', 'call']
+    };
+  }
+
+  // 🐛 Questions de débogage
+  if (q.match(/error|bug|fail|wrong|fix|debug/)) {
+    return {
+      maxDepth: 2,
+      includeTypes: true,
+      includeCallers: true,  // Voir d'où vient l'appel
+      prioritize: ['import', 'call', 'calledBy']
+    };
+  }
+
+  // ⚙️ Défaut : expansion modérée
+  return {
+    maxDepth: 1,
+    includeTypes: true,
+    includeCallers: false,
+    prioritize: ['import', 'type_reference']
+  };
+}
+```
+
+| Type de question | Stratégie | Raison |
+|------------------|-----------|--------|
+| 📝 Types/Structure | Types only, depth=1 | Besoin des définitions |
+| 🔄 Flux/Architecture | Callers + Called, depth=2 | Voir les connexions |
+| 🔧 Implémentation | Imports, depth=2 | Code source complet |
+| 🐛 Débogage | Full expansion | Tracer l'erreur |
+
+### 8.5.2 Expansion sélective
+
+Ne pas tout inclure — filtrer par pertinence à la query :
+
+```typescript
+/**
+ * Expansion sélective : n'inclut que les dépendances
+ * pertinentes par rapport à la query originale.
+ */
 async function selectiveExpand(
   chunk: RetrievedChunk,
   query: string,
@@ -519,98 +712,52 @@ async function selectiveExpand(
 
     for (const depChunk of depChunks) {
       // Calculer la pertinence par rapport à la query
-      const relevance = await computeRelevance(depChunk.content, query);
+      const relevance = await computeSemanticSimilarity(
+        depChunk.content,
+        query
+      );
 
-      if (relevance > 0.3) {  // Seuil de pertinence
+      // Seuil de pertinence : ignorer si trop faible
+      if (relevance > 0.3) {
         depChunk.relevanceScore = relevance;
         candidates.push(depChunk);
       }
     }
   }
 
-  // Garder les N plus pertinents
+  // Garder seulement les N plus pertinents
   return candidates
     .sort((a, b) => b.relevanceScore - a.relevanceScore)
     .slice(0, 5);
 }
 ```
 
-### 8.5.2 Expansion par type de query
-
-Adapter l'expansion selon le type de question :
-
-```typescript
-function getExpansionStrategy(query: string): ExpansionStrategy {
-  const queryLower = query.toLowerCase();
-
-  // Questions sur les types → inclure types et interfaces
-  if (queryLower.match(/type|interface|schema|format|structure/)) {
-    return {
-      maxDepth: 1,
-      includeTypes: true,
-      includeCallers: false,
-      prioritize: ['type_reference', 'extends', 'implements']
-    };
-  }
-
-  // Questions sur le flux → inclure appelants et appelés
-  if (queryLower.match(/flow|calls|uses|how.*works|architecture/)) {
-    return {
-      maxDepth: 2,
-      includeTypes: true,
-      includeCallers: true,
-      prioritize: ['call', 'calledBy']
-    };
-  }
-
-  // Questions sur l'implémentation → focus sur les imports
-  if (queryLower.match(/implement|code|function|method/)) {
-    return {
-      maxDepth: 2,
-      includeTypes: true,
-      includeCallers: false,
-      prioritize: ['import']
-    };
-  }
-
-  // Défaut
-  return {
-    maxDepth: 1,
-    includeTypes: true,
-    includeCallers: false,
-    prioritize: ['import', 'type_reference']
-  };
-}
-```
-
 ---
 
-## 8.6 Implémentation Grok-CLI
+## 8.6 🛠️ Implémentation Grok-CLI
 
-### 8.6.1 Architecture
+### 8.6.1 Architecture du module
 
-```
-src/context/
-├── dependency-aware-rag.ts     # RAG principal
-├── dependency-graph/
-│   ├── index.ts                # Point d'entrée
-│   ├── graph-builder.ts        # Construction du graphe
-│   ├── import-analyzer.ts      # Analyse des imports
-│   ├── type-analyzer.ts        # Analyse des types
-│   ├── call-analyzer.ts        # Analyse des appels
-│   └── graph-store.ts          # Persistance du graphe
-└── expansion/
-    ├── strategies.ts           # Stratégies d'expansion
-    └── scoring.ts              # Scoring des dépendances
-```
+![Architecture Dependency-Aware RAG](images/dep-aware-rag-architecture.svg)
 
 ### 8.6.2 Classe principale
 
 ```typescript
 // src/context/dependency-aware-rag.ts
+
 import { DependencyGraph, DependencyGraphBuilder } from './dependency-graph';
 import { HybridRetriever } from './codebase-rag/retriever';
-import { ExpansionStrategy, getExpansionStrategy } from './expansion/strategies';
+import { getExpansionStrategy, ExpansionStrategy } from './expansion/strategies';
+
+interface RetrievalResult {
+  chunks: RetrievedChunk[];
+  subgraph: SubGraph;  // Sous-graphe des fichiers inclus
+  stats: {
+    baseRetrieved: number;
+    afterExpansion: number;
+    expansionRatio: number;
+  };
+}
 
 export class DependencyAwareRAG {
   private graph: DependencyGraph | null = null;
@@ -623,147 +770,67 @@ export class DependencyAwareRAG {
     this.graphBuilder = new DependencyGraphBuilder();
   }
 
+  /**
+   * Initialise le RAG en construisant le graphe de dépendances.
+   * À appeler une fois au démarrage du projet.
+   */
   async initialize(projectRoot: string): Promise<void> {
     if (this.initialized) return;
 
-    console.log('Building dependency graph...');
+    console.log('🔍 Building dependency graph...');
     const start = Date.now();
 
     this.graph = await this.graphBuilder.buildGraph(projectRoot);
 
-    console.log(`Graph built in ${Date.now() - start}ms`);
-    console.log(`  Nodes: ${this.graph.nodes.size}`);
-    console.log(`  Edges: ${this.graph.edges.length}`);
+    console.log(`✅ Graph ready in ${Date.now() - start}ms`);
+    console.log(`   📊 ${this.graph.nodes.size} nodes`);
+    console.log(`   🔗 ${this.graph.edges.length} edges`);
 
     this.initialized = true;
   }
 
+  /**
+   * Retrieval principal avec expansion des dépendances.
+   */
   async retrieve(
     query: string,
     options: Partial<RetrievalOptions> = {}
   ): Promise<RetrievalResult> {
     if (!this.graph) {
-      throw new Error('DependencyAwareRAG not initialized');
+      throw new Error('DependencyAwareRAG not initialized. Call initialize() first.');
     }
 
-    // Déterminer la stratégie d'expansion
+    // 🎯 Déterminer la stratégie d'expansion
     const strategy = options.strategy ?? getExpansionStrategy(query);
 
-    // Retrieval de base
+    // 🔍 Retrieval de base
     const baseChunks = await this.retriever.retrieve(query, {
       topK: options.baseTopK ?? 5
     });
 
-    // Expansion avec dépendances
+    // 🔄 Expansion avec dépendances
     const expandedChunks = await this.expandWithDependencies(
       baseChunks,
       strategy,
       query
     );
 
-    // Assembler le résultat
+    // 📊 Stats et résultat
     return {
       chunks: expandedChunks,
-      graph: this.buildSubgraph(expandedChunks),
+      subgraph: this.buildSubgraph(expandedChunks),
       stats: {
         baseRetrieved: baseChunks.length,
         afterExpansion: expandedChunks.length,
-        expansionRatio: expandedChunks.length / baseChunks.length
+        expansionRatio: expandedChunks.length / Math.max(baseChunks.length, 1)
       }
     };
   }
 
-  private async expandWithDependencies(
-    baseChunks: RetrievedChunk[],
-    strategy: ExpansionStrategy,
-    query: string
-  ): Promise<RetrievedChunk[]> {
-    const result: RetrievedChunk[] = [...baseChunks];
-    const visited = new Set<string>(baseChunks.map(c => c.id));
-    const queue = baseChunks.map(c => ({ chunk: c, depth: 0 }));
-
-    while (queue.length > 0) {
-      const { chunk, depth } = queue.shift()!;
-
-      if (depth >= strategy.maxDepth) continue;
-
-      const node = this.graph!.nodes.get(chunk.filePath);
-      if (!node) continue;
-
-      // Collecter les dépendances selon la stratégie
-      const deps = this.collectDependencies(node, strategy);
-
-      for (const { targetFile, edgeType } of deps) {
-        if (visited.has(targetFile)) continue;
-        visited.add(targetFile);
-
-        // Récupérer les chunks du fichier cible
-        const targetChunks = await this.retriever.getChunksByFile(targetFile);
-
-        for (const targetChunk of targetChunks) {
-          // Scorer la pertinence
-          const score = this.scoreDependency(
-            chunk.relevanceScore,
-            depth + 1,
-            edgeType,
-            targetChunk,
-            query
-          );
-
-          if (score >= 0.3) {  // Seuil minimum
-            targetChunk.relevanceScore = score;
-            targetChunk.metadata = {
-              ...targetChunk.metadata,
-              expansionSource: chunk.filePath,
-              expansionReason: edgeType,
-              expansionDepth: depth + 1
-            };
-
-            result.push(targetChunk);
-            queue.push({ chunk: targetChunk, depth: depth + 1 });
-          }
-        }
-      }
-    }
-
-    return result.sort((a, b) => b.relevanceScore - a.relevanceScore);
-  }
-
-  private collectDependencies(
-    node: DependencyNode,
-    strategy: ExpansionStrategy
-  ): Array<{ targetFile: string; edgeType: string }> {
-    const deps: Array<{ targetFile: string; edgeType: string }> = [];
-
-    // Imports
-    for (const edge of node.imports) {
-      deps.push({ targetFile: edge.target, edgeType: 'import' });
-    }
-
-    // Types
-    if (strategy.includeTypes) {
-      for (const edge of node.references) {
-        if (['type_reference', 'extends', 'implements'].includes(edge.type)) {
-          deps.push({ targetFile: edge.target, edgeType: edge.type });
-        }
-      }
-    }
-
-    // Callers
-    if (strategy.includeCallers) {
-      for (const edge of node.calledBy) {
-        deps.push({ targetFile: edge.source, edgeType: 'calledBy' });
-      }
-    }
-
-    // Trier par priorité
-    return deps.sort((a, b) => {
-      const priorityA = strategy.prioritize.indexOf(a.edgeType);
-      const priorityB = strategy.prioritize.indexOf(b.edgeType);
-      return (priorityA === -1 ? 999 : priorityA) - (priorityB === -1 ? 999 : priorityB);
-    });
-  }
-
+  /**
+   * Construit le sous-graphe des fichiers inclus.
+   * Utile pour visualiser les relations.
+   */
   private buildSubgraph(chunks: RetrievedChunk[]): SubGraph {
     const files = new Set(chunks.map(c => c.filePath));
     const nodes = new Map<string, DependencyNode>();
@@ -774,7 +841,7 @@ export class DependencyAwareRAG {
       if (node) {
         nodes.set(file, node);
 
-        // Inclure seulement les edges vers d'autres fichiers inclus
+        // Inclure seulement les edges internes au sous-graphe
         for (const edge of [...node.imports, ...node.references]) {
           if (files.has(edge.target)) {
             edges.push(edge);
@@ -790,56 +857,74 @@ export class DependencyAwareRAG {
 
 ---
 
-## 8.7 Optimisations
+## 8.7 ⚡ Optimisations
 
 ### 8.7.1 Cache du graphe de dépendances
 
+Le graphe ne change que lorsque les fichiers changent :
+
 ```typescript
 // src/context/dependency-graph/graph-store.ts
+
 export class GraphStore {
   private cacheFile: string;
+  private projectRoot: string;
 
   constructor(projectRoot: string) {
+    this.projectRoot = projectRoot;
     this.cacheFile = path.join(projectRoot, '.grok/cache/dependency-graph.json');
   }
 
+  /**
+   * Charge le graphe depuis le cache si valide.
+   */
   async load(): Promise<DependencyGraph | null> {
     try {
       const data = await fs.readFile(this.cacheFile, 'utf-8');
       const cached = JSON.parse(data);
 
-      // Vérifier la fraîcheur
+      // Vérifier si le cache est encore valide
       if (await this.isStale(cached.timestamp)) {
+        console.log('📦 Cache stale, rebuilding...');
         return null;
       }
 
+      console.log('📦 Loading graph from cache...');
       return this.deserialize(cached.graph);
     } catch {
       return null;
     }
   }
 
+  /**
+   * Sauvegarde le graphe dans le cache.
+   */
   async save(graph: DependencyGraph): Promise<void> {
     const data = {
       timestamp: Date.now(),
+      version: 1,
       graph: this.serialize(graph)
     };
 
     await fs.mkdir(path.dirname(this.cacheFile), { recursive: true });
-    await fs.writeFile(this.cacheFile, JSON.stringify(data));
+    await fs.writeFile(this.cacheFile, JSON.stringify(data, null, 2));
   }
 
-  private async isStale(timestamp: number): Promise<boolean> {
-    // Vérifier si des fichiers ont été modifiés depuis
+  /**
+   * Vérifie si des fichiers ont changé depuis le cache.
+   */
+  private async isStale(cacheTimestamp: number): Promise<boolean> {
     const files = await glob('**/*.{ts,tsx,js,jsx}', {
       cwd: this.projectRoot,
-      ignore: ['node_modules/**']
+      ignore: ['node_modules/**', 'dist/**']
     });
 
     for (const file of files) {
-      const stat = await fs.stat(path.join(this.projectRoot, file));
-      if (stat.mtimeMs > timestamp) {
-        return true;
+      const fullPath = path.join(this.projectRoot, file);
+      const stat = await fs.stat(fullPath);
+
+      if (stat.mtimeMs > cacheTimestamp) {
+        return true;  // Un fichier a été modifié
       }
     }
 
@@ -851,167 +936,249 @@ export class GraphStore {
 ### 8.7.2 Mise à jour incrémentale
 
 ```typescript
+/**
+ * Met à jour le graphe de façon incrémentale.
+ * Plus rapide que de tout reconstruire.
+ */
 async function updateGraphIncremental(
   graph: DependencyGraph,
   changedFiles: string[]
 ): Promise<DependencyGraph> {
   for (const file of changedFiles) {
-    // Supprimer l'ancien nœud et ses edges
+    // 1️⃣ Supprimer l'ancien nœud et ses edges
     const oldNode = graph.nodes.get(file);
     if (oldNode) {
+      // Retirer les edges sortants
       graph.edges = graph.edges.filter(e =>
         e.source !== file && e.target !== file
       );
       graph.nodes.delete(file);
     }
 
-    // Réanalyser le fichier
-    if (await fs.access(file).then(() => true).catch(() => false)) {
+    // 2️⃣ Réanalyser le fichier s'il existe encore
+    const exists = await fs.access(file).then(() => true).catch(() => false);
+    if (exists) {
       const content = await fs.readFile(file, 'utf-8');
-      const node = await analyzeFile(file, content);
-      graph.nodes.set(file, node);
+      const newNode = await analyzeFile(file, content);
+      graph.nodes.set(file, newNode);
 
       // Ajouter les nouveaux edges
-      for (const edge of node.imports) {
+      for (const edge of newNode.imports) {
         graph.edges.push(edge);
+        // Mettre à jour les relations inverses
+        const targetNode = graph.nodes.get(edge.target);
+        if (targetNode) {
+          targetNode.importedBy.push(edge);
+        }
       }
     }
   }
-
-  // Recalculer les relations inverses
-  recalculateInverseRelations(graph);
 
   return graph;
 }
 ```
 
-### 8.7.3 Expansion lazy
-
-```typescript
-class LazyDependencyExpander {
-  private expansionCache = new Map<string, RetrievedChunk[]>();
-
-  async expand(
-    chunk: RetrievedChunk,
-    graph: DependencyGraph
-  ): Promise<RetrievedChunk[]> {
-    // Vérifier le cache
-    const cacheKey = `${chunk.id}:${chunk.relevanceScore}`;
-    if (this.expansionCache.has(cacheKey)) {
-      return this.expansionCache.get(cacheKey)!;
-    }
-
-    // Expansion lazy - seulement si nécessaire
-    const expanded = await this.doExpand(chunk, graph);
-
-    this.expansionCache.set(cacheKey, expanded);
-    return expanded;
-  }
-
-  // Invalider le cache quand un fichier change
-  invalidate(filePath: string): void {
-    for (const [key, chunks] of this.expansionCache.entries()) {
-      if (chunks.some(c => c.filePath === filePath)) {
-        this.expansionCache.delete(key);
-      }
-    }
-  }
-}
-```
+| Méthode | Temps (100 fichiers) | Temps (1000 fichiers) |
+|---------|:--------------------:|:---------------------:|
+| Full rebuild | ~2s | ~15s |
+| Incrémental (1 fichier) | ~50ms | ~50ms |
+| Depuis cache | ~100ms | ~500ms |
 
 ---
 
-## 8.8 Cas Pratiques
+## 8.8 💼 Cas Pratiques
 
-### 8.8.1 Cas 1 : Comprendre une fonction
+### Cas 1 : Comprendre une fonction
 
-```
-Query : "Explique comment fonctionne createUser"
+![Cas 1 : Comprendre une fonction](images/case-understand-function.svg)
 
-Sans Dependency-Aware RAG :
-───────────────────────────
-Retourne : user-service.ts (createUser)
-→ LLM doit deviner les types User, CreateUserInput
-→ Peut halluciner sur les validations
+### Cas 2 : Analyse d'impact (refactoring)
 
-Avec Dependency-Aware RAG :
-────────────────────────────
-Retourne :
-├── user-service.ts (createUser)
-├── types/user.ts (User, CreateUserInput)  ← via type_reference
-├── validators/user.ts (validateUser)      ← via call
-└── database/user-repo.ts (UserRepository) ← via import
+![Cas 2 : Analyse d'impact](images/case-impact-analysis.svg)
 
-→ LLM a tout le contexte nécessaire
-→ Réponse précise et complète
-```
+### Cas 3 : Débogage
 
-### 8.8.2 Cas 2 : Refactoring
-
-```
-Query : "Quels fichiers seront affectés si je change UserRepository ?"
-
-Dependency-Aware RAG (includeCallers = true) :
-─────────────────────────────────────────────
-Analyse calledBy de UserRepository :
-├── user-service.ts
-├── auth-service.ts
-├── admin-controller.ts
-└── tests/user.test.ts
-
-→ Liste complète des fichiers à vérifier/modifier
-```
-
-### 8.8.3 Cas 3 : Débogage
-
-```
-Query : "Pourquoi createOrder échoue avec 'Invalid payment method' ?"
-
-Expansion :
-───────────
-├── order-service.ts (createOrder)
-├── payment-service.ts (validatePayment)    ← suit l'erreur
-├── types/payment.ts (PaymentMethod)        ← type concerné
-└── validators/payment.ts (isValidMethod)   ← logique de validation
-
-→ Le LLM peut tracer le flux et trouver la cause
-```
+![Cas 3 : Debogage](images/case-debugging.svg)
 
 ---
 
-## Résumé
+## ⚠️ 8.9 Limites et Risques
 
-Dans ce chapitre, nous avons vu :
+### 🚧 Limites Techniques
+
+| Limite | Description | Impact |
+|--------|-------------|--------|
+| **Explosion transitive** | Suivre toutes les dépendances = trop de contexte | Budget tokens épuisé |
+| **Qualité du parsing** | Dépend de la syntaxe (TS/JS OK, autres difficiles) | Graphe incomplet |
+| **Dépendances dynamiques** | Imports dynamiques / reflection invisibles | Relations manquantes |
+| **Coût de construction** | Analyse AST de tout le projet = lent | Démarrage ralenti |
+| **Maintenance du graphe** | Doit être mis à jour à chaque changement | Cache stale possible |
+
+### ⚡ Risques Opérationnels
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|:-----------:|:------:|------------|
+| **Over-fetching** | Haute | Moyen | Limiter maxDepth à 2, scorer la pertinence |
+| **Graphe obsolète** | Moyenne | Moyen | Mise à jour incrémentale, invalidation auto |
+| **Cycles de dépendances** | Moyenne | Moyen | Détection et coupure des cycles |
+| **Fichiers manquants** | Faible | Faible | Graceful degradation vers RAG classique |
+
+### 📊 Quand NE PAS Utiliser Dependency-Aware RAG
+
+| Situation | Raison | Alternative |
+|-----------|--------|-------------|
+| Projet < 20 fichiers | Overhead > bénéfice | RAG classique suffisant |
+| Questions génériques | Pas besoin de dépendances | Recherche sémantique simple |
+| Langages non supportés | Parsing AST impossible | RAG classique + heuristiques |
+
+> 📌 **À Retenir** : Le graphe de dépendances est un **amplificateur** — il amplifie la qualité du retrieval initial, mais aussi ses erreurs. Si le retrieval de base récupère du code non pertinent, l'expansion des dépendances va récupérer encore plus de code non pertinent. Assurez-vous que votre retrieval de base est solide avant d'activer l'expansion.
+
+> 💡 **Astuce Pratique** : Commencez avec `maxDepth: 1` et `maxExpansion: 5`. Augmentez progressivement si les réponses manquent de contexte. Un ratio d'expansion > 3x est souvent signe de sur-fetching.
+
+---
+
+## 📊 Tableau Synthétique — Chapitre 08
+
+| Aspect | Détails |
+|--------|---------|
+| **Titre** | Dependency-Aware RAG |
+| **Problème** | RAG classique = fichiers en isolation |
+| **Solution** | Graphe de dépendances + expansion automatique |
+| **Construction** | Analyse AST : imports, types, appels de fonctions |
+| **Algorithme** | BFS avec scoring décroissant par profondeur |
+| **Stratégies** | Adapt expansion selon le type de question |
+| **Performance** | Cache + mise à jour incrémentale |
+| **Papier de Référence** | CodeRAG (2024) |
+
+---
+
+## 📝 Points Clés
 
 | Concept | Point clé |
 |---------|-----------|
-| **Problème** | RAG classique ignore les dépendances |
-| **Solution** | Graphe de dépendances + expansion automatique |
-| **Construction** | Analyse AST des imports, types, appels |
-| **Expansion** | BFS avec scoring décroissant par profondeur |
-| **Stratégies** | Adapter l'expansion au type de question |
-| **Optimisation** | Cache, mise à jour incrémentale |
+| 🚫 **Problème** | RAG classique traite les fichiers en isolation |
+| 🕸️ **Solution** | Graphe de dépendances + expansion automatique |
+| 🔨 **Construction** | Analyse AST : imports, types, appels |
+| 🔍 **Algorithme** | BFS avec scoring décroissant par profondeur |
+| 🎯 **Stratégies** | Adapter l'expansion au type de question |
+| ⚡ **Performance** | Cache + mise à jour incrémentale |
 
 ---
 
-## Exercices
+## 🏋️ Exercices
 
-1. **Graphe** : Construisez le graphe de dépendances d'un petit projet (10 fichiers). Visualisez-le avec un outil comme Graphviz.
+### Exercice 1 : Construire un graphe
+**Objectif** : Visualiser les dépendances d'un projet
 
-2. **Comparaison** : Comparez les résultats RAG vs Dependency-Aware RAG sur 5 questions. Mesurez la pertinence.
+```bash
+# 1. Construire le graphe (10 fichiers max)
+node scripts/build-graph.js ./my-project
 
-3. **Stratégies** : Implémentez une stratégie d'expansion custom pour les questions "qui appelle X ?".
+# 2. Exporter en format DOT
+node scripts/export-dot.js > graph.dot
 
-4. **Performance** : Mesurez le temps d'expansion pour différentes profondeurs (1, 2, 3). Trouvez le sweet spot.
+# 3. Visualiser avec Graphviz
+dot -Tpng graph.dot -o graph.png
+```
+
+### Exercice 2 : Comparaison
+**Objectif** : Mesurer l'amélioration
+
+| Question | RAG classique | Dependency-Aware | Amélioration |
+|----------|:-------------:|:----------------:|:------------:|
+| "Explique createUser" | | | |
+| "Quels types utilise X" | | | |
+| "Qui appelle Y" | | | |
+
+### Exercice 3 : Stratégie custom
+**Objectif** : Implémenter une stratégie pour "qui appelle X ?"
+
+```typescript
+// Votre implémentation
+function getCallersStrategy(): ExpansionStrategy {
+  return {
+    maxDepth: ???,
+    includeTypes: ???,
+    includeCallers: ???,
+    prioritize: [???]
+  };
+}
+```
+
+### Exercice 4 : Sweet spot de profondeur
+**Objectif** : Trouver le meilleur maxDepth
+
+| maxDepth | Chunks retournés | Temps (ms) | Pertinence |
+|:--------:|:----------------:|:----------:|:----------:|
+| 1 | | | |
+| 2 | | | |
+| 3 | | | |
 
 ---
 
-## Pour aller plus loin
+## 📚 Références
 
-- Jimenez, C., et al. (2024). "CodeRAG: A Retrieval-Augmented Generation Framework for Code"
-- Grok-CLI : `src/context/dependency-aware-rag.ts`
+| Type | Référence |
+|------|-----------|
+| 📄 Paper | Jimenez, C., et al. (2024). "CodeRAG: Retrieval-Augmented Generation for Code" |
+| 📄 Paper | Zhang, Y., et al. (2023). "RepoFusion: Training Code Models to Understand Your Repository" |
+| 💻 Code | Grok-CLI : `src/context/dependency-aware-rag.ts` |
+| 🔗 Tool | TypeScript Compiler API : AST analysis |
 
 ---
 
-*Prochainement : Chapitre 9 — Context Compression & Masking*
+## 🌅 Épilogue
 
+*Le lendemain matin. Lina teste son nouveau système.*
+
+**Lina** : "Explique comment fonctionne `processPayment` et son type de retour."
+
+*L'agent récupère non seulement processPayment, mais aussi types.ts avec PaymentResult.*
+
+**Agent** : *"La fonction `processPayment` dans `processor.ts` retourne un `PaymentResult` (défini dans `types.ts` ligne 15) qui contient : `success: boolean`, `transactionId: string`, `amount: number`..."*
+
+**Lina** *(souriant)* : "Il comprend les relations entre les fichiers maintenant !"
+
+*Mais son sourire se fige quand elle regarde les statistiques.*
+
+**Lina** : "Attends... 47 000 tokens de contexte pour une seule question ?"
+
+*Elle vérifie. Le graphe de dépendances a explosé.*
+
+**Marc** *(regardant par-dessus son épaule)* : "Ah. Le problème de transitivité."
+
+**Lina** : "`processPayment` importe de `types.ts`. Qui importe de `common.ts`. Qui importe de `utils.ts`. Qui importe..."
+
+**Marc** : "...de la moitié du codebase. Oui. C'est le revers de la médaille."
+
+*Lina calcule mentalement.*
+
+**Lina** : "À ce rythme, on va exploser les coûts API. Et les limites de contexte."
+
+**Marc** : "Il y a une solution. Au lieu de tout garder, on compresse intelligemment. On garde les parties importantes, on résume le reste."
+
+*Il ouvre un papier de recherche sur son écran.*
+
+**Marc** : "JetBrains a publié quelque chose là-dessus. Leur équipe de Saint-Pétersbourg a trouvé comment réduire le contexte de 70% sans perdre en qualité."
+
+**Lina** *(intriguée)* : "70% ? Comment c'est possible ?"
+
+**Marc** : "En comprenant que tout le contexte n'a pas la même importance. Certaines parties sont critiques, d'autres sont du bruit."
+
+*Il ferme son laptop.*
+
+**Marc** : "Prochaine étape : la compression de contexte. L'art de dire beaucoup avec peu."
+
+---
+
+**À suivre** : *Chapitre 9 — Compression de Contexte*
+
+*47 000 tokens pour une question simple. Comment réduire ce contexte à 8 000 tokens sans perdre l'information critique ? La réponse vient d'une équipe de Saint-Pétersbourg — et d'une découverte sur ce que les LLMs "perdent" vraiment.*
+
+---
+
+<div align="center">
+
+**← [Chapitre 7 : RAG Moderne](07-rag-moderne.md)** | **[Sommaire](README.md)** | **[Chapitre 9 : Compression de Contexte](09-context-compression.md) →**
+
+</div>
