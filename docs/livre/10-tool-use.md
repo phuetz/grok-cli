@@ -491,6 +491,48 @@ function shouldExecute(toolName: string, args?: string): Decision {
 
 ---
 
+## 8. Input Multimodal : Images et Voix
+
+Les modèles modernes supportent l'entrée multimodale. Grok-CLI permet d'inclure des images et de dicter les prompts.
+
+### Images (Vision)
+
+```bash
+# Fichier local
+grok "Implémente ce design" --image mockup.png
+
+# URL
+grok "Analyse ce graphique" --image https://example.com/chart.png
+
+# Référence inline
+grok "Que montre @screenshot.png ?"
+```
+
+```typescript
+// Construction du message multimodal
+const content = buildMultimodalContent(
+  "Analyse cette image",
+  [await parseImageInput("screenshot.png")],
+  'auto'  // detail: 'low' | 'high' | 'auto'
+);
+// → [{ type: 'text', text: '...' }, { type: 'image_url', image_url: { url: 'data:...' } }]
+```
+
+### Voix (Whisper)
+
+```bash
+grok --voice
+# Enregistrement... Appuyez sur Entrée pour arrêter.
+# Transcription...
+# "Comment optimiser cette fonction ?"
+```
+
+Supporte : API Whisper (OpenAI), whisper.cpp local, sox/ffmpeg pour l'enregistrement.
+
+**Détails complets** : [Chapitre 18 - Productivité CLI](18-productivite-cli.md)
+
+---
+
 ## Ce Qui Vient Ensuite
 
 Les outils sont prêts, mais comment les **étendre** sans modifier le code ? Le **Chapitre 11** introduit MCP (Model Context Protocol) : l'architecture de plugins qui permet d'ajouter des outils à la volée.

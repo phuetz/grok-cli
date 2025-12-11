@@ -292,7 +292,7 @@ Même en 2030 :
 
 ## Conclusion du Livre
 
-15 chapitres. Un agent complet. Architecture modulaire, sécurisée, évolutive.
+18 chapitres. Un agent complet. Architecture modulaire, sécurisée, évolutive.
 
 **Ce que vous avez appris :**
 
@@ -301,15 +301,16 @@ Même en 2030 :
 | 1-3 | Agent = LLM + Outils + Boucle |
 | 4-6 | Raisonnement : ToT, MCTS, Repair |
 | 7-9 | Contexte : RAG, compression, dépendances |
-| 10-11 | Actions : 41 outils, MCP |
+| 10-11 | Actions : 41 outils, MCP, Skills |
 | 12-13 | Optimisation : cache, routing, parallélisation |
 | 14 | Mémoire : 4 types persistants |
 | 15 | Architecture : 6 couches |
 | 16 | Sécurité : defense-in-depth |
 | 17 | Futur : évolutions et préparation |
+| 18 | Productivité : watch mode, voice, images |
 
 **Le reste est à vous.**
 
 ---
 
-[Chapitre 16](16-system-prompts-securite.md) | [Table des Matières](README.md)
+[Chapitre 16](16-system-prompts-securite.md) | [Table des Matières](README.md) | [Chapitre 18](18-productivite-cli.md)

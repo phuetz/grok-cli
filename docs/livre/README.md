@@ -36,7 +36,8 @@ Ce livre existe en deux versions selon votre style d'apprentissage :
 | RAG avec graphe de dépendances | 7-8 | ~400 lignes |
 | Cache sémantique (68% de réduction) | 12 | ~150 lignes |
 | Model routing FrugalGPT (-70% coûts) | 13 | ~100 lignes |
-| **Total** | 17 chapitres | ~25,000 lignes |
+| Productivité CLI (voice, images, watch) | 18 | ~500 lignes |
+| **Total** | 18 chapitres | ~26,000 lignes |
 
 ---
 
@@ -88,6 +89,7 @@ Ce livre existe en deux versions selon votre style d'apprentissage :
 | **15** | [Architecture Complète](15-architecture-complete.md) | Grok-CLI de A à Z |
 | **16** | [Sécurité : Le Chapitre le Plus Important](16-system-prompts-securite.md) | Défense contre prompt injection |
 | **17** | [Ce Qui Arrive en 2025](17-perspectives-futures.md) | Préparez-vous |
+| **18** | [Productivité CLI Avancée](18-productivite-cli.md) | Watch mode, voice, images, /delegate |
 
 ### Annexes
 
@@ -161,11 +163,11 @@ code .
 
 | Métrique | Valeur |
 |----------|--------|
-| **Chapitres** | 17 + annexes |
-| **Mots** | ~45,000 |
-| **Pages imprimées** | ~150 |
+| **Chapitres** | 18 + annexes |
+| **Mots** | ~50,000 |
+| **Pages imprimées** | ~170 |
 | **Diagrammes** | 140+ |
-| **Outils documentés** | 41+ |
+| **Outils documentés** | 45+ |
 | **Code prêt-à-l'emploi** | Chaque chapitre |
 
 ---

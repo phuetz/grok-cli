@@ -7,6 +7,7 @@
 ## A
 
 - **Agent** — [Ch.02](02-role-des-agents.md), [Ch.03](03-anatomie-agent.md), [Ch.15](15-architecture-complete.md)
+- **AI! / AI? (commentaires)** — [Ch.18](18-productivite-cli.md)
 - **Agent multi-agent** — [Ch.03](03-anatomie-agent.md), [Ch.15](15-architecture-complete.md)
 - **Agent spécialisé** — [Ch.15](15-architecture-complete.md)
 - **Agentic loop** — [Ch.03](03-anatomie-agent.md), [Ch.15](15-architecture-complete.md)
@@ -38,6 +39,8 @@
 
 - **Cache sémantique** — [Ch.12](12-optimisations-cognitives.md)
 - **Cache d'outils** — [Ch.12](12-optimisations-cognitives.md)
+- **Context files** — [Ch.18](18-productivite-cli.md)
+- **Compress (commande)** — [Ch.18](18-productivite-cli.md)
 - **Chain-of-Thought (CoT)** — [Ch.04](04-tree-of-thought.md)
 - **Chatbot** — [Ch.02](02-role-des-agents.md)
 - **ChatRepair** — [Ch.06](06-repair-reflexion.md)
@@ -59,6 +62,7 @@
 ## D
 
 - **Déduplication sémantique** — [Ch.09](09-context-compression.md)
+- **Delegate (commande)** — [Ch.18](18-productivite-cli.md)
 - **Dependency-Aware RAG** — [Ch.08](08-dependency-aware-rag.md)
 - **DFS (Depth-First Search)** — [Ch.04](04-tree-of-thought.md)
 - **Diagramme de dépendances** — [Ch.08](08-dependency-aware-rag.md)
@@ -102,6 +106,7 @@
 
 ## I
 
+- **Image input** — [Ch.10](10-tool-use.md), [Ch.18](18-productivite-cli.md)
 - **Import graph** — [Ch.08](08-dependency-aware-rag.md)
 - **In-context learning** — [Ch.01](01-comprendre-les-llms.md)
 - **Index vectoriel** — [Ch.07](07-rag-moderne.md)
@@ -159,12 +164,14 @@
 - **Parallélisation** — [Ch.10](10-tool-use.md), [Ch.13](13-optimisations-systeme.md)
 - **Patch (réparation)** — [Ch.06](06-repair-reflexion.md)
 - **Permission** — [Ch.03](03-anatomie-agent.md), [Ch.10](10-tool-use.md)
+- **Personas** — [Ch.18](18-productivite-cli.md)
 - **Pipeline RAG** — [Ch.07](07-rag-moderne.md)
 - **Plugin** — [Ch.11](11-plugins-mcp.md)
 - **Positional encoding** — [Ch.01](01-comprendre-les-llms.md)
 - **Pre-training** — [Ch.01](01-comprendre-les-llms.md)
 - **Priorité (contexte)** — [Ch.09](09-context-compression.md)
 - **Prompt engineering** — [Ch.01](01-comprendre-les-llms.md)
+- **Prompt externe (Markdown)** — [Ch.16](16-system-prompts-securite.md)
 - **Prompt hardening** — [Ch.16](16-system-prompts-securite.md)
 - **Prompt injection** — [Ch.16](16-system-prompts-securite.md)
 
@@ -196,8 +203,10 @@
 - **Sécurité CLI** — [Ch.16](16-system-prompts-securite.md)
 - **Self-attention** — [Ch.01](01-comprendre-les-llms.md)
 - **Sélection (MCTS)** — [Ch.05](05-mcts.md)
+- **Shell prefix (!)** — [Ch.18](18-productivite-cli.md)
 - **Simulation (MCTS)** — [Ch.05](05-mcts.md)
-- **Slash commands** — [Ch.11](11-plugins-mcp.md)
+- **Skills** — [Ch.11](11-plugins-mcp.md), [Ch.18](18-productivite-cli.md)
+- **Slash commands** — [Ch.11](11-plugins-mcp.md), [Ch.18](18-productivite-cli.md)
 - **Streaming** — [Ch.10](10-tool-use.md)
 - **Symbol search** — [Ch.10](10-tool-use.md)
 - **System prompt** — [Ch.16](16-system-prompts-securite.md)
@@ -227,10 +236,14 @@
 
 - **Validation (outils)** — [Ch.10](10-tool-use.md)
 - **Vector database** — [Ch.07](07-rag-moderne.md)
+- **Vision (image input)** — [Ch.10](10-tool-use.md), [Ch.18](18-productivite-cli.md)
 - **Vocabulaire (tokenizer)** — [Ch.01](01-comprendre-les-llms.md)
+- **Voice input** — [Ch.10](10-tool-use.md), [Ch.18](18-productivite-cli.md)
 
 ## W
 
+- **Watch mode** — [Ch.18](18-productivite-cli.md)
+- **Whisper (transcription)** — [Ch.18](18-productivite-cli.md)
 - **Window (contexte)** — [Ch.01](01-comprendre-les-llms.md), [Ch.09](09-context-compression.md)
 - **Workflow** — [Ch.14](14-apprentissage-persistant.md)
 

@@ -396,6 +396,151 @@ class PluginSandbox {
 
 ---
 
+## 7. Skills : Capacités Auto-Activées
+
+Les Skills sont des modules qui s'activent automatiquement selon le contexte. Contrairement aux plugins MCP (explicites), les skills se déclenchent sur des patterns.
+
+```typescript
+// src/skills/skill-manager.ts
+
+interface Skill {
+  id: string;
+  name: string;
+  triggers: SkillTrigger[];
+  tools: string[];
+  systemPromptAddition?: string;
+}
+
+interface SkillTrigger {
+  type: 'file_extension' | 'keyword' | 'tool_result';
+  pattern: string | RegExp;
+}
+
+const BUILTIN_SKILLS: Skill[] = [
+  {
+    id: 'typescript',
+    name: 'TypeScript Expert',
+    triggers: [
+      { type: 'file_extension', pattern: '.ts' },
+      { type: 'keyword', pattern: /typescript|tsc|tsconfig/i },
+    ],
+    tools: ['typescript_check', 'eslint'],
+    systemPromptAddition: 'Utilise les types stricts TypeScript.',
+  },
+  {
+    id: 'testing',
+    name: 'Testing Expert',
+    triggers: [
+      { type: 'file_extension', pattern: '.test.ts' },
+      { type: 'keyword', pattern: /jest|vitest|test|spec/i },
+    ],
+    tools: ['run_tests', 'coverage'],
+  },
+];
+
+class SkillManager {
+  detectSkills(context: { files?: string[]; userMessage: string }): Skill[] {
+    return BUILTIN_SKILLS.filter(skill =>
+      skill.triggers.some(trigger => this.matchesTrigger(trigger, context))
+    );
+  }
+}
+```
+
+**Activation automatique** :
+
+```
+grok> Aide-moi à corriger les erreurs TypeScript
+
+[Skill activé: TypeScript Expert]
+Je vais analyser les erreurs avec tsc --noEmit...
+```
+
+---
+
+## 8. Hooks : Interception des Événements
+
+Les hooks permettent d'exécuter du code personnalisé à des points clés du cycle de vie de l'agent.
+
+### Configuration (`.grok/hooks.json`)
+
+```json
+{
+  "hooks": [
+    {
+      "event": "preToolUse",
+      "command": "echo 'Tool: $TOOL_NAME' >> ~/.grok/audit.log"
+    },
+    {
+      "event": "postToolUse",
+      "match": { "tool": "bash" },
+      "command": "node scripts/validate-command.js '$TOOL_ARGS'"
+    },
+    {
+      "event": "sessionStart",
+      "command": "git status --short"
+    }
+  ]
+}
+```
+
+### Événements Disponibles
+
+| Événement | Déclencheur | Variables |
+|-----------|-------------|-----------|
+| `sessionStart` | Début de session | `$SESSION_ID` |
+| `sessionEnd` | Fin de session | `$SESSION_ID`, `$DURATION` |
+| `preToolUse` | Avant exécution d'outil | `$TOOL_NAME`, `$TOOL_ARGS` |
+| `postToolUse` | Après exécution d'outil | `$TOOL_NAME`, `$TOOL_RESULT` |
+| `preMessage` | Avant envoi au LLM | `$MESSAGE` |
+| `postMessage` | Après réponse LLM | `$RESPONSE` |
+
+### Implémentation
+
+```typescript
+// src/hooks/hook-manager.ts
+
+type HookEvent = 'sessionStart' | 'sessionEnd' | 'preToolUse' | 'postToolUse';
+
+interface Hook {
+  event: HookEvent;
+  command: string;
+  match?: { tool?: string; pattern?: string };
+}
+
+class HookManager {
+  private hooks: Hook[] = [];
+
+  async trigger(event: HookEvent, context: Record<string, string>): Promise<void> {
+    const matching = this.hooks.filter(h => h.event === event);
+
+    for (const hook of matching) {
+      if (hook.match?.tool && context.TOOL_NAME !== hook.match.tool) continue;
+
+      // Substituer les variables
+      let cmd = hook.command;
+      for (const [key, value] of Object.entries(context)) {
+        cmd = cmd.replace(new RegExp(`\\$${key}`, 'g'), value);
+      }
+
+      await exec(cmd, { timeout: 5000 });
+    }
+  }
+}
+
+// Usage dans l'agent
+await hookManager.trigger('preToolUse', {
+  TOOL_NAME: 'bash',
+  TOOL_ARGS: JSON.stringify(args)
+});
+```
+
+**Cas d'usage** : Audit de sécurité, logging, validation, notifications Slack.
+
+**Détails complets** : [Chapitre 18 - Productivité CLI](18-productivite-cli.md)
+
+---
+
 ## Ce Qui Vient Ensuite
 
 MCP permet d'étendre l'agent indéfiniment, mais 41% des requêtes sont identiques. Le **Chapitre 12** introduit les optimisations cognitives : cache sémantique, batching, et réduction des coûts de 68%.
