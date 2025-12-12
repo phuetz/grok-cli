@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { Box, Text } from "ink";
 import { getMCPManager } from "../../grok/tools.js";
 import { MCPTool } from "../../mcp/client.js";
+import { ErrorBoundary } from "./error-boundary.js";
 
 // Memoized MCP status component to reduce unnecessary re-renders
-export const MCPStatus = React.memo(function MCPStatusInner() {
+const MCPStatusInner = React.memo(function MCPStatusInner() {
   const [connectedServers, setConnectedServers] = useState<string[]>([]);
   // Track available tools for potential future UI display
   const [, setAvailableTools] = useState<MCPTool[]>([]);
+  const [hasError, setHasError] = useState(false);
 
   // Use refs to cache previous values and avoid unnecessary state updates
   const prevServersRef = useRef<string>("");
@@ -34,8 +36,15 @@ export const MCPStatus = React.memo(function MCPStatusInner() {
           prevToolsRef.current = toolsStr;
           setAvailableTools(tools);
         }
-      } catch (_error) {
-        // MCP manager not initialized yet
+
+        // Clear error state if successful
+        if (hasError) {
+          setHasError(false);
+        }
+      } catch (error) {
+        // MCP manager error - log and set error state
+        console.error('MCP status update error:', error);
+        setHasError(true);
         if (prevServersRef.current !== "[]") {
           prevServersRef.current = "[]";
           setConnectedServers([]);
@@ -54,7 +63,15 @@ export const MCPStatus = React.memo(function MCPStatusInner() {
       clearTimeout(initialTimer);
       clearInterval(interval);
     };
-  }, []);
+  }, [hasError]);
+
+  if (hasError) {
+    return (
+      <Box marginLeft={1}>
+        <Text color="yellow">⚠ MCP error</Text>
+      </Box>
+    );
+  }
 
   if (connectedServers.length === 0) {
     return null;
@@ -66,3 +83,17 @@ export const MCPStatus = React.memo(function MCPStatusInner() {
     </Box>
   );
 });
+
+// Export wrapped version with ErrorBoundary
+export const MCPStatus = () => (
+  <ErrorBoundary
+    fallback={
+      <Box marginLeft={1}>
+        <Text color="yellow">⚠ MCP unavailable</Text>
+      </Box>
+    }
+    showDetails={false}
+  >
+    <MCPStatusInner />
+  </ErrorBoundary>
+);

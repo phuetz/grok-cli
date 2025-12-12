@@ -22,6 +22,9 @@ export {
 export { testResultsRenderer } from './test-results-renderer.js';
 export { weatherRenderer } from './weather-renderer.js';
 export { codeStructureRenderer } from './code-structure-renderer.js';
+export { diffRenderer } from './diff-renderer.js';
+export { tableRenderer } from './table-renderer.js';
+export { treeRenderer } from './tree-renderer.js';
 
 // ============================================================================
 // Auto-Registration
@@ -31,6 +34,9 @@ import { getRenderManager } from './render-manager.js';
 import { testResultsRenderer } from './test-results-renderer.js';
 import { weatherRenderer } from './weather-renderer.js';
 import { codeStructureRenderer } from './code-structure-renderer.js';
+import { diffRenderer } from './diff-renderer.js';
+import { tableRenderer } from './table-renderer.js';
+import { treeRenderer } from './tree-renderer.js';
 
 /**
  * Initialize the render system with all built-in renderers
@@ -43,11 +49,9 @@ export function initializeRenderers(): void {
   manager.register(testResultsRenderer);
   manager.register(weatherRenderer);
   manager.register(codeStructureRenderer);
-
-  // Future renderers can be added here:
-  // manager.register(diffRenderer);
-  // manager.register(tableRenderer);
-  // manager.register(treeRenderer);
+  manager.register(diffRenderer);
+  manager.register(tableRenderer);
+  manager.register(treeRenderer);
 }
 
 /**
