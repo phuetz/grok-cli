@@ -16,6 +16,8 @@ import {
   DEFAULT_AVATARS,
 } from './theme.js';
 import { BUILTIN_THEMES, DEFAULT_THEME } from './default-themes.js';
+import { themeSchema, themePreferencesSchema } from './theme-schema.js';
+import { ZodError } from 'zod';
 
 /**
  * Singleton manager for themes and avatars
@@ -88,15 +90,23 @@ export class ThemeManager {
           try {
             const filePath = path.join(this.themesDir, file);
             const content = fs.readFileSync(filePath, 'utf-8');
-            const theme = JSON.parse(content) as Theme;
+            const parsed = JSON.parse(content);
 
-            // Validate theme has required fields
-            if (theme.id && theme.name && theme.colors) {
+            // Validate theme structure with Zod
+            const validationResult = themeSchema.safeParse(parsed);
+            if (validationResult.success) {
+              const theme = validationResult.data as Theme;
               theme.isBuiltin = false;
               this.themes.set(theme.id, theme);
+            } else {
+              console.warn(`Invalid theme in ${file}:`, validationResult.error.errors.map(e => e.message).join(', '));
             }
-          } catch (_error) {
-            console.warn(`Failed to load theme from ${file}`);
+          } catch (error) {
+            if (error instanceof SyntaxError) {
+              console.warn(`Invalid JSON in theme file ${file}`);
+            } else {
+              console.warn(`Failed to load theme from ${file}`);
+            }
           }
         }
       }
@@ -115,7 +125,16 @@ export class ThemeManager {
       }
 
       const content = fs.readFileSync(this.preferencesPath, 'utf-8');
-      const preferences = JSON.parse(content) as ThemePreferences;
+      const parsed = JSON.parse(content);
+
+      // Validate preferences structure with Zod
+      const validationResult = themePreferencesSchema.safeParse(parsed);
+      if (!validationResult.success) {
+        console.warn('Invalid theme preferences:', validationResult.error.errors.map(e => e.message).join(', '));
+        return;
+      }
+
+      const preferences = validationResult.data as ThemePreferences;
 
       // Set active theme
       if (preferences.activeTheme && this.themes.has(preferences.activeTheme)) {
@@ -131,8 +150,11 @@ export class ThemeManager {
       if (preferences.customColors) {
         this.customColors = preferences.customColors;
       }
-    } catch (_error) {
-      // Silently ignore, use defaults
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.warn('Invalid JSON in theme preferences file');
+      }
+      // Silently ignore other errors, use defaults
     }
   }
 
@@ -383,12 +405,16 @@ export class ThemeManager {
    */
   public importTheme(jsonString: string): Theme | null {
     try {
-      const theme = JSON.parse(jsonString) as Theme;
+      const parsed = JSON.parse(jsonString);
 
-      // Validate required fields
-      if (!theme.id || !theme.name || !theme.colors) {
+      // Validate theme structure with Zod
+      const validationResult = themeSchema.safeParse(parsed);
+      if (!validationResult.success) {
+        console.warn('Invalid theme:', validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
         return null;
       }
+
+      const theme = validationResult.data as Theme;
 
       // Ensure it's marked as custom
       theme.isBuiltin = false;
@@ -398,7 +424,12 @@ export class ThemeManager {
       this.themes.set(theme.id, theme);
       this.saveCustomTheme(theme);
       return theme;
-    } catch (_error) {
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.warn('Invalid JSON in imported theme');
+      } else {
+        console.warn('Failed to import theme:', error);
+      }
       return null;
     }
   }

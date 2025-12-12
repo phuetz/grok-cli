@@ -6,10 +6,13 @@ import { MarkdownRenderer } from "../utils/markdown-renderer.js";
 import { useTheme } from "../context/theme-context.js";
 import { ThemeColors, AvatarConfig } from "../../themes/theme.js";
 import { getRenderManager, isTestResultsData, isWeatherData, isCodeStructureData } from "../../renderers/index.js";
+import { ErrorBoundary } from "./error-boundary.js";
 
 interface ChatHistoryProps {
   entries: ChatEntry[];
   isConfirmationActive?: boolean;
+  /** Maximum number of messages to display (default: 50) */
+  maxMessages?: number;
 }
 
 interface MemoizedChatEntryProps {
@@ -34,12 +37,24 @@ function tryRenderStructuredData(content: string): string | null {
 
     // Check if it's a known structured data type
     if (isTestResultsData(parsed) || isWeatherData(parsed) || isCodeStructureData(parsed)) {
-      return manager.render(parsed);
+      try {
+        return manager.render(parsed);
+      } catch (renderError) {
+        // Render error - return error message instead of crashing
+        console.error('Error rendering structured data:', renderError);
+        return '⚠ Error rendering structured output';
+      }
     }
 
     // Check if manager can render it (generic check)
     if (manager.canRender(parsed)) {
-      return manager.render(parsed);
+      try {
+        return manager.render(parsed);
+      } catch (renderError) {
+        // Render error - return error message instead of crashing
+        console.error('Error rendering data:', renderError);
+        return '⚠ Error rendering output';
+      }
     }
   } catch {
     // Not JSON, not structured data
@@ -51,14 +66,22 @@ function tryRenderStructuredData(content: string): string | null {
  * Component to render structured output with proper line handling
  */
 function StructuredContent({ content, color }: { content: string; color?: string }) {
-  const lines = content.split('\n');
-  return (
-    <Box flexDirection="column">
-      {lines.map((line, idx) => (
-        <Text key={idx} color={color}>{line}</Text>
-      ))}
-    </Box>
-  );
+  try {
+    const lines = content.split('\n');
+    return (
+      <Box flexDirection="column">
+        {lines.map((line, idx) => (
+          <Text key={idx} color={color}>{line}</Text>
+        ))}
+      </Box>
+    );
+  } catch (error) {
+    return (
+      <Text color="yellow">
+        ⚠ Error rendering structured content
+      </Text>
+    );
+  }
 }
 
 // Memoized ChatEntry component to prevent unnecessary re-renders
@@ -66,37 +89,52 @@ const MemoizedChatEntry = React.memo(
   ({ entry, index, colors, avatars }: MemoizedChatEntryProps) => {
     const renderDiff = (diffContent: string, filename?: string) => {
       return (
-        <DiffRenderer
-          diffContent={diffContent}
-          filename={filename}
-          terminalWidth={80}
-        />
+        <ErrorBoundary
+          fallback={
+            <Text color="yellow">⚠ Error rendering diff (content too large or invalid format)</Text>
+          }
+          showDetails={false}
+        >
+          <DiffRenderer
+            diffContent={diffContent}
+            filename={filename}
+            terminalWidth={80}
+          />
+        </ErrorBoundary>
       );
     };
 
     const renderFileContent = (content: string) => {
-      const lines = content.split("\n");
+      try {
+        const lines = content.split("\n");
 
-      // Calculate minimum indentation like DiffRenderer does
-      let baseIndentation = Infinity;
-      for (const line of lines) {
-        if (line.trim() === "") continue;
-        const firstCharIndex = line.search(/\S/);
-        const currentIndent = firstCharIndex === -1 ? 0 : firstCharIndex;
-        baseIndentation = Math.min(baseIndentation, currentIndent);
-      }
-      if (!isFinite(baseIndentation)) {
-        baseIndentation = 0;
-      }
+        // Calculate minimum indentation like DiffRenderer does
+        let baseIndentation = Infinity;
+        for (const line of lines) {
+          if (line.trim() === "") continue;
+          const firstCharIndex = line.search(/\S/);
+          const currentIndent = firstCharIndex === -1 ? 0 : firstCharIndex;
+          baseIndentation = Math.min(baseIndentation, currentIndent);
+        }
+        if (!isFinite(baseIndentation)) {
+          baseIndentation = 0;
+        }
 
-      return lines.map((line, index) => {
-        const displayContent = line.substring(baseIndentation);
+        return lines.map((line, index) => {
+          const displayContent = line.substring(baseIndentation);
+          return (
+            <Text key={index} color="gray">
+              {displayContent}
+            </Text>
+          );
+        });
+      } catch (error) {
         return (
-          <Text key={index} color="gray">
-            {displayContent}
+          <Text color="yellow">
+            ⚠ Error rendering file content (file too large or invalid format)
           </Text>
         );
-      });
+      }
     };
 
     switch (entry.type) {
@@ -187,29 +225,35 @@ const MemoizedChatEntry = React.memo(
         
         // Format JSON content for better readability
         const formatToolContent = (content: string, toolName: string): { text: string; isStructured: boolean } => {
-          // First, try to render as structured data
-          const structuredOutput = tryRenderStructuredData(content);
-          if (structuredOutput) {
-            return { text: structuredOutput, isStructured: true };
-          }
-
-          if (toolName.startsWith("mcp__")) {
-            try {
-              // Try to parse as JSON and format it
-              const parsed = JSON.parse(content);
-              if (Array.isArray(parsed)) {
-                // For arrays, show a summary instead of full JSON
-                return { text: `Found ${parsed.length} items`, isStructured: false };
-              } else if (typeof parsed === 'object') {
-                // For objects, show a formatted version
-                return { text: JSON.stringify(parsed, null, 2), isStructured: false };
-              }
-            } catch {
-              // If not JSON, return as is
-              return { text: content, isStructured: false };
+          try {
+            // First, try to render as structured data
+            const structuredOutput = tryRenderStructuredData(content);
+            if (structuredOutput) {
+              return { text: structuredOutput, isStructured: true };
             }
+
+            if (toolName.startsWith("mcp__")) {
+              try {
+                // Try to parse as JSON and format it
+                const parsed = JSON.parse(content);
+                if (Array.isArray(parsed)) {
+                  // For arrays, show a summary instead of full JSON
+                  return { text: `Found ${parsed.length} items`, isStructured: false };
+                } else if (typeof parsed === 'object') {
+                  // For objects, show a formatted version
+                  return { text: JSON.stringify(parsed, null, 2), isStructured: false };
+                }
+              } catch {
+                // If not JSON, return as is
+                return { text: content, isStructured: false };
+              }
+            }
+            return { text: content, isStructured: false };
+          } catch (error) {
+            // Fallback for any unexpected errors
+            console.error('Error formatting tool content:', error);
+            return { text: '⚠ Error formatting tool output', isStructured: false };
           }
-          return { text: content, isStructured: false };
         };
         const shouldShowDiff =
           entry.toolCall?.function?.name === "str_replace_editor" &&
@@ -250,12 +294,19 @@ const MemoizedChatEntry = React.memo(
                 const formatted = formatToolContent(entry.content, toolName);
                 if (formatted.isStructured) {
                   return (
-                    <Box flexDirection="column">
-                      <Text color={colors.toolResult}>⎿ Structured output:</Text>
-                      <Box marginLeft={2}>
-                        <StructuredContent content={formatted.text} />
+                    <ErrorBoundary
+                      fallback={
+                        <Text color="yellow">⎿ ⚠ Error displaying structured output</Text>
+                      }
+                      showDetails={false}
+                    >
+                      <Box flexDirection="column">
+                        <Text color={colors.toolResult}>⎿ Structured output:</Text>
+                        <Box marginLeft={2}>
+                          <StructuredContent content={formatted.text} />
+                        </Box>
                       </Box>
-                    </Box>
+                    </ErrorBoundary>
                   );
                 }
                 return <Text color={colors.toolResult}>⎿ {formatted.text}</Text>;
@@ -280,10 +331,12 @@ MemoizedChatEntry.displayName = "MemoizedChatEntry";
 export function ChatHistory({
   entries,
   isConfirmationActive = false,
+  maxMessages = 50,
 }: ChatHistoryProps) {
   const { colors, avatars } = useTheme();
 
   // Filter out tool_call entries with "Executing..." when confirmation is active
+  // Apply windowing to prevent performance issues with very long conversations
   const filteredEntries = useMemo(() => {
     const filtered = isConfirmationActive
       ? entries.filter(
@@ -291,8 +344,30 @@ export function ChatHistory({
             !(entry.type === "tool_call" && entry.content === "Executing...")
         )
       : entries;
-    return filtered.slice(-20);
-  }, [entries, isConfirmationActive]);
+
+    // Windowing: Only show the most recent N messages
+    // This prevents performance degradation in very long conversations
+    const windowSize = Math.max(10, Math.min(maxMessages, 100)); // Clamp between 10-100
+
+    if (filtered.length > windowSize) {
+      // Show truncation indicator for long conversations
+      const truncatedCount = filtered.length - windowSize;
+      console.log(`[ChatHistory] Showing ${windowSize} most recent messages (${truncatedCount} older messages hidden)`);
+    }
+
+    return filtered.slice(-windowSize);
+  }, [entries, isConfirmationActive, maxMessages]);
+
+  // Calculate truncation info
+  const truncatedCount = useMemo(() => {
+    const totalFiltered = isConfirmationActive
+      ? entries.filter(
+          (entry) =>
+            !(entry.type === "tool_call" && entry.content === "Executing...")
+        ).length
+      : entries.length;
+    return Math.max(0, totalFiltered - filteredEntries.length);
+  }, [entries, filteredEntries, isConfirmationActive]);
 
   // Separate completed (static) entries from streaming (dynamic) entries
   // Static entries use Ink's Static component - they render once and never re-render
@@ -322,6 +397,15 @@ export function ChatHistory({
 
   return (
     <Box flexDirection="column">
+      {/* Truncation indicator for long conversations */}
+      {truncatedCount > 0 && (
+        <Box marginBottom={1}>
+          <Text color="gray" dimColor>
+            ··· {truncatedCount} older message{truncatedCount !== 1 ? 's' : ''} hidden (showing most recent {filteredEntries.length})
+          </Text>
+        </Box>
+      )}
+
       {/* Static component renders items once and never re-renders them */}
       {/* This prevents flickering for completed messages */}
       <Static items={staticEntries}>
