@@ -442,7 +442,38 @@ program
     "--list-prompts",
     "list available system prompts and exit"
   )
+  .option(
+    "--agent <name>",
+    "use a custom agent configuration from ~/.grok/agents/ (like mistral-vibe)"
+  )
+  .option(
+    "--list-agents",
+    "list available custom agents and exit"
+  )
+  .option(
+    "--enabled-tools <patterns>",
+    "only enable tools matching patterns (comma-separated, supports glob: bash,*file*,search)"
+  )
+  .option(
+    "--disabled-tools <patterns>",
+    "disable tools matching patterns (comma-separated, supports glob: bash,web_*)"
+  )
+  .option(
+    "--setup",
+    "run interactive setup wizard for API key and configuration"
+  )
+  .option(
+    "--vim",
+    "enable Vim keybindings for input"
+  )
   .action(async (message, options) => {
+    // Handle --setup flag (interactive setup wizard)
+    if (options.setup) {
+      const { runSetup } = await import("./utils/interactive-setup.js");
+      await runSetup();
+      process.exit(0);
+    }
+
     // Handle --init flag
     if (options.init) {
       const { initGrokProject, formatInitResult } = await lazyImport.initProject();
@@ -504,6 +535,33 @@ program
       process.exit(0);
     }
 
+    // Handle --list-agents flag
+    if (options.listAgents) {
+      const { getCustomAgentLoader } = await import("./agents/custom-agent-loader.js");
+      const loader = getCustomAgentLoader();
+      const agents = loader.listAgents();
+
+      console.log("📋 Available custom agents:\n");
+
+      if (agents.length === 0) {
+        console.log("  (no custom agents found)");
+        console.log("\n💡 Create agents in ~/.grok/agents/");
+        console.log("   Example: ~/.grok/agents/_example.toml");
+      } else {
+        agents.forEach(agent => {
+          const tags = agent.tags?.length ? ` [${agent.tags.join(', ')}]` : '';
+          console.log(`  • ${agent.id}: ${agent.name}${tags}`);
+          if (agent.description) {
+            console.log(`      ${agent.description}`);
+          }
+        });
+        console.log(`\n  Total: ${agents.length} agent(s)`);
+      }
+
+      console.log("\n💡 Usage: grok --agent <id>");
+      process.exit(0);
+    }
+
     // Handle --continue flag (resume last session, like mistral-vibe)
     if (options.continue) {
       const { getSessionStore } = await import("./persistence/session-store.js");
@@ -558,7 +616,7 @@ program
       // Get API key from options, environment, or user settings
       const apiKey = options.apiKey || loadApiKey();
       const baseURL = options.baseUrl || loadBaseURL();
-      const model = options.model || loadModel();
+      let model = options.model || loadModel();  // let: can be overridden by --agent
       const maxToolRounds = parseInt(options.maxToolRounds) || 400;
 
       if (!apiKey) {
@@ -591,10 +649,49 @@ program
       const maxPrice = parseFloat(options.maxPrice) || 10.0;
       process.env.MAX_COST = maxPrice.toString();
 
-      // Headless mode: process prompt and exit
-      if (options.prompt) {
+      // Handle tool filtering (like mistral-vibe --enabled-tools)
+      if (options.enabledTools || options.disabledTools) {
+        const { setToolFilter, createToolFilter, formatFilterResult, filterTools } = await import("./utils/tool-filter.js");
+        const { GROK_TOOLS } = await import("./grok/tools.js");
+
+        const filter = createToolFilter({
+          enabledTools: options.enabledTools,
+          disabledTools: options.disabledTools,
+        });
+        setToolFilter(filter);
+
+        const result = filterTools(GROK_TOOLS, filter);
+        console.log(formatFilterResult(result));
+      }
+
+      // Handle vim mode
+      if (options.vim) {
+        process.env.GROK_VIM_MODE = 'true';
+        console.log("Vim mode: ENABLED");
+      }
+
+      // Check for piped input (like mistral-vibe: cat file.txt | grok)
+      let pipedInput = '';
+      if (!process.stdin.isTTY) {
+        // Reading from stdin (pipe or redirect)
+        const chunks: Buffer[] = [];
+        for await (const chunk of process.stdin) {
+          chunks.push(chunk);
+        }
+        pipedInput = Buffer.concat(chunks).toString('utf-8').trim();
+      }
+
+      // Combine piped input with any CLI prompt or message args
+      const combinedPrompt = [
+        options.prompt,
+        message?.join(' '),
+        pipedInput
+      ].filter(Boolean).join('\n\n');
+
+      // Headless mode: process prompt and exit (if prompt, message, or piped input provided)
+      if (combinedPrompt && (options.prompt || pipedInput)) {
         await processPromptHeadless(
-          options.prompt,
+          combinedPrompt,
           apiKey,
           baseURL,
           model,
@@ -615,8 +712,40 @@ program
 
       // Interactive mode: launch UI (lazy load heavy modules)
       const GrokAgent = await lazyImport.GrokAgent();
-      const systemPromptId = options.systemPrompt;  // New: external prompt support
+      let systemPromptId = options.systemPrompt;  // New: external prompt support
+      let customAgentConfig = null;
+
+      // Handle --agent flag: load custom agent configuration
+      if (options.agent) {
+        const { getCustomAgentLoader } = await import("./agents/custom-agent-loader.js");
+        const loader = getCustomAgentLoader();
+        const agentConfig = loader.getAgent(options.agent);
+
+        if (!agentConfig) {
+          console.error(`❌ Agent not found: ${options.agent}`);
+          const agents = loader.listAgents();
+          if (agents.length > 0) {
+            console.log("\n📋 Available agents:");
+            agents.forEach(a => console.log(`   • ${a.id}`));
+          }
+          process.exit(1);
+        }
+
+        customAgentConfig = agentConfig;
+        console.log(`🤖 Using agent: ${agentConfig.name}`);
+
+        // Override model if specified in agent config
+        if (agentConfig.model) {
+          model = agentConfig.model;
+        }
+      }
+
       const agent = new GrokAgent(apiKey, baseURL, model, maxToolRounds, true, systemPromptId);
+
+      // Apply custom agent system prompt if configured
+      if (customAgentConfig?.systemPrompt) {
+        agent.setSystemPrompt(customAgentConfig.systemPrompt);
+      }
 
       // Probe for tool support if requested
       if (options.probeTools) {

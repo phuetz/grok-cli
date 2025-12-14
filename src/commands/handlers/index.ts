@@ -85,5 +85,14 @@ export {
   checkAgentTriggers,
 } from './agent-handlers.js';
 
+// Vibe handlers (Mistral Vibe-inspired)
+export {
+  handleReload,
+  handleLog,
+  handleCompact,
+  handleTools,
+  handleVimMode,
+} from './vibe-handlers.js';
+
 // Re-export CommandHandlerResult type
 export type { CommandHandlerResult } from './branch-handlers.js';

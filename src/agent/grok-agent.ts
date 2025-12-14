@@ -1605,6 +1605,36 @@ export class GrokAgent extends EventEmitter {
   }
 
   /**
+   * Set a custom system prompt (for custom agents)
+   *
+   * This replaces the current system prompt with a custom one.
+   * Used by --agent flag to load custom agent configurations.
+   *
+   * @param prompt - The custom system prompt content
+   */
+  setSystemPrompt(prompt: string): void {
+    // Find and update the system message
+    const systemMessageIndex = this.messages.findIndex(m => m.role === 'system');
+    if (systemMessageIndex >= 0) {
+      this.messages[systemMessageIndex].content = prompt;
+    } else {
+      // Add system message if none exists
+      this.messages.unshift({
+        role: 'system',
+        content: prompt,
+      });
+    }
+  }
+
+  /**
+   * Get the current system prompt
+   */
+  getSystemPrompt(): string | null {
+    const systemMessage = this.messages.find(m => m.role === 'system');
+    return systemMessage?.content as string || null;
+  }
+
+  /**
    * Check if parallel tool execution is enabled
    */
   isParallelToolExecutionEnabled(): boolean {

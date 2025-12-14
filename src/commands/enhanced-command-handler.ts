@@ -53,6 +53,12 @@ import {
   handleSessions,
   // Agent handlers
   handleAgent,
+  // Vibe handlers
+  handleReload,
+  handleLog,
+  handleCompact,
+  handleTools,
+  handleVimMode,
   // Type
   CommandHandlerResult,
 } from "./handlers/index.js";
@@ -210,6 +216,22 @@ export class EnhancedCommandHandler {
       // Custom Agents
       case "__AGENT__":
         return handleAgent(args);
+
+      // Vibe-inspired commands
+      case "__RELOAD__":
+        return handleReload();
+
+      case "__LOG__":
+        return handleLog();
+
+      case "__COMPACT__":
+        return handleCompact(args, this.conversationHistory);
+
+      case "__TOOLS__":
+        return handleTools(args);
+
+      case "__VIM_MODE__":
+        return handleVimMode(args);
 
       default:
         return { handled: false };

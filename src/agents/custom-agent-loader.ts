@@ -12,8 +12,8 @@
 
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 import TOML from '@iarna/toml';
+import { getAgentsDir } from '../utils/grok-home.js';
 
 // ============================================================================
 // Types
@@ -67,7 +67,8 @@ export interface CustomAgentFile {
 // Constants
 // ============================================================================
 
-const AGENTS_DIR = path.join(os.homedir(), '.grok', 'agents');
+// Use GROK_HOME/agents/ directory (supports GROK_HOME env var)
+const AGENTS_DIR = getAgentsDir();
 
 const EXAMPLE_AGENT_TOML = `# Example Custom Agent Configuration
 # Place this file in ~/.grok/agents/

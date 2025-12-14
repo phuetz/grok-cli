@@ -672,6 +672,50 @@ Be systematic and thorough in your analysis.`,
         arguments: [
           { name: 'action', description: 'list, <id>, create <name>, info <id>, reload', required: false }
         ]
+      },
+      // ==========================================
+      // Mistral Vibe-inspired Commands
+      // ==========================================
+      {
+        name: 'reload',
+        description: 'Reload configuration without restarting',
+        prompt: '__RELOAD__',
+        filePath: '',
+        isBuiltin: true
+      },
+      {
+        name: 'log',
+        description: 'Show log file path and information',
+        prompt: '__LOG__',
+        filePath: '',
+        isBuiltin: true
+      },
+      {
+        name: 'compact',
+        description: 'Compact/summarize conversation history to free up context',
+        prompt: '__COMPACT__',
+        filePath: '',
+        isBuiltin: true
+      },
+      {
+        name: 'tools',
+        description: 'List and filter available tools',
+        prompt: '__TOOLS__',
+        filePath: '',
+        isBuiltin: true,
+        arguments: [
+          { name: 'action', description: 'list, filter <pattern>, reset', required: false }
+        ]
+      },
+      {
+        name: 'vim',
+        description: 'Toggle Vim keybindings mode',
+        prompt: '__VIM_MODE__',
+        filePath: '',
+        isBuiltin: true,
+        arguments: [
+          { name: 'action', description: 'on, off, status', required: false }
+        ]
       }
     ];
 
