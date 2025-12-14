@@ -97,7 +97,7 @@ export function createBuiltins(config: GrokScriptConfig, print: PrintFn): Builti
   builtins.push = (arr: GrokValue, ...items: GrokValue[]) => {
     if (Array.isArray(arr)) {
       arr.push(...items);
-      return arr.length;
+      return arr; // Return array for chaining
     }
     throw new Error('push requires an array');
   };
