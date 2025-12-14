@@ -123,7 +123,10 @@ describe('BashTool', () => {
     it('should allow grep command', async () => {
       const result = await bashTool.execute('grep -r "test" .');
       // May succeed or fail depending on matches, but shouldn't be blocked
-      expect(result.error).not.toContain('blocked');
+      // If there's an error, it shouldn't be because it was blocked
+      if (result.error) {
+        expect(result.error).not.toContain('blocked');
+      }
     });
   });
 

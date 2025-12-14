@@ -130,7 +130,9 @@ export class BashTool {
       };
 
       const spawnOptions: SpawnOptions = {
-        shell: true,
+        // IMPORTANT: shell must be false when using bash -c
+        // Using shell: true with bash -c creates double-shell that breaks commands
+        shell: false,
         cwd: options.cwd,
         env: controlledEnv,
         // Process group isolation on Unix (allows killing entire process tree)
