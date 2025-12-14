@@ -51,6 +51,8 @@ import {
   handleExportFormats,
   // Session handlers
   handleSessions,
+  // Agent handlers
+  handleAgent,
   // Type
   CommandHandlerResult,
 } from "./handlers/index.js";
@@ -204,6 +206,10 @@ export class EnhancedCommandHandler {
       // Sessions
       case "__SESSIONS__":
         return handleSessions(args);
+
+      // Custom Agents
+      case "__AGENT__":
+        return handleAgent(args);
 
       default:
         return { handled: false };

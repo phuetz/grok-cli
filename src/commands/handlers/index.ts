@@ -79,5 +79,11 @@ export {
   handleSessions,
 } from './session-handlers.js';
 
+// Agent handlers
+export {
+  handleAgent,
+  checkAgentTriggers,
+} from './agent-handlers.js';
+
 // Re-export CommandHandlerResult type
 export type { CommandHandlerResult } from './branch-handlers.js';

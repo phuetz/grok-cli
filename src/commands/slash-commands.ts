@@ -659,6 +659,19 @@ Be systematic and thorough in your analysis.`,
           { name: 'action', description: 'analyze <path>, security, review, refactor, plan, architecture', required: false },
           { name: 'mode', description: 'Mode: analyze-only, suggest, plan, diff', required: false }
         ]
+      },
+      // ==========================================
+      // Custom Agents (Mistral Vibe-style)
+      // ==========================================
+      {
+        name: 'agent',
+        description: 'Manage and activate custom agents',
+        prompt: '__AGENT__',
+        filePath: '',
+        isBuiltin: true,
+        arguments: [
+          { name: 'action', description: 'list, <id>, create <name>, info <id>, reload', required: false }
+        ]
       }
     ];
 

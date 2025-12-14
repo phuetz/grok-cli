@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useInput } from "ink";
+import fs from "fs";
+import path from "path";
 import { GrokAgent, ChatEntry } from "../agent/grok-agent.js";
 import { ConfirmationService } from "../utils/confirmation-service.js";
 import { useEnhancedInput, Key } from "./use-enhanced-input.js";
@@ -17,6 +19,9 @@ import { initGrokProject, formatInitResult } from "../utils/init-project.js";
 import { getBackgroundTaskManager } from "../tasks/background-tasks.js";
 import { getEnhancedCommandHandler } from "../commands/enhanced-command-handler.js";
 import { getTTSManager } from "../input/text-to-speech.js";
+
+// Import file autocomplete
+import { extractFileReference, getFileSuggestions, FileSuggestion } from "../ui/components/file-autocomplete.js";
 
 interface UseInputHandlerProps {
   agent: GrokAgent;
@@ -58,6 +63,9 @@ export function useInputHandler({
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
   const [showModelSelection, setShowModelSelection] = useState(false);
   const [selectedModelIndex, setSelectedModelIndex] = useState(0);
+  const [showFileAutocomplete, setShowFileAutocomplete] = useState(false);
+  const [selectedFileIndex, setSelectedFileIndex] = useState(0);
+  const [fileSuggestions, setFileSuggestions] = useState<FileSuggestion[]>([]);
   const [autoEditEnabled, setAutoEditEnabled] = useState(() => {
     const confirmationService = ConfirmationService.getInstance();
     const sessionFlags = confirmationService.getSessionFlags();
@@ -199,6 +207,56 @@ export function useInputHandler({
       }
     }
 
+    // Handle file autocomplete navigation (@ file references)
+    if (showFileAutocomplete && fileSuggestions.length > 0) {
+      if (key.upArrow) {
+        setSelectedFileIndex((prev) =>
+          prev === 0 ? fileSuggestions.length - 1 : prev - 1
+        );
+        return true;
+      }
+      if (key.downArrow) {
+        setSelectedFileIndex((prev) => (prev + 1) % fileSuggestions.length);
+        return true;
+      }
+      if (key.tab || key.return) {
+        const selectedFile = fileSuggestions[selectedFileIndex];
+        const { startPos } = extractFileReference(input);
+
+        if (startPos >= 0) {
+          // Replace the @ reference with the selected file path
+          const beforeAt = input.slice(0, startPos);
+          const filePath = selectedFile.isDirectory
+            ? `@${selectedFile.path}/`
+            : `@${selectedFile.path}`;
+          const newInput = beforeAt + filePath + (selectedFile.isDirectory ? '' : ' ');
+
+          setInput(newInput);
+          setCursorPosition(newInput.length);
+          setShowFileAutocomplete(false);
+          setSelectedFileIndex(0);
+
+          // If it's a directory and Enter was pressed, refresh suggestions
+          if (selectedFile.isDirectory && key.return) {
+            // Keep autocomplete open for directory navigation
+            setTimeout(() => {
+              const newSuggestions = getFileSuggestions(selectedFile.path + '/');
+              setFileSuggestions(newSuggestions.slice(0, 8));
+              if (newSuggestions.length > 0) {
+                setShowFileAutocomplete(true);
+              }
+            }, 0);
+          }
+        }
+        return true;
+      }
+      if (key.escape) {
+        setShowFileAutocomplete(false);
+        setSelectedFileIndex(0);
+        return true;
+      }
+    }
+
     return false; // Let default handling proceed
   };
 
@@ -209,14 +267,138 @@ export function useInputHandler({
     }
 
     if (userInput.trim()) {
+      // Handle ! shell bypass prefix - execute command directly without AI
+      if (userInput.startsWith("!")) {
+        await handleShellBypass(userInput.slice(1).trim());
+        return;
+      }
+
       // For slash commands, handleDirectCommand handles clearInput
       // For regular messages, we need to handle it here
       if (userInput.startsWith("/")) {
         await handleDirectCommand(userInput);
       } else {
-        await processUserMessage(userInput);
+        // Process @ file references before sending to AI
+        const processedInput = await processFileReferences(userInput);
+        await processUserMessage(processedInput);
       }
     }
+  };
+
+  /**
+   * Handle ! shell bypass - execute shell command directly without AI
+   */
+  const handleShellBypass = async (command: string) => {
+    if (!command) {
+      const errorEntry: ChatEntry = {
+        type: "assistant",
+        content: "Usage: !<command> - Execute shell command directly\nExample: !ls -la",
+        timestamp: new Date(),
+      };
+      setChatHistory((prev) => [...prev, errorEntry]);
+      clearInput();
+      return;
+    }
+
+    const userEntry: ChatEntry = {
+      type: "user",
+      content: `!${command}`,
+      timestamp: new Date(),
+    };
+    setChatHistory((prev) => [...prev, userEntry]);
+
+    try {
+      const result = await agent.executeBashCommand(command);
+
+      const commandEntry: ChatEntry = {
+        type: "tool_result",
+        content: result.success
+          ? result.output || "Command completed"
+          : result.error || "Command failed",
+        timestamp: new Date(),
+        toolCall: {
+          id: `shell_bypass_${Date.now()}`,
+          type: "function",
+          function: {
+            name: "bash",
+            arguments: JSON.stringify({ command }),
+          },
+        },
+        toolResult: result,
+      };
+      setChatHistory((prev) => [...prev, commandEntry]);
+    } catch (error) {
+      const errorEntry: ChatEntry = {
+        type: "assistant",
+        content: `Error executing command: ${getErrorMessage(error)}`,
+        timestamp: new Date(),
+      };
+      setChatHistory((prev) => [...prev, errorEntry]);
+    }
+
+    clearInput();
+  };
+
+  /**
+   * Process @ file references in input
+   * Replaces @path with file content or adds context about the file
+   */
+  const processFileReferences = async (input: string): Promise<string> => {
+    // Match @path patterns (not preceded by non-whitespace, not followed by space within the reference)
+    const fileRefPattern = /(?:^|(?<=\s))@([^\s@]+)/g;
+    const matches = [...input.matchAll(fileRefPattern)];
+
+    if (matches.length === 0) {
+      return input;
+    }
+
+    let processedInput = input;
+    const fileContents: string[] = [];
+
+    for (const match of matches) {
+      const filePath = match[1];
+      const fullMatch = match[0];
+
+      try {
+        const resolvedPath = path.isAbsolute(filePath)
+          ? filePath
+          : path.resolve(process.cwd(), filePath);
+
+        if (fs.existsSync(resolvedPath)) {
+          const stats = fs.statSync(resolvedPath);
+
+          if (stats.isDirectory()) {
+            // For directories, list contents
+            const entries = fs.readdirSync(resolvedPath);
+            const listing = entries.slice(0, 50).join('\n');
+            fileContents.push(`📁 Directory: ${filePath}\n${listing}${entries.length > 50 ? '\n... and more files' : ''}`);
+          } else if (stats.isFile()) {
+            // For files, read content (with size limit)
+            const maxSize = 100 * 1024; // 100KB limit
+            if (stats.size > maxSize) {
+              const content = fs.readFileSync(resolvedPath, 'utf-8').slice(0, maxSize);
+              fileContents.push(`📄 File: ${filePath} (truncated to 100KB)\n\`\`\`\n${content}\n\`\`\``);
+            } else {
+              const content = fs.readFileSync(resolvedPath, 'utf-8');
+              const ext = path.extname(filePath).slice(1) || 'txt';
+              fileContents.push(`📄 File: ${filePath}\n\`\`\`${ext}\n${content}\n\`\`\``);
+            }
+          }
+
+          // Remove the @reference from the input text
+          processedInput = processedInput.replace(fullMatch, `[${filePath}]`);
+        }
+      } catch {
+        // File doesn't exist or can't be read - leave the @reference as is
+      }
+    }
+
+    if (fileContents.length > 0) {
+      // Append file contents as context
+      processedInput = `${processedInput}\n\n---\nReferenced files:\n\n${fileContents.join('\n\n')}`;
+    }
+
+    return processedInput;
   };
 
   const handleInputChange = (newInput: string) => {
@@ -224,9 +406,22 @@ export function useInputHandler({
     if (newInput.startsWith("/")) {
       setShowCommandSuggestions(true);
       setSelectedCommandIndex(0);
+      setShowFileAutocomplete(false);
     } else {
       setShowCommandSuggestions(false);
       setSelectedCommandIndex(0);
+
+      // Check for @ file references
+      const { found, partial } = extractFileReference(newInput);
+      if (found) {
+        const suggestions = getFileSuggestions(partial);
+        setFileSuggestions(suggestions.slice(0, 8));
+        setShowFileAutocomplete(suggestions.length > 0);
+        setSelectedFileIndex(0);
+      } else {
+        setShowFileAutocomplete(false);
+        setFileSuggestions([]);
+      }
     }
   };
 
@@ -966,6 +1161,9 @@ Respond with ONLY the commit message, no additional text.`;
     selectedCommandIndex,
     showModelSelection,
     selectedModelIndex,
+    showFileAutocomplete,
+    selectedFileIndex,
+    fileSuggestions,
     commandSuggestions,
     availableModels,
     agent,
