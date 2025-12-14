@@ -25,8 +25,8 @@ function getBuiltinPromptsDir(): string {
   const candidates = [
     // When running from dist/ (ESM production) or local dev
     path.join(process.cwd(), 'prompts'),
-    // npm global install (node_modules/@phuetz/grok-cli/prompts)
-    path.join(process.execPath, '..', '..', 'lib', 'node_modules', '@phuetz', 'grok-cli', 'prompts'),
+    // npm global install (node_modules/@phuetz/code-buddy/prompts)
+    path.join(process.execPath, '..', '..', 'lib', 'node_modules', '@phuetz', 'code-buddy', 'prompts'),
     // Fallback to home directory
     path.join(os.homedir(), '.grok', 'builtin-prompts'),
   ];
