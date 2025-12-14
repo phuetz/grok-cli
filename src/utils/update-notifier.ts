@@ -47,7 +47,7 @@ const CACHE_FILE = join(homedir(), '.grok', 'update-cache.json');
 const DEFAULT_CONFIG: UpdateNotifierConfig = {
   enabled: true,
   checkIntervalHours: 24,
-  packageName: '@phuetz/grok-cli',
+  packageName: '@phuetz/code-buddy',
   registryUrl: 'https://registry.npmjs.org',
 };
 
@@ -66,14 +66,14 @@ function getCurrentVersion(): string {
     const possiblePaths = [
       // Local development or npx
       join(process.cwd(), 'package.json'),
-      // npm global install (node_modules/@phuetz/grok-cli/package.json)
-      join(process.execPath, '..', '..', 'lib', 'node_modules', '@phuetz', 'grok-cli', 'package.json'),
+      // npm global install (node_modules/@phuetz/code-buddy/package.json)
+      join(process.execPath, '..', '..', 'lib', 'node_modules', '@phuetz', 'code-buddy', 'package.json'),
     ];
 
     for (const pkgPath of possiblePaths) {
       if (existsSync(pkgPath)) {
         const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { name?: string; version?: string };
-        if (pkg.name?.includes('grok-cli')) {
+        if (pkg.name?.includes('code-buddy')) {
           return pkg.version || '0.0.0';
         }
       }
@@ -235,7 +235,7 @@ export class UpdateNotifier {
       currentVersion,
       latestVersion,
       updateAvailable: compareVersions(currentVersion, latestVersion) < 0,
-      releaseNotesUrl: `https://github.com/phuetz/grok-cli/releases/tag/v${latestVersion}`,
+      releaseNotesUrl: `https://github.com/phuetz/code-buddy/releases/tag/v${latestVersion}`,
       installCommand: `npm update -g ${this.config.packageName}`,
       lastCheck: new Date(),
     };
@@ -266,7 +266,7 @@ export class UpdateNotifier {
       currentVersion,
       latestVersion,
       updateAvailable: compareVersions(currentVersion, latestVersion) < 0,
-      releaseNotesUrl: `https://github.com/phuetz/grok-cli/releases/tag/v${latestVersion}`,
+      releaseNotesUrl: `https://github.com/phuetz/code-buddy/releases/tag/v${latestVersion}`,
       installCommand: `npm update -g ${this.config.packageName}`,
       lastCheck: new Date(),
     };

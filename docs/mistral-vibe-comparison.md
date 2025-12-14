@@ -2,7 +2,7 @@
 
 ## Résumé Exécutif
 
-Cette analyse compare mistral-vibe (CLI de Mistral AI) avec grok-cli pour identifier les fonctionnalités manquantes et les problèmes d'implémentation.
+Cette analyse compare mistral-vibe (CLI de Mistral AI) avec code-buddy pour identifier les fonctionnalités manquantes et les problèmes d'implémentation.
 
 ---
 
@@ -421,4 +421,4 @@ Les priorités d'amélioration devraient être:
 3. Interaction logger avec replay
 4. Amélioration isolation bash
 
-Ces améliorations rendraient grok-cli aussi robuste que mistral-vibe tout en conservant ses avantages (plus d'outils, UI riche, multi-provider).
+Ces améliorations rendraient code-buddy aussi robuste que mistral-vibe tout en conservant ses avantages (plus d'outils, UI riche, multi-provider).

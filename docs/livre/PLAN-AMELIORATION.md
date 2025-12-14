@@ -953,7 +953,7 @@ Le code ne sera plus la seule action :
 #!/bin/bash
 # scripts/generate-pdf.sh
 
-OUTPUT="livre-grok-cli.pdf"
+OUTPUT="livre-code-buddy.pdf"
 CHAPTERS=$(cat << 'EOF'
 00-avant-propos.md
 01-comprendre-les-llms.md
@@ -1037,7 +1037,7 @@ pandoc \
   --toc \
   --toc-depth=2 \
   --css=styles/epub.css \
-  -o livre-grok-cli.epub \
+  -o livre-code-buddy.epub \
   $(cat chapters.txt)
 ```
 
@@ -1266,7 +1266,7 @@ cd docs/livre
 ../../scripts/generate-epub.sh
 
 # Vérifier la taille des fichiers
-ls -lh livre-grok-cli.pdf livre-grok-cli.epub
+ls -lh livre-code-buddy.pdf livre-code-buddy.epub
 
 # Créer le release
 git tag -a v1.0.0 -m "Première version du livre"
@@ -1297,4 +1297,4 @@ git push origin v1.0.0
 ---
 
 *Document généré le 8 décembre 2024*
-*Pour le projet Grok-CLI — github.com/phuetz/grok-cli*
+*Pour le projet Grok-CLI — github.com/phuetz/code-buddy*

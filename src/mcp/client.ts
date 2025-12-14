@@ -48,7 +48,7 @@ export class MCPManager extends EventEmitter {
       // Create client
       const client = new Client(
         {
-          name: "grok-cli",
+          name: "code-buddy",
           version: "1.0.0"
         },
         {

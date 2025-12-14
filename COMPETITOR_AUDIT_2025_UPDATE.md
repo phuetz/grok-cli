@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This updated audit compares grok-cli against the latest features from leading AI CLI tools (Claude Code, Aider, Gemini CLI, Cursor, Warp) as of November 2025. Since the last audit, **grok-cli has implemented 12 of the 15 high-priority improvements** originally identified. This update identifies **18 new improvement opportunities** based on competitor advancements in 2025.
+This updated audit compares code-buddy against the latest features from leading AI CLI tools (Claude Code, Aider, Gemini CLI, Cursor, Warp) as of November 2025. Since the last audit, **code-buddy has implemented 12 of the 15 high-priority improvements** originally identified. This update identifies **18 new improvement opportunities** based on competitor advancements in 2025.
 
 ---
 
@@ -35,7 +35,7 @@ This updated audit compares grok-cli against the latest features from leading AI
 
 ### Current Implementation Strengths
 
-grok-cli now includes:
+code-buddy now includes:
 - **12 tools** (view_file, create_file, str_replace_editor, bash, search, todo, multi_edit, git, interactive_bash, web_search, image)
 - **6 predefined subagents** (code-reviewer, debugger, test-runner, explorer, refactorer, documenter)
 - **4 autonomy levels** (suggest, confirm, auto, full)
@@ -565,7 +565,7 @@ interface GrokPlugin {
 
 ## Updated Competitive Matrix (November 2025)
 
-| Feature | grok-cli | Claude Code | Aider | Gemini CLI | Cursor |
+| Feature | code-buddy | Claude Code | Aider | Gemini CLI | Cursor |
 |---------|----------|-------------|-------|------------|--------|
 | Terminal-native | **YES** | **YES** | **YES** | **YES** | NO |
 | Hooks system | **YES** | **YES** | NO | NO | **YES** |
@@ -627,7 +627,7 @@ interface GrokPlugin {
 
 ## Conclusion
 
-grok-cli has made exceptional progress since the last audit, implementing 12 of 15 high-priority features. The tool is now competitive with or exceeds most alternatives in core functionality.
+code-buddy has made exceptional progress since the last audit, implementing 12 of 15 high-priority features. The tool is now competitive with or exceeds most alternatives in core functionality.
 
 **Key Remaining Gaps**:
 1. **Parallel Execution** - Subagents and tools run sequentially
@@ -636,7 +636,7 @@ grok-cli has made exceptional progress since the last audit, implementing 12 of 
 4. **Skills System** - No auto-activating specialized abilities
 5. **Multi-Model Routing** - Single model per session
 
-**Competitive Position**: grok-cli is now a **Tier 1** AI CLI tool, comparable to Claude Code and ahead of most alternatives. Implementing Phase 1-2 features would establish clear market leadership.
+**Competitive Position**: code-buddy is now a **Tier 1** AI CLI tool, comparable to Claude Code and ahead of most alternatives. Implementing Phase 1-2 features would establish clear market leadership.
 
 ---
 

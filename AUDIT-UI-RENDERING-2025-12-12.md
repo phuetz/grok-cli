@@ -1257,7 +1257,7 @@ describe('ErrorBoundary', () => {
 
 ### Statut Global : ✅ **EXCELLENT - PRÊT POUR PRODUCTION**
 
-Le système UI/Rendering de grok-cli est **architecturalement solide** et **bien implémenté**. L'utilisation de React 18 + Ink 4 est appropriée pour un CLI moderne.
+Le système UI/Rendering de code-buddy est **architecturalement solide** et **bien implémenté**. L'utilisation de React 18 + Ink 4 est appropriée pour un CLI moderne.
 
 ### Points Forts Majeurs
 
@@ -1282,7 +1282,7 @@ Le système UI/Rendering de grok-cli est **architecturalement solide** et **bien
 
 **Score : 9.0/10** ⭐⭐⭐⭐⭐
 
-L'interface utilisateur de grok-cli est **prête pour production** avec quelques améliorations mineures recommandées. Le système de rendu est **robuste**, **extensible**, et **performant**.
+L'interface utilisateur de code-buddy est **prête pour production** avec quelques améliorations mineures recommandées. Le système de rendu est **robuste**, **extensible**, et **performant**.
 
 ---
 

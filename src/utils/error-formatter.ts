@@ -41,7 +41,7 @@ export const ERROR_TEMPLATES = {
     code: "API_KEY_MISSING",
     message: "API key is not configured",
     suggestion: "Run `grok config --set-api-key YOUR_KEY` or set GROK_API_KEY environment variable",
-    docUrl: "https://github.com/phuetz/grok-cli#configuration",
+    docUrl: "https://github.com/phuetz/code-buddy#configuration",
     exitCode: EXIT_CODES.AUTHENTICATION_ERROR,
   },
 
@@ -49,7 +49,7 @@ export const ERROR_TEMPLATES = {
     code: "API_KEY_INVALID",
     message: "API key is invalid or expired",
     suggestion: "Verify your API key at https://console.x.ai and update with `grok config --set-api-key`",
-    docUrl: "https://github.com/phuetz/grok-cli#configuration",
+    docUrl: "https://github.com/phuetz/code-buddy#configuration",
     exitCode: EXIT_CODES.AUTHENTICATION_ERROR,
   },
 
@@ -92,7 +92,7 @@ export const ERROR_TEMPLATES = {
     code: "COST_LIMIT",
     message: "Session cost limit exceeded",
     suggestion: "Start a new session or increase MAX_COST environment variable",
-    docUrl: "https://github.com/phuetz/grok-cli#cost-management",
+    docUrl: "https://github.com/phuetz/code-buddy#cost-management",
     exitCode: EXIT_CODES.COST_LIMIT_EXCEEDED,
   },
 
@@ -107,7 +107,7 @@ export const ERROR_TEMPLATES = {
     code: "CONFIG_INVALID",
     message: "Configuration file is invalid",
     suggestion: "Check the configuration file syntax or delete it to reset to defaults",
-    docUrl: "https://github.com/phuetz/grok-cli#configuration",
+    docUrl: "https://github.com/phuetz/code-buddy#configuration",
     exitCode: EXIT_CODES.CONFIG_ERROR,
   },
 
@@ -115,7 +115,7 @@ export const ERROR_TEMPLATES = {
     code: "MCP_CONNECTION_FAILED",
     message: "Failed to connect to MCP server",
     suggestion: "Verify the MCP server is running and the configuration is correct",
-    docUrl: "https://github.com/phuetz/grok-cli#mcp-servers",
+    docUrl: "https://github.com/phuetz/code-buddy#mcp-servers",
     exitCode: EXIT_CODES.MCP_ERROR,
   },
 
@@ -172,7 +172,7 @@ export const ERROR_TEMPLATES = {
     code: "SANDBOX_VIOLATION",
     message: "Operation blocked by sandbox",
     suggestion: "This command requires elevated permissions. Use --allow-dangerous or run in full-auto mode",
-    docUrl: "https://github.com/phuetz/grok-cli#security-modes",
+    docUrl: "https://github.com/phuetz/code-buddy#security-modes",
     exitCode: EXIT_CODES.SECURITY_ERROR,
   },
 

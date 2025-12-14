@@ -1065,7 +1065,7 @@ export class SecurityReviewAgent extends EventEmitter {
           driver: {
             name: 'Grok Security Review',
             version: '1.0.0',
-            informationUri: 'https://github.com/grok-cli',
+            informationUri: 'https://github.com/code-buddy',
             rules: ALL_PATTERNS.map(p => ({
               id: p.id,
               name: p.title,

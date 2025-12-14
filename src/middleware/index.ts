@@ -1,7 +1,7 @@
 /**
  * Middleware Module
  *
- * Conversation middleware system for grok-cli.
+ * Conversation middleware system for code-buddy.
  * Provides turn limits, cost limits, auto-compaction, and more.
  */
 

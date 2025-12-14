@@ -224,7 +224,7 @@ The agent is working on this task in the background.
 
 ---
 
-Generated with [Grok CLI](https://github.com/phuetz/grok-cli)`;
+Generated with [Grok CLI](https://github.com/phuetz/code-buddy)`;
 
     // Create PR
     console.log('Creating pull request...');
@@ -233,7 +233,7 @@ Generated with [Grok CLI](https://github.com/phuetz/grok-cli)`;
       prBody,
       baseBranch,
       config.draft !== false,
-      config.labels || ['grok-cli', 'automated'],
+      config.labels || ['code-buddy', 'automated'],
       config.reviewers || []
     );
 

@@ -24,7 +24,7 @@ We take the security of Grok CLI seriously. If you believe you have found a secu
 **Report security vulnerabilities privately** using one of these methods:
 
 1. **GitHub Security Advisories** (Preferred)
-   - Go to the [Security tab](https://github.com/phuetz/grok-cli/security/advisories)
+   - Go to the [Security tab](https://github.com/phuetz/code-buddy/security/advisories)
    - Click "Report a vulnerability"
    - Fill out the form with details
 
@@ -161,8 +161,8 @@ Security updates will be:
 For security-related questions or concerns:
 
 - **Security Email**: security@example.com (replace with actual)
-- **General Issues**: https://github.com/phuetz/grok-cli/issues
-- **Discussions**: https://github.com/phuetz/grok-cli/discussions
+- **General Issues**: https://github.com/phuetz/code-buddy/issues
+- **Discussions**: https://github.com/phuetz/code-buddy/discussions
 
 ## Attribution
 

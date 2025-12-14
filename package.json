@@ -1,16 +1,16 @@
 {
-  "name": "@phuetz/grok-cli",
+  "name": "@phuetz/code-buddy",
   "version": "1.0.0",
-  "description": "An open-source AI agent that brings the power of Grok directly into your terminal.",
+  "description": "An open-source AI coding agent that brings AI power directly into your terminal.",
   "author": "Patrice Huetz <ton-email@example.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/phuetz/grok-cli.git"
+    "url": "git+https://github.com/phuetz/code-buddy.git"
   },
   "bugs": {
-    "url": "https://github.com/phuetz/grok-cli/issues"
+    "url": "https://github.com/phuetz/code-buddy/issues"
   },
-  "homepage": "https://github.com/phuetz/grok-cli#readme",
+  "homepage": "https://github.com/phuetz/code-buddy#readme",
   "type": "module",
   "main": "dist/index.js",
   "exports": {
@@ -20,7 +20,7 @@
     }
   },
   "bin": {
-    "grok": "dist/index.js"
+    "buddy": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -47,13 +47,16 @@
     "cli",
     "agent",
     "text-editor",
-    "grok",
+    "code-buddy",
     "ai",
     "coding-assistant",
     "terminal",
     "developer-tools",
     "mcp",
-    "hooks"
+    "hooks",
+    "grok",
+    "openai",
+    "claude"
   ],
   "license": "MIT",
   "dependencies": {

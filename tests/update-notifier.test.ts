@@ -80,7 +80,7 @@ describe('UpdateNotifier', () => {
       currentVersion: '1.0.0',
       latestVersion: '1.1.0',
       updateAvailable: true,
-      installCommand: 'npm update -g @phuetz/grok-cli',
+      installCommand: 'npm update -g @phuetz/code-buddy',
       lastCheck: new Date(),
     };
 
@@ -101,7 +101,7 @@ describe('UpdateNotifier', () => {
       currentVersion: '1.0.0',
       latestVersion: '1.0.0',
       updateAvailable: false,
-      installCommand: 'npm update -g @phuetz/grok-cli',
+      installCommand: 'npm update -g @phuetz/code-buddy',
       lastCheck: new Date(),
     };
 

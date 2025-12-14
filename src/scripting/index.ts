@@ -1,5 +1,5 @@
 /**
- * Grok Script - Scripting Language for grok-cli automation
+ * Grok Script - Scripting Language for code-buddy automation
  *
  * Inspired by FileCommander Enhanced Script (FCS)
  *
@@ -129,7 +129,7 @@ export function createScriptTemplate(name: string, description: string = ''): st
 // ${description || 'Grok Script'}
 // ============================================
 
-// Import grok-cli bindings
+// Import code-buddy bindings
 import grok
 
 // Script configuration

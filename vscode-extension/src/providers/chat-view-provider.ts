@@ -3,7 +3,7 @@
  */
 
 import * as vscode from 'vscode';
-import { GrokClient } from '../grok-client';
+import { GrokClient } from '../code-buddyent';
 
 interface ChatMessage {
   role: 'user' | 'assistant';

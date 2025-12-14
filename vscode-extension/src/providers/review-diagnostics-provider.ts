@@ -5,7 +5,7 @@
  */
 
 import * as vscode from 'vscode';
-import { GrokClient } from '../grok-client';
+import { GrokClient } from '../code-buddyent';
 
 export class ReviewDiagnosticsProvider implements vscode.Disposable {
   private diagnosticCollection: vscode.DiagnosticCollection;

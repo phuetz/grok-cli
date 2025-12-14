@@ -7,7 +7,7 @@
 
 ## 🎯 Résumé Exécutif
 
-Cet audit approfondi identifie **2 problèmes critiques bloquants**, **3 problèmes majeurs** et **8 recommandations d'amélioration** pour l'application grok-cli.
+Cet audit approfondi identifie **2 problèmes critiques bloquants**, **3 problèmes majeurs** et **8 recommandations d'amélioration** pour l'application code-buddy.
 
 ### ⚠️ Statut Actuel : **APPLICATION NON UTILISABLE**
 
@@ -299,7 +299,7 @@ npm run build
 
 ```bash
 $ npm run build
-> @phuetz/grok-cli@1.0.0 build
+> @phuetz/code-buddy@1.0.0 build
 > tsc
 
 # Doit compiler sans erreur
@@ -590,8 +590,8 @@ Créer un `QUICKSTART.md` détaillé :
 
 ### 1. Cloner le repository
 
-git clone https://github.com/phuetz/grok-cli.git
-cd grok-cli
+git clone https://github.com/phuetz/code-buddy.git
+cd code-buddy
 
 ### 2. Installer les dépendances
 
@@ -881,8 +881,8 @@ npm start -- --help
 
 Pour toute question sur cet audit :
 
-- **GitHub Issues:** https://github.com/phuetz/grok-cli/issues
-- **Documentation:** https://github.com/phuetz/grok-cli#readme
+- **GitHub Issues:** https://github.com/phuetz/code-buddy/issues
+- **Documentation:** https://github.com/phuetz/code-buddy#readme
 - **Sécurité:** ⚠️ *À mettre à jour dans SECURITY.md*
 
 ---

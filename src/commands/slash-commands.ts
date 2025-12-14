@@ -752,6 +752,16 @@ Be systematic and thorough in your analysis.`,
         arguments: [
           { name: 'action', description: 'run <file>, new <name>, validate <file>, list, history', required: false }
         ]
+      },
+      {
+        name: 'fcs',
+        description: 'Run FileCommander Script files (.fcs) - 100% compatible',
+        prompt: '__FCS__',
+        filePath: '',
+        isBuiltin: true,
+        arguments: [
+          { name: 'action', description: 'run <file>, validate <file>, parse <code>, list, repl', required: false }
+        ]
       }
     ];
 

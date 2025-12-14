@@ -305,7 +305,7 @@ find src -name "*.ts" -o -name "*.tsx" | xargs wc -l
 
 ## Fichiers Générés
 
-- `/home/patrice/claude/grok-cli/AUDIT-QUALITY-2025-12-09.md` - Ce rapport
-- `/home/patrice/claude/grok-cli/ACTION-PLAN-2025-12-09.md` - Plan d'action détaillé
-- `/home/patrice/claude/grok-cli/coverage/` - Rapport de couverture HTML
-- `/home/patrice/claude/grok-cli/.jscpd/` - Rapport de duplication
+- `/home/patrice/claude/code-buddy/AUDIT-QUALITY-2025-12-09.md` - Ce rapport
+- `/home/patrice/claude/code-buddy/ACTION-PLAN-2025-12-09.md` - Plan d'action détaillé
+- `/home/patrice/claude/code-buddy/coverage/` - Rapport de couverture HTML
+- `/home/patrice/claude/code-buddy/.jscpd/` - Rapport de duplication

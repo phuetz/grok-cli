@@ -69,7 +69,7 @@ export class WebSearchTool {
     try {
       const response = await axios.get(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; GrokCLI/1.0; +https://github.com/grok-cli)',
+          'User-Agent': 'Mozilla/5.0 (compatible; GrokCLI/1.0; +https://github.com/code-buddy)',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         },
         timeout: 10000,

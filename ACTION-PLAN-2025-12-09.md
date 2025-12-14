@@ -5,7 +5,7 @@
 ### 1.1 Corriger les erreurs TypeScript (5 erreurs)
 
 #### Action 1: Exporter ToolResult depuis tools/index.ts
-**Fichier**: `/home/patrice/claude/grok-cli/src/tools/index.ts`
+**Fichier**: `/home/patrice/claude/code-buddy/src/tools/index.ts`
 
 **Ajouter à la fin du fichier**:
 ```typescript
@@ -14,7 +14,7 @@ export type { ToolResult } from '../types/index.js';
 ```
 
 #### Action 2: Corriger l'import better-sqlite3
-**Fichier**: `/home/patrice/claude/grok-cli/src/tools/sql-tool.ts`
+**Fichier**: `/home/patrice/claude/code-buddy/src/tools/sql-tool.ts`
 
 **Ligne 75-77 - Remplacer**:
 ```typescript
@@ -52,7 +52,7 @@ npm run build      # Doit compiler
 ### 2.1 Refactoring Complexité Cyclomatique
 
 #### Fonction 1: parseDiffWithLineNumbers (complexité 37)
-**Fichier**: `/home/patrice/claude/grok-cli/src/ui/components/diff-renderer.tsx`
+**Fichier**: `/home/patrice/claude/code-buddy/src/ui/components/diff-renderer.tsx`
 
 **Stratégie**: Découper en sous-fonctions
 
@@ -90,12 +90,12 @@ function formatParsedDiff(lines: Line[]): ParsedDiff {
 **Complexité cible**: <10 par fonction
 
 #### Fonction 2: hasCycle (complexité 34)
-**Fichier**: `/home/patrice/claude/grok-cli/src/services/plan-generator.ts`
+**Fichier**: `/home/patrice/claude/code-buddy/src/services/plan-generator.ts`
 
 **Même approche**: Extraire DFS, colorisation, détection en sous-fonctions
 
 #### Fonction 3: handleSpecialKey (complexité 25)
-**Fichier**: `/home/patrice/claude/grok-cli/src/hooks/use-input-handler.ts`
+**Fichier**: `/home/patrice/claude/code-buddy/src/hooks/use-input-handler.ts`
 
 **Approche**: Switch case → Map de handlers
 

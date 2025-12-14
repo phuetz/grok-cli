@@ -1,7 +1,7 @@
 /**
  * Grok Script Built-in Functions
  *
- * Provides bindings to grok-cli features for scripting
+ * Provides bindings to code-buddy features for scripting
  */
 
 import * as fs from 'fs';

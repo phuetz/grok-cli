@@ -171,7 +171,7 @@ export class PlanGenerator {
       steps: [],
       metadata: {
         version: 1,
-        author: "grok-cli",
+        author: "code-buddy",
         tags: [],
         context: {},
       },

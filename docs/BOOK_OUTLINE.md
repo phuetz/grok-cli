@@ -71,7 +71,7 @@ Le tout est illustré par une étude de cas complète : **Grok-CLI**, un agent o
 | **Niveau** | Intermédiaire à avancé |
 | **Prérequis** | Python/TypeScript, notions LLM, API OpenAI/Anthropic |
 | **Format estimé** | ~400 pages, 15 chapitres, 7 parties |
-| **Code source** | https://github.com/phuetz/grok-cli |
+| **Code source** | https://github.com/phuetz/code-buddy |
 
 ---
 
@@ -733,8 +733,8 @@ interface ToolResult {
 
 ```bash
 # Cloner le projet
-git clone https://github.com/phuetz/grok-cli.git
-cd grok-cli
+git clone https://github.com/phuetz/code-buddy.git
+cd code-buddy
 
 # Installer les dépendances
 npm install

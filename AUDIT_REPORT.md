@@ -1,7 +1,7 @@
 # Rapport d'Audit Complet - Grok CLI
 
 **Date:** 29 Novembre 2025
-**Projet:** @phuetz/grok-cli v1.0.0
+**Projet:** @phuetz/code-buddy v1.0.0
 **Auditeur:** Claude (Opus 4)
 
 ---

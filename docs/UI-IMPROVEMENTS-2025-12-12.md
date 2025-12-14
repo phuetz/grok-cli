@@ -274,7 +274,7 @@ const result: ToolResultData = {
 │ ✓ Read File • config.json         2.5KB • 45ms • 32 lines │
 │                                                      │
 │ {                                                    │
-│   "name": "grok-cli",                               │
+│   "name": "code-buddy",                               │
 │   "version": "1.0.0",                               │
 │   ...                                               │
 │ }                                                    │

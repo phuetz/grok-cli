@@ -1,7 +1,7 @@
 /**
  * Database Manager
  *
- * Central SQLite database manager for grok-cli.
+ * Central SQLite database manager for code-buddy.
  * Handles connection, migrations, and provides access to repositories.
  */
 

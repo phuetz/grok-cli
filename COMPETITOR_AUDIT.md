@@ -6,14 +6,14 @@
 
 ## Executive Summary
 
-This audit compares grok-cli against leading AI CLI tools (Claude Code, Aider, Gemini CLI, Cursor, Warp) to identify feature gaps and improvement opportunities. The analysis reveals **15 high-priority** and **12 medium-priority** improvements that would significantly enhance grok-cli's competitive position.
+This audit compares code-buddy against leading AI CLI tools (Claude Code, Aider, Gemini CLI, Cursor, Warp) to identify feature gaps and improvement opportunities. The analysis reveals **15 high-priority** and **12 medium-priority** improvements that would significantly enhance code-buddy's competitive position.
 
 ---
 
 ## Current State Assessment
 
 ### Existing Strengths ✅
-grok-cli already implements several competitive features:
+code-buddy already implements several competitive features:
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -579,7 +579,7 @@ Allow third-party plugins for extensibility.
 
 ## Competitive Positioning Matrix
 
-| Feature | grok-cli | Claude Code | Aider | Gemini CLI | Cursor |
+| Feature | code-buddy | Claude Code | Aider | Gemini CLI | Cursor |
 |---------|----------|-------------|-------|------------|--------|
 | Terminal-native | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Hooks system | ❌ | ✅ | ❌ | ❌ | ❌ |
@@ -602,14 +602,14 @@ Allow third-party plugins for extensibility.
 
 ## Conclusion
 
-grok-cli has a solid foundation with several competitive features already implemented. The primary gaps are in:
+code-buddy has a solid foundation with several competitive features already implemented. The primary gaps are in:
 
 1. **Developer Workflow Integration** - Hooks, custom commands, git integration
 2. **Multi-file Operations** - Multi-edit, codebase mapping
 3. **Advanced Agent Capabilities** - Subagents, architect mode
 4. **User Experience** - Voice input, @ mentions, better session management
 
-Implementing the Phase 1 and Phase 2 features would put grok-cli on par with or ahead of most competitors. The Phase 3 features would establish it as a category leader.
+Implementing the Phase 1 and Phase 2 features would put code-buddy on par with or ahead of most competitors. The Phase 3 features would establish it as a category leader.
 
 ---
 

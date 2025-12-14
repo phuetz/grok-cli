@@ -306,7 +306,7 @@ const WORKFLOW_TEMPLATES: Record<string, WorkflowConfig> = {
           { uses: 'actions/checkout@v4', with: { 'fetch-depth': 0 } },
           {
             name: 'Install Grok CLI',
-            run: 'npm install -g grok-cli',
+            run: 'npm install -g code-buddy',
           },
           {
             name: 'Run AI Review',

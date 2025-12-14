@@ -499,8 +499,8 @@ export const DEFAULT_HELP_CONFIG: HelpConfig = {
   appName: "Grok CLI",
   version: "1.0.0",
   description: "AI-powered terminal agent using Grok API",
-  docUrl: "https://github.com/phuetz/grok-cli#readme",
-  issuesUrl: "https://github.com/phuetz/grok-cli/issues",
+  docUrl: "https://github.com/phuetz/code-buddy#readme",
+  issuesUrl: "https://github.com/phuetz/code-buddy/issues",
   categories: [
     {
       name: "Chat",

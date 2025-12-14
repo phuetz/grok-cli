@@ -66,7 +66,7 @@
 ### Structure des Répertoires
 
 ```
-grok-cli/
+code-buddy/
 ├── src/
 │   ├── agent/              # 🧠 Logique centrale (1 fichier)
 │   ├── grok/               # 🔌 API client + tools (2 fichiers)

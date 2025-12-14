@@ -13,7 +13,7 @@ import * as vscode from 'vscode';
 import { GrokChatViewProvider } from './providers/chat-view-provider';
 import { GrokCodeActionsProvider } from './providers/code-actions-provider';
 import { GrokCompletionProvider } from './providers/completion-provider';
-import { GrokClient } from './grok-client';
+import { GrokClient } from './code-buddyent';
 import { ReviewDiagnosticsProvider } from './providers/review-diagnostics-provider';
 
 let grokClient: GrokClient;

@@ -131,8 +131,8 @@ Sautez directement aux chapitres qui vous interessent. Chaque chapitre inclut se
 Clonez Grok-CLI et experimentez en parallele de votre lecture :
 
 ```bash
-git clone https://github.com/phuetz/grok-cli.git
-cd grok-cli
+git clone https://github.com/phuetz/code-buddy.git
+cd code-buddy
 npm install
 export GROK_API_KEY=your_key
 npm run dev
@@ -180,7 +180,7 @@ Repérez ces marqueurs tout au long du livre :
 Tous les exemples proviennent de **Grok-CLI**, un agent open-source complet :
 
 ```
-https://github.com/phuetz/grok-cli
+https://github.com/phuetz/code-buddy
 ```
 
 | Statistique | Valeur |
@@ -9572,7 +9572,7 @@ export interface PluginManifest {
 
 ```typescript
 // plugins/hello-world/index.ts
-import { Plugin, Tool, PluginContext } from '@grok-cli/plugin-sdk';
+import { Plugin, Tool, PluginContext } from '@code-buddy/plugin-sdk';
 
 export default class HelloWorldPlugin implements Plugin {
   id = 'hello-world';
@@ -9834,7 +9834,7 @@ export class MCPClient {
     const response = await this.request('initialize', {
       protocolVersion: '0.1.0',
       clientInfo: {
-        name: 'grok-cli',
+        name: 'code-buddy',
         version: '1.0.0'
       },
       capabilities: {

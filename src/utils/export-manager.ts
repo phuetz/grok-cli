@@ -151,7 +151,7 @@ function exportToJson(data: ConversationExport, options: ExportOptions): string 
       thinking: options.includeThinking ? msg.thinking : undefined,
     })),
     exportedAt: new Date().toISOString(),
-    format: 'grok-cli-export',
+    format: 'code-buddy-export',
     version: '1.0',
   };
 

@@ -1,5 +1,5 @@
 {
-  "name": "grok-cli-vscode",
+  "name": "code-buddy-vscode",
   "displayName": "Grok CLI",
   "description": "AI-powered coding assistant powered by Grok - bring the power of Grok CLI to VS Code",
   "version": "0.1.0",
@@ -202,7 +202,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/phuetz/grok-cli.git"
+    "url": "https://github.com/phuetz/code-buddy.git"
   },
   "license": "MIT"
 }

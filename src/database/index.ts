@@ -1,7 +1,7 @@
 /**
  * Database Module
  *
- * Central SQLite database for grok-cli persistence.
+ * Central SQLite database for code-buddy persistence.
  *
  * Features:
  * - Persistent memories with vector embeddings

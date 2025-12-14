@@ -304,7 +304,7 @@ class MCPServerConnection extends EventEmitter {
         resources: {}
       },
       clientInfo: {
-        name: 'grok-cli',
+        name: 'code-buddy',
         version: '1.0.0'
       }
     });

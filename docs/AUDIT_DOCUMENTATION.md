@@ -106,7 +106,7 @@ Grok-CLI dispose d'une **documentation globalement excellente** (score: **87/100
 - Inclure des captures d'écran ou GIFs
 
 ## FAQ Section
-Q: Quelle est la différence entre grok-cli et Claude Code?
+Q: Quelle est la différence entre code-buddy et Claude Code?
 A: [...]
 
 Q: Comment utiliser avec mes modèles locaux?
@@ -243,7 +243,7 @@ A: [...]
    /**
     * Database Manager
     *
-    * Central SQLite database manager for grok-cli.
+    * Central SQLite database manager for code-buddy.
     * Handles connection, migrations, and provides access to repositories.
     */
    ```
@@ -561,7 +561,7 @@ Créer une application React TypeScript avec tests et CI/CD.
 /**
  * Using Grok-CLI as a library in your Node.js app
  */
-import { GrokAgent } from '@phuetz/grok-cli';
+import { GrokAgent } from '@phuetz/code-buddy';
 
 async function main() {
   const agent = new GrokAgent(

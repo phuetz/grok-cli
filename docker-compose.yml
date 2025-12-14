@@ -6,7 +6,7 @@ services:
     build:
       context: .
       target: production
-    image: grok-cli:latest
+    image: code-buddy:latest
     environment:
       - GROK_API_KEY=${GROK_API_KEY}
       - GROK_MODEL=${GROK_MODEL:-grok-3-latest}
@@ -23,7 +23,7 @@ services:
     build:
       context: .
       target: development
-    image: grok-cli:dev
+    image: code-buddy:dev
     environment:
       - GROK_API_KEY=${GROK_API_KEY}
       - GROK_MODEL=${GROK_MODEL:-grok-3-latest}

@@ -1,7 +1,7 @@
 /**
  * Database Schema Definitions
  *
- * SQLite schema for grok-cli persistent storage including:
+ * SQLite schema for code-buddy persistent storage including:
  * - Memories with vector embeddings
  * - Session history with costs
  * - Code embeddings for semantic search

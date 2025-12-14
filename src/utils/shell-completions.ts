@@ -147,7 +147,7 @@ _grok_completions() {
 
 # Register completion
 complete -F _grok_completions grok
-complete -F _grok_completions grok-cli
+complete -F _grok_completions code-buddy
 
 # Mode completion helper
 _grok_mode_completions() {
@@ -187,7 +187,7 @@ function generateZshCompletion(): string {
   const modes = APPROVAL_MODES.join(' ');
   const themes = THEMES.join(' ');
 
-  return `#compdef grok grok-cli
+  return `#compdef grok code-buddy
 # Grok CLI Zsh Completion
 # Save to ~/.zsh/completions/_grok or /usr/local/share/zsh/site-functions/_grok
 

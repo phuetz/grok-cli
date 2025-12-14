@@ -401,7 +401,7 @@ export function parseTOML(content: string): Record<string, unknown> {
 export function serializeTOML(config: GrokConfig): string {
   const lines: string[] = [
     '# Grok CLI Configuration',
-    '# See https://github.com/phuetz/grok-cli for documentation',
+    '# See https://github.com/phuetz/code-buddy for documentation',
     '',
   ];
 

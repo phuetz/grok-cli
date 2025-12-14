@@ -121,8 +121,8 @@ Ce livre est sur l'**utilisation** des LLM pour construire des agents, pas sur l
 Tout le code est disponible et testé :
 
 ```bash
-git clone https://github.com/phuetz/grok-cli.git
-cd grok-cli
+git clone https://github.com/phuetz/code-buddy.git
+cd code-buddy
 npm install
 export GROK_API_KEY=your_key
 npm run dev

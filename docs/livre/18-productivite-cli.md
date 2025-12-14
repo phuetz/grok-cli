@@ -624,7 +624,7 @@ export async function delegate(config: DelegateConfig): Promise<DelegateResult> 
     prBody,
     baseBranch,
     config.draft !== false,
-    config.labels || ['grok-cli', 'automated'],
+    config.labels || ['code-buddy', 'automated'],
     config.reviewers || []
   );
 

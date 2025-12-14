@@ -65,6 +65,8 @@ import {
   handleWorktree,
   // Script handlers (FileCommander Enhanced-inspired)
   handleScript,
+  // FCS handlers (100% FileCommander Compatible)
+  handleFCS,
   // Type
   CommandHandlerResult,
 } from "./handlers/index.js";
@@ -250,6 +252,10 @@ export class EnhancedCommandHandler {
       // Script execution (FileCommander Enhanced-inspired)
       case "__SCRIPT__":
         return handleScript(args);
+
+      // FCS execution (100% FileCommander Compatible)
+      case "__FCS__":
+        return handleFCS(args);
 
       default:
         return { handled: false };

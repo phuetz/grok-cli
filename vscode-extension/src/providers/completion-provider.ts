@@ -5,7 +5,7 @@
  */
 
 import * as vscode from 'vscode';
-import { GrokClient } from '../grok-client';
+import { GrokClient } from '../code-buddyent';
 
 export class GrokCompletionProvider implements vscode.InlineCompletionItemProvider {
   private lastRequest: AbortController | null = null;

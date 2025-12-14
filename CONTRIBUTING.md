@@ -32,8 +32,8 @@ This project and everyone participating in it is governed by the [Contributor Co
 
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/grok-cli.git
-   cd grok-cli
+   git clone https://github.com/YOUR_USERNAME/code-buddy.git
+   cd code-buddy
    ```
 
 3. **Install dependencies**:
@@ -354,7 +354,7 @@ Add macOS-specific instructions and troubleshooting section.
 ## Project Structure
 
 ```
-grok-cli/
+code-buddy/
 ├── .github/              # GitHub workflows and templates
 │   └── workflows/        # CI/CD workflows
 ├── .husky/               # Git hooks
@@ -389,8 +389,8 @@ grok-cli/
 ## Getting Help
 
 - **Documentation**: Check the [README.md](README.md) and [ARCHITECTURE.md](ARCHITECTURE.md)
-- **Issues**: Browse [existing issues](https://github.com/your-org/grok-cli/issues)
-- **Discussions**: Join [GitHub Discussions](https://github.com/your-org/grok-cli/discussions)
+- **Issues**: Browse [existing issues](https://github.com/your-org/code-buddy/issues)
+- **Discussions**: Join [GitHub Discussions](https://github.com/your-org/code-buddy/discussions)
 - **Discord**: Join our [Discord community](#)
 
 ## Recognition

@@ -283,7 +283,7 @@ export class IDEExtensionsServer extends EventEmitter {
       displayName: 'Grok AI Assistant',
       description: 'AI-powered coding assistant powered by Grok',
       version: '1.0.0',
-      publisher: 'grok-cli',
+      publisher: 'code-buddy',
       engines: { vscode: '^1.85.0' },
       categories: ['Machine Learning', 'Programming Languages', 'Snippets'],
       activationEvents: ['onStartupFinished'],

@@ -109,5 +109,12 @@ export {
   handleScript,
 } from './script-handlers.js';
 
+// FCS handlers (100% FileCommander Compatible)
+export {
+  handleFCS,
+  isFCSScript,
+  executeInlineFCS,
+} from './fcs-handlers.js';
+
 // Re-export CommandHandlerResult type
 export type { CommandHandlerResult } from './branch-handlers.js';

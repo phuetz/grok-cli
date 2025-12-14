@@ -164,7 +164,7 @@ export interface MarketplaceConfig {
 }
 
 const DEFAULT_CONFIG: MarketplaceConfig = {
-  registryUrl: 'https://plugins.grok-cli.dev',
+  registryUrl: 'https://plugins.code-buddy.dev',
   autoUpdate: true,
   checkUpdatesInterval: 86400000, // 24 hours
   allowUntrusted: false,

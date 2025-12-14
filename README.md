@@ -7,11 +7,11 @@
 ### 🚀 L'Agent IA de Développement Nouvelle Génération pour Votre Terminal
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@phuetz/grok-cli"><img src="https://img.shields.io/npm/v/@phuetz/grok-cli.svg?style=flat-square&color=ff6b6b&label=version" alt="npm version"/></a>
+  <a href="https://www.npmjs.com/package/@phuetz/code-buddy"><img src="https://img.shields.io/npm/v/@phuetz/code-buddy.svg?style=flat-square&color=ff6b6b&label=version" alt="npm version"/></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-feca57.svg?style=flat-square" alt="License: MIT"/></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-54a0ff?style=flat-square&logo=node.js" alt="Node Version"/></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.3-5f27cd?style=flat-square&logo=typescript" alt="TypeScript"/></a>
-  <a href="https://www.npmjs.com/package/@phuetz/grok-cli"><img src="https://img.shields.io/npm/dm/@phuetz/grok-cli.svg?style=flat-square&color=10ac84" alt="npm downloads"/></a>
+  <a href="https://www.npmjs.com/package/@phuetz/code-buddy"><img src="https://img.shields.io/npm/dm/@phuetz/code-buddy.svg?style=flat-square&color=10ac84" alt="npm downloads"/></a>
 </p>
 
 <p align="center">
@@ -41,7 +41,7 @@
 
 > *"Parce que refactorer, c'est mieux quand on sourit."*
 
-Bienvenue dans **grok-cli**, un outil né d'une idée simple :
+Bienvenue dans **code-buddy**, un outil né d'une idée simple :
 👉 Si on code avec une IA, autant que ce soit une IA **intelligente**, **élégante**... et de **bonne compagnie**.
 
 Ce projet a été créé avec :
@@ -56,10 +56,10 @@ Ce projet a été créé avec :
 
 ```bash
 # 🎯 Lancer sans installer (essayez maintenant !)
-npx @phuetz/grok-cli@latest
+npx @phuetz/code-buddy@latest
 
 # 📦 Ou installer globalement
-npm install -g @phuetz/grok-cli
+npm install -g @phuetz/code-buddy
 
 # 🔑 Configurer votre clé API (depuis x.ai)
 export GROK_API_KEY=votre_clé_api
@@ -193,7 +193,7 @@ L'IA ne se contente pas de répondre. Elle :
 
 ### 🔧 Auto-Réparation : APR Engine
 
-> *"Ce développeur du lundi matin qui répare vos bugs sans broncher ? C'est grok-cli."*
+> *"Ce développeur du lundi matin qui répare vos bugs sans broncher ? C'est code-buddy."*
 
 <table>
 <tr>
@@ -314,7 +314,7 @@ L'IA ne se contente pas de répondre. Elle :
 
 ```typescript
 // Exemple d'utilisation
-import { getEmbeddingProvider } from 'grok-cli';
+import { getEmbeddingProvider } from 'code-buddy';
 
 const provider = getEmbeddingProvider();
 await provider.initialize();
@@ -573,7 +573,7 @@ grok --model hermes-4-14b
 
 ### 📚 RAG Avancé pour le Code
 
-> *"Comme si votre projet était un livre que grok-cli lit vraiment."*
+> *"Comme si votre projet était un livre que code-buddy lit vraiment."*
 
 - 🧩 **Chunking intelligent** par langage
 - 🎯 **Embeddings sémantiques** pour le code
@@ -740,16 +740,16 @@ choco install ripgrep
 
 ```bash
 # npm
-npm install -g @phuetz/grok-cli
+npm install -g @phuetz/code-buddy
 
 # yarn
-yarn global add @phuetz/grok-cli
+yarn global add @phuetz/code-buddy
 
 # pnpm
-pnpm add -g @phuetz/grok-cli
+pnpm add -g @phuetz/code-buddy
 
 # bun
-bun add -g @phuetz/grok-cli
+bun add -g @phuetz/code-buddy
 ```
 
 ### Configuration
@@ -811,8 +811,8 @@ Les contributions sont les bienvenues ! 💖
 
 ```bash
 # 1. Fork et clone
-git clone https://github.com/phuetz/grok-cli.git
-cd grok-cli
+git clone https://github.com/phuetz/code-buddy.git
+cd code-buddy
 
 # 2. Install et dev
 npm install
@@ -888,7 +888,7 @@ code docs/livre/
 
 # Générer un PDF
 cd docs/livre
-pandoc -o livre-grok-cli.pdf *.md --pdf-engine=xelatex
+pandoc -o livre-code-buddy.pdf *.md --pdf-engine=xelatex
 
 # Dans le navigateur (GitHub style)
 pip install grip
@@ -912,9 +912,9 @@ MIT License — voir [LICENSE](LICENSE) pour les détails.
 
 <br/>
 
-**[🐛 Signaler un Bug](https://github.com/phuetz/grok-cli/issues)** •
-**[💡 Proposer une Fonctionnalité](https://github.com/phuetz/grok-cli/discussions)** •
-**[⭐ Donner une Étoile](https://github.com/phuetz/grok-cli)**
+**[🐛 Signaler un Bug](https://github.com/phuetz/code-buddy/issues)** •
+**[💡 Proposer une Fonctionnalité](https://github.com/phuetz/code-buddy/discussions)** •
+**[⭐ Donner une Étoile](https://github.com/phuetz/code-buddy)**
 
 <br/>
 
