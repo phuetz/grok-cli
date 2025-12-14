@@ -7,7 +7,6 @@ import {
   findBestFuzzyMatch,
   generateFuzzyDiff,
   suggestWhitespaceFixes,
-  FuzzyMatchResult,
 } from "../utils/fuzzy-match.js";
 
 export class TextEditorTool {

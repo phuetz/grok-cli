@@ -417,7 +417,7 @@ export class CollaborationServer extends EventEmitter {
    */
   private handleDisconnect(connectionId: string): void {
     // Find collaborator by connection
-    for (const [collaboratorId, ws] of this.connections) {
+    for (const [collaboratorId, _ws] of this.connections) {
       // Check if this is the disconnected connection
       const sessionId = this.collaboratorSessions.get(collaboratorId);
       if (sessionId) {

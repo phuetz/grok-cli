@@ -122,8 +122,8 @@ export function EnhancedToolResult({
   const statusColor = result.success ? colors.success : colors.error;
   const statusIcon = result.success ? '✓' : '✗';
 
-  // Toggle collapse
-  const toggleCollapse = () => {
+  // Toggle collapse (used via click handler)
+  const _toggleCollapse = () => {
     if (metadata.isTruncated || result.content.length > 500) {
       setIsCollapsed((prev) => !prev);
     }

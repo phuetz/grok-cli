@@ -615,7 +615,7 @@ export class CodeGuardianAgent extends SpecializedAgent {
     return complexity;
   }
 
-  private generateFileSummary(content: string, language: string): string {
+  private generateFileSummary(content: string, _language: string): string {
     const lines = content.split('\n').length;
     const functions = (content.match(/function\s+\w+|const\s+\w+\s*=\s*(?:async\s*)?\(/g) || []).length;
     const classes = (content.match(/class\s+\w+/g) || []).length;

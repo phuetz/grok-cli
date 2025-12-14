@@ -347,7 +347,7 @@ export class SessionExporter {
     output.messages = options.includeToolResults
       ? session.messages
       : session.messages.map(m => {
-          const { toolResults, ...rest } = m;
+          const { toolResults: _toolResults, ...rest } = m;
           return rest;
         });
 

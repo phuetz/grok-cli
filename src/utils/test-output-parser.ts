@@ -25,7 +25,7 @@ const JEST_SUMMARY_REGEX = /Tests:\s*(\d+)\s*passed(?:,\s*(\d+)\s*failed)?(?:,\s
 const JEST_PASS_REGEX = /✓\s+(.+?)(?:\s+\((\d+)\s*m?s\))?$/gm;
 const JEST_FAIL_REGEX = /✕\s+(.+?)(?:\s+\((\d+)\s*m?s\))?$/gm;
 const JEST_SKIP_REGEX = /○\s+skipped\s+(.+)$/gm;
-const JEST_SUITE_REGEX = /^\s*(PASS|FAIL)\s+(.+)$/gm;
+const _JEST_SUITE_REGEX = /^\s*(PASS|FAIL)\s+(.+)$/gm;
 const JEST_TIME_REGEX = /Time:\s*([\d.]+)\s*s/i;
 
 function parseJestOutput(output: string): ParseResult {

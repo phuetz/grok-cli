@@ -78,7 +78,7 @@ function renderNodePlain(
   lines.push(`${indent}${prefix}${icon}${node.name}${size}`);
 
   if (node.children && node.children.length > 0) {
-    const childIndent = isLast ? '    ' : '│   ';
+    const _childIndent = isLast ? '    ' : '│   ';
     for (let i = 0; i < node.children.length; i++) {
       const child = node.children[i];
       const childIsLast = i === node.children.length - 1;

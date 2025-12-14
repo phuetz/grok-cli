@@ -76,7 +76,7 @@ export const LoadingSpinner = React.memo(function LoadingSpinnerInner({
 });
 
 // Keep for backwards compatibility (if used elsewhere)
-const loadingTextsArray = [
+const _loadingTextsArray = [
   "Thinking...",
   "Computing...",
   "Analyzing...",

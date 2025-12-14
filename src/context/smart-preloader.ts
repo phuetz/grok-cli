@@ -440,7 +440,7 @@ export class SmartContextPreloader extends EventEmitter {
   /**
    * Get files based on user patterns
    */
-  private async getPatternBasedFiles(taskHint?: string): Promise<Array<{ path: string; relevance: number; reason: PreloadReason }>> {
+  private async getPatternBasedFiles(_taskHint?: string): Promise<Array<{ path: string; relevance: number; reason: PreloadReason }>> {
     const files: Array<{ path: string; relevance: number; reason: PreloadReason }> = [];
 
     // Use historical patterns

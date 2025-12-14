@@ -212,7 +212,7 @@ export function MultiStepProgress({
 
       {/* Step list */}
       <Box flexDirection="column">
-        {steps.map((step, index) => {
+        {steps.map((step, _index) => {
           const config = STATUS_CONFIG[step.status];
           const icon = getStepIcon(step.status);
           const isRunning = step.status === "running";

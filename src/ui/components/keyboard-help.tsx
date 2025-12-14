@@ -8,7 +8,7 @@
  * - Context-sensitive help
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useTheme } from '../context/theme-context.js';
 

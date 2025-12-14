@@ -48,7 +48,7 @@ function ChatInterfaceWithAgent({
   const [isStreaming, setIsStreaming] = useState(false);
   const [confirmationOptions, setConfirmationOptions] =
     useState<ConfirmationOptions | null>(null);
-  const [sessionStartTime] = useState(new Date());
+  const [_sessionStartTime] = useState(new Date());
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const scrollRef = useRef<any>();
   const processingStartTime = useRef<number>(0);

@@ -461,7 +461,7 @@ export function estimateSpeedup(calls: ToolCall[]): {
   const sequentialEstimate = calls.length * avgCallDuration;
 
   // Parallel estimate: max duration in each group level
-  const parallelEstimate = groups.reduce((total, group) => {
+  const parallelEstimate = groups.reduce((total, _group) => {
     // Within a group, max duration is the bottleneck
     return total + avgCallDuration; // Simplified: assumes all calls same duration
   }, 0);

@@ -92,8 +92,8 @@ export function HelpSystem({
   const [searchMode, setSearchMode] = useState(false);
   const [tipIndex, setTipIndex] = useState(0);
 
-  // Find command by name
-  const findCommand = useCallback(
+  // Find command by name (used for search)
+  const _findCommand = useCallback(
     (name: string): { category: CommandCategory; command: CommandHelp } | null => {
       for (const category of config.categories) {
         const command = category.commands.find(

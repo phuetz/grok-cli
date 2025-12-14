@@ -136,7 +136,7 @@ function ToastItem({ toast, onDismiss, config }: ToastItemProps) {
  */
 export function ToastNotifications({
   maxToasts = 3,
-  defaultDuration = 3000,
+  defaultDuration: _defaultDuration = 3000,
   position = 'bottom',
 }: ToastNotificationsProps) {
   const { colors } = useTheme();

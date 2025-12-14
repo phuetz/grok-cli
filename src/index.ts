@@ -901,7 +901,7 @@ program
   .command("mcp")
   .description("Manage MCP (Model Context Protocol) servers")
   .allowUnknownOption()
-  .action(async (_options, command) => {
+  .action(async (_options, _command) => {
     // Lazy load the full MCP command implementation
     const { createMCPCommand } = await import("./commands/mcp.js");
     const mcpCmd = createMCPCommand();

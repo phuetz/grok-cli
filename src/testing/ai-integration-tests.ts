@@ -251,7 +251,7 @@ export class AITestRunner extends EventEmitter {
       } else {
         details = 'No JSON object found in response';
       }
-    } catch (e) {
+    } catch {
       details = `Failed to parse JSON: ${content.slice(0, 100)}`;
     }
 

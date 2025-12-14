@@ -7,7 +7,7 @@
 
 import React, { useMemo } from 'react';
 import { Box, Text } from 'ink';
-import { getRenderManager, RenderContext, RenderableData } from '../../renderers/index.js';
+import { getRenderManager, RenderContext } from '../../renderers/index.js';
 import { useTheme } from '../context/theme-context.js';
 
 // ============================================================================

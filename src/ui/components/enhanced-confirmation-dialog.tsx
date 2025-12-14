@@ -113,7 +113,7 @@ export function EnhancedConfirmationDialog({
   onReject,
   showVSCodeOpen = false,
   content,
-  originalContent,
+  originalContent: _originalContent,
   newContent,
   timeout,
   showFileInfo = true,

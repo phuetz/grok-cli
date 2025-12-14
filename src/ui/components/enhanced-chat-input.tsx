@@ -10,7 +10,7 @@
  * - Keyboard shortcut hints
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { Box, Text, useInput } from "ink";
 import { useTheme } from "../context/theme-context.js";
 

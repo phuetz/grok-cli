@@ -408,7 +408,7 @@ export class PersistentAnalytics extends EventEmitter {
   // Private Methods
   // ============================================================================
 
-  private checkBudgets(addedCost: number): void {
+  private checkBudgets(_addedCost: number): void {
     const alerts: CostAlert[] = [];
 
     // Check session budget
