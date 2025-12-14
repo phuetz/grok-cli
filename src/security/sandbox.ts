@@ -129,7 +129,7 @@ export class SandboxManager {
     const hasMultipleCommands = dangerousChars.some(char => command.includes(char));
 
     // Allow piping for common safe operations
-    const safePipes = ['grep', 'head', 'tail', 'wc', 'sort', 'uniq', 'awk', 'sed', 'cut', 'less', 'more'];
+    const safePipes = ['grep', 'rg', 'head', 'tail', 'wc', 'sort', 'uniq', 'awk', 'sed', 'cut', 'less', 'more'];
     if (hasMultipleCommands && command.includes('|')) {
       const parts = command.split('|').map(p => p.trim().split(' ')[0]);
       const allSafe = parts.every(cmd => safePipes.includes(cmd) || !cmd.includes('$'));

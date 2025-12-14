@@ -48,6 +48,7 @@ const DEFAULT_CONFIG: ToolCacheConfig = {
   cacheableTools: new Set([
     'search',
     'grep',
+    'rg',
     'glob',
     'find_files',
     'list_files',

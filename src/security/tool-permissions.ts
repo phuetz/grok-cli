@@ -59,6 +59,7 @@ const DEFAULT_CONFIG: ToolPermissionConfig = {
     { pattern: 'list_files', permission: ToolPermission.ALWAYS },
     { pattern: 'search_files', permission: ToolPermission.ALWAYS },
     { pattern: 'grep', permission: ToolPermission.ALWAYS },
+    { pattern: 'rg', permission: ToolPermission.ALWAYS },
     { pattern: 'find_files', permission: ToolPermission.ALWAYS },
     { pattern: 'glob', permission: ToolPermission.ALWAYS },
     { pattern: 'git_status', permission: ToolPermission.ALWAYS },

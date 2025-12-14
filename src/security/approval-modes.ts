@@ -115,7 +115,7 @@ const APPROVAL_MODE_CONFIGS: Record<ApprovalMode, ApprovalModeConfig> = {
 
 // Safe commands that can be auto-approved
 const SAFE_COMMANDS = new Set([
-  'ls', 'cat', 'head', 'tail', 'less', 'more', 'wc', 'grep', 'find',
+  'ls', 'cat', 'head', 'tail', 'less', 'more', 'wc', 'grep', 'rg', 'find',
   'pwd', 'echo', 'date', 'whoami', 'uname', 'which', 'whereis',
   'git status', 'git log', 'git diff', 'git branch', 'git show',
   'npm list', 'npm ls', 'npm outdated', 'npm view',

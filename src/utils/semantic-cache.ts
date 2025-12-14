@@ -502,6 +502,7 @@ export function isCacheable(toolName: string): boolean {
   const cacheableTools = new Set([
     'search',
     'grep',
+    'rg',
     'glob',
     'find_files',
     'list_files',
