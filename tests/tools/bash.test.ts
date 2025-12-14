@@ -204,10 +204,11 @@ describe('BashTool', () => {
     });
 
     test('grep should execute grep command', async () => {
-      const result = await bashTool.grep('test', '.');
+      // Grep only package.json to avoid timeout on large directories
+      const result = await bashTool.grep('name', 'package.json');
       // May not find matches but command should execute
       expect(result).toBeDefined();
-    });
+    }, 15000);
   });
 
   describe('Shell Argument Escaping', () => {

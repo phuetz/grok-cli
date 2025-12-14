@@ -121,13 +121,14 @@ describe('BashTool', () => {
     }, 15000);
 
     it('should allow grep command', async () => {
-      const result = await bashTool.execute('grep -r "test" .');
+      // Grep only package.json to avoid timeout on large directories
+      const result = await bashTool.execute('grep "name" package.json');
       // May succeed or fail depending on matches, but shouldn't be blocked
       // If there's an error, it shouldn't be because it was blocked
       if (result.error) {
         expect(result.error).not.toContain('blocked');
       }
-    });
+    }, 15000);
   });
 
   describe('cd Command', () => {
