@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useInput } from "ink";
 import fs from "fs";
 import path from "path";
+import * as yaml from 'js-yaml';
 import { GrokAgent, ChatEntry } from "../agent/grok-agent.js";
 import { ConfirmationService } from "../utils/confirmation-service.js";
 import { useEnhancedInput, Key } from "./use-enhanced-input.js";
@@ -72,6 +73,61 @@ export function useInputHandler({
     return sessionFlags.allOperations;
   });
 
+  // Track last escape time for double-escape detection
+  const lastEscapeTimeRef = useRef<number>(0);
+  const DOUBLE_ESCAPE_THRESHOLD = 500; // ms
+
+  /**
+   * Save instruction to .grokrules file (Claude Code-style # capture)
+   */
+  const saveInstructionToGrokRules = (instruction: string): string => {
+    const grokrulesPath = path.join(process.cwd(), '.grokrules');
+
+    try {
+      let rules: { instructions?: string[] } = {};
+
+      // Load existing rules if file exists
+      if (fs.existsSync(grokrulesPath)) {
+        const content = fs.readFileSync(grokrulesPath, 'utf-8');
+        try {
+          rules = yaml.load(content) as { instructions?: string[] } || {};
+        } catch {
+          // If parsing fails, treat existing content as raw
+          rules = { instructions: [] };
+        }
+      }
+
+      // Ensure instructions array exists
+      if (!rules.instructions) {
+        rules.instructions = [];
+      }
+
+      // Add the new instruction if not already present
+      if (!rules.instructions.includes(instruction)) {
+        rules.instructions.push(instruction);
+      }
+
+      // Write back to file
+      fs.writeFileSync(grokrulesPath, yaml.dump(rules, { lineWidth: -1 }));
+
+      return `Instruction saved to .grokrules:\n  "${instruction}"`;
+    } catch (error) {
+      return `Failed to save instruction: ${getErrorMessage(error)}`;
+    }
+  };
+
+  /**
+   * Get the last user message from chat history for editing
+   */
+  const getLastUserMessage = (): string | null => {
+    for (let i = chatHistory.length - 1; i >= 0; i--) {
+      if (chatHistory[i].type === 'user') {
+        return chatHistory[i].content;
+      }
+    }
+    return null;
+  };
+
   const handleSpecialKey = (key: Key): boolean => {
     // Don't handle input if confirmation dialog is active
     if (isConfirmationActive) {
@@ -94,7 +150,7 @@ export function useInputHandler({
       return true; // Handled
     }
 
-    // Handle escape key for closing menus
+    // Handle escape key for closing menus and double-escape for history edit
     if (key.escape) {
       if (showCommandSuggestions) {
         setShowCommandSuggestions(false);
@@ -106,6 +162,11 @@ export function useInputHandler({
         setSelectedModelIndex(0);
         return true;
       }
+      if (showFileAutocomplete) {
+        setShowFileAutocomplete(false);
+        setSelectedFileIndex(0);
+        return true;
+      }
       if (isProcessing || isStreaming) {
         agent.abortCurrentOperation();
         setIsProcessing(false);
@@ -115,6 +176,22 @@ export function useInputHandler({
         processingStartTime.current = 0;
         return true;
       }
+
+      // Double-escape detection for editing previous prompt
+      const now = Date.now();
+      const timeSinceLastEscape = now - lastEscapeTimeRef.current;
+      lastEscapeTimeRef.current = now;
+
+      if (timeSinceLastEscape < DOUBLE_ESCAPE_THRESHOLD && input.trim() === '') {
+        // Double escape with empty input - load last user message for editing
+        const lastMessage = getLastUserMessage();
+        if (lastMessage) {
+          setInput(lastMessage);
+          setCursorPosition(lastMessage.length);
+          return true;
+        }
+      }
+
       return false; // Let default escape handling work
     }
 
@@ -267,6 +344,29 @@ export function useInputHandler({
     }
 
     if (userInput.trim()) {
+      // Handle # instruction capture - save to .grokrules (Claude Code-style)
+      if (userInput.startsWith("#")) {
+        const instruction = userInput.slice(1).trim();
+        if (instruction) {
+          const result = saveInstructionToGrokRules(instruction);
+          const entry: ChatEntry = {
+            type: "assistant",
+            content: result,
+            timestamp: new Date(),
+          };
+          setChatHistory((prev) => [...prev, entry]);
+        } else {
+          const helpEntry: ChatEntry = {
+            type: "assistant",
+            content: `# Instruction Capture\n\nUsage: #<instruction>\n\nSave a project-specific instruction to .grokrules.\n\nExamples:\n  # Always use TypeScript strict mode\n  # Prefer functional components over class components\n  # Use conventional commits format`,
+            timestamp: new Date(),
+          };
+          setChatHistory((prev) => [...prev, helpEntry]);
+        }
+        clearInput();
+        return;
+      }
+
       // Handle ! shell bypass prefix - execute command directly without AI
       if (userInput.startsWith("!")) {
         await handleShellBypass(userInput.slice(1).trim());
