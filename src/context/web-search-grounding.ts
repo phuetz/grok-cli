@@ -11,7 +11,6 @@
  */
 
 import { EventEmitter } from 'events';
-import { spawn } from 'child_process';
 import * as https from 'https';
 import * as http from 'http';
 

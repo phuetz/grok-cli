@@ -99,7 +99,7 @@ export class ThemeManager {
               theme.isBuiltin = false;
               this.themes.set(theme.id, theme);
             } else {
-              console.warn(`Invalid theme in ${file}:`, validationResult.error.errors.map(e => e.message).join(', '));
+              console.warn(`Invalid theme in ${file}:`, validationResult.error.issues.map((e: { message: string; path: PropertyKey[] }) => e.message).join(', '));
             }
           } catch (error) {
             if (error instanceof SyntaxError) {
@@ -130,7 +130,7 @@ export class ThemeManager {
       // Validate preferences structure with Zod
       const validationResult = themePreferencesSchema.safeParse(parsed);
       if (!validationResult.success) {
-        console.warn('Invalid theme preferences:', validationResult.error.errors.map(e => e.message).join(', '));
+        console.warn('Invalid theme preferences:', validationResult.error.issues.map((e: { message: string; path: PropertyKey[] }) => e.message).join(', '));
         return;
       }
 
@@ -410,7 +410,7 @@ export class ThemeManager {
       // Validate theme structure with Zod
       const validationResult = themeSchema.safeParse(parsed);
       if (!validationResult.success) {
-        console.warn('Invalid theme:', validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+        console.warn('Invalid theme:', validationResult.error.issues.map((e: { message: string; path: PropertyKey[] }) => `${e.path.join('.')}: ${e.message}`).join(', '));
         return null;
       }
 

@@ -15,6 +15,32 @@ import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
 
+/**
+ * Get the builtin prompts directory path
+ * Works in both ESM (runtime) and CJS (Jest) environments
+ */
+function getBuiltinPromptsDir(): string {
+  // In production: prompts are at <package_root>/prompts
+  // Try multiple locations to handle different execution contexts
+  const candidates = [
+    // When running from dist/ (ESM production) or local dev
+    path.join(process.cwd(), 'prompts'),
+    // npm global install (node_modules/@phuetz/grok-cli/prompts)
+    path.join(process.execPath, '..', '..', 'lib', 'node_modules', '@phuetz', 'grok-cli', 'prompts'),
+    // Fallback to home directory
+    path.join(os.homedir(), '.grok', 'builtin-prompts'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  // Default to cwd/prompts (will be created or use inline prompts)
+  return path.join(process.cwd(), 'prompts');
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -111,7 +137,7 @@ export class PromptManager {
 
   constructor() {
     this.userPromptsDir = path.join(os.homedir(), '.grok', 'prompts');
-    this.builtinPromptsDir = path.join(__dirname, '..', '..', 'prompts');
+    this.builtinPromptsDir = getBuiltinPromptsDir();
   }
 
   /**

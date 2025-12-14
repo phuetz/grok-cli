@@ -11,7 +11,7 @@
 
 import { EventEmitter } from 'events';
 import { getAnalyticsRepository } from '../database/repositories/analytics-repository.js';
-import type { RepairLearning, Convention, ToolStats } from '../database/schema.js';
+import type { RepairLearning, Convention } from '../database/schema.js';
 import { getDatabaseManager } from '../database/database-manager.js';
 
 // ============================================================================

@@ -4,7 +4,6 @@ export {
   handleBranches,
   handleCheckout,
   handleMerge,
-  handleDiffCheckpoints,
 } from './branch-handlers.js';
 
 // Memory handlers

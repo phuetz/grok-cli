@@ -502,7 +502,7 @@ describe('MiddlewarePipeline', () => {
       },
     ]);
 
-    pipeline.on(event => events.push(event.type));
+    pipeline.on((event: { type: string }) => events.push(event.type));
 
     const context = createTestContext({});
     await pipeline.runBefore(context);
@@ -591,10 +591,10 @@ describe('Factory Functions', () => {
     const middlewares = createDefaultMiddlewares();
 
     expect(middlewares.length).toBe(4);
-    expect(middlewares.some(m => m.name === 'turn-limit')).toBe(true);
-    expect(middlewares.some(m => m.name === 'price-limit')).toBe(true);
-    expect(middlewares.some(m => m.name === 'auto-compact')).toBe(true);
-    expect(middlewares.some(m => m.name === 'context-warning')).toBe(true);
+    expect(middlewares.some((m: { name: string }) => m.name === 'turn-limit')).toBe(true);
+    expect(middlewares.some((m: { name: string }) => m.name === 'price-limit')).toBe(true);
+    expect(middlewares.some((m: { name: string }) => m.name === 'auto-compact')).toBe(true);
+    expect(middlewares.some((m: { name: string }) => m.name === 'context-warning')).toBe(true);
   });
 
   it('should create default middlewares with custom options', () => {
@@ -610,10 +610,10 @@ describe('Factory Functions', () => {
     const middlewares = createYoloMiddlewares();
 
     expect(middlewares.length).toBe(3);
-    expect(middlewares.some(m => m.name === 'turn-limit')).toBe(true);
-    expect(middlewares.some(m => m.name === 'price-limit')).toBe(true);
-    expect(middlewares.some(m => m.name === 'auto-compact')).toBe(true);
+    expect(middlewares.some((m: { name: string }) => m.name === 'turn-limit')).toBe(true);
+    expect(middlewares.some((m: { name: string }) => m.name === 'price-limit')).toBe(true);
+    expect(middlewares.some((m: { name: string }) => m.name === 'auto-compact')).toBe(true);
     // No context warning in YOLO mode
-    expect(middlewares.some(m => m.name === 'context-warning')).toBe(false);
+    expect(middlewares.some((m: { name: string }) => m.name === 'context-warning')).toBe(false);
   });
 });

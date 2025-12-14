@@ -13,7 +13,6 @@ import {
   RenderContext,
   WeatherData,
   WeatherCondition,
-  WeatherForecast,
   isWeatherData,
 } from './types.js';
 

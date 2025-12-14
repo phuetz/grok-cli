@@ -8,7 +8,6 @@ import {
   handleBranches,
   handleCheckout,
   handleMerge,
-  handleDiffCheckpoints,
   // Memory handlers
   handleMemory,
   handleRemember,
@@ -141,9 +140,6 @@ export class EnhancedCommandHandler {
 
       case "__MERGE__":
         return handleMerge(args);
-
-      case "__DIFF_CHECKPOINTS__":
-        return handleDiffCheckpoints(args);
 
       // Memory & TODOs
       case "__MEMORY__":

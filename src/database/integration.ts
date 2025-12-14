@@ -10,7 +10,6 @@ import { EventEmitter } from 'events';
 import { initializeDatabase, getDatabaseManager, needsMigration, runMigration } from './index.js';
 import { getMemoryRepository, type MemoryFilter } from './repositories/memory-repository.js';
 import { getSessionRepository } from './repositories/session-repository.js';
-import { getAnalyticsRepository } from './repositories/analytics-repository.js';
 import { getEmbeddingRepository } from './repositories/embedding-repository.js';
 import { getCacheRepository } from './repositories/cache-repository.js';
 import { initializeEmbeddingProvider, getEmbeddingProvider } from '../embeddings/index.js';

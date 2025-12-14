@@ -3,7 +3,7 @@ import path from 'path';
 import os from 'os';
 import { ChatEntry } from '../agent/grok-agent.js';
 import { getSessionRepository, SessionRepository } from '../database/repositories/session-repository.js';
-import type { Session as DBSession, Message as DBMessage } from '../database/schema.js';
+import type { Message as DBMessage } from '../database/schema.js';
 
 export interface Session {
   id: string;

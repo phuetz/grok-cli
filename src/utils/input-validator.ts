@@ -558,3 +558,122 @@ export const assertBoolean = createAssertingValidator(validateBoolean);
 export const assertUrl = createAssertingValidator(validateUrl);
 export const assertEmail = createAssertingValidator(validateEmail);
 export const assertFilePath = createAssertingValidator(validateFilePath);
+
+// ============================================================================
+// Bash Tool Schemas and Validators
+// ============================================================================
+
+/**
+ * Schemas for bash tool operations
+ */
+export const bashToolSchemas = {
+  execute: {
+    command: { type: 'string' as const, required: true, minLength: 1 },
+    timeout: { type: 'number' as const, required: false, min: 1, max: 600000 },
+  },
+  listFiles: {
+    directory: { type: 'string' as const, required: false },
+  },
+  findFiles: {
+    pattern: { type: 'string' as const, required: true, minLength: 1 },
+    directory: { type: 'string' as const, required: false },
+  },
+  grep: {
+    pattern: { type: 'string' as const, required: true, minLength: 1 },
+    files: { type: 'string' as const, required: false },
+  },
+};
+
+/**
+ * Validate input against a schema
+ */
+export function validateWithSchema(
+  schema: Record<string, { type: string; required?: boolean; minLength?: number; min?: number; max?: number }>,
+  input: Record<string, unknown>,
+  _context: string
+): ValidationResult<Record<string, unknown>> {
+  for (const [field, rules] of Object.entries(schema)) {
+    const value = input[field];
+
+    // Check required fields
+    if (rules.required && (value === undefined || value === null)) {
+      return { valid: false, error: `Missing required field: ${field}` };
+    }
+
+    // Skip validation for optional undefined fields
+    if (value === undefined || value === null) continue;
+
+    // Type validation
+    if (rules.type === 'string' && typeof value !== 'string') {
+      return { valid: false, error: `${field} must be a string` };
+    }
+    if (rules.type === 'number' && typeof value !== 'number') {
+      return { valid: false, error: `${field} must be a number` };
+    }
+
+    // String constraints
+    if (rules.type === 'string' && typeof value === 'string') {
+      if (rules.minLength && value.length < rules.minLength) {
+        return { valid: false, error: `${field} must be at least ${rules.minLength} characters` };
+      }
+    }
+
+    // Number constraints
+    if (rules.type === 'number' && typeof value === 'number') {
+      if (rules.min !== undefined && value < rules.min) {
+        return { valid: false, error: `${field} must be at least ${rules.min}` };
+      }
+      if (rules.max !== undefined && value > rules.max) {
+        return { valid: false, error: `${field} must be at most ${rules.max}` };
+      }
+    }
+  }
+
+  return { valid: true, value: input };
+}
+
+/**
+ * Dangerous command patterns for validation
+ */
+const DANGEROUS_PATTERNS: RegExp[] = [
+  /rm\s+(-rf?|--recursive)\s+[/~]/i,
+  /rm\s+.*\/\s*$/i,
+  />\s*\/dev\/sd[a-z]/i,
+  /dd\s+.*if=.*of=\/dev/i,
+  /mkfs/i,
+  /:\(\)\s*\{\s*:\|:&\s*\};:/,
+  /chmod\s+-R\s+777\s+\//i,
+  /wget.*\|\s*(ba)?sh/i,
+  /curl.*\|\s*(ba)?sh/i,
+  /sudo\s+(rm|dd|mkfs)/i,
+];
+
+/**
+ * Validate a command for dangerous patterns
+ */
+export function validateCommand(command: string): ValidationResult<string> {
+  if (!command || typeof command !== 'string') {
+    return { valid: false, error: 'Command must be a non-empty string' };
+  }
+
+  for (const pattern of DANGEROUS_PATTERNS) {
+    if (pattern.test(command)) {
+      return { valid: false, error: `Dangerous command pattern detected` };
+    }
+  }
+
+  return { valid: true, value: command };
+}
+
+/**
+ * Sanitize a string for safe shell use
+ */
+export function sanitizeForShell(input: string): string {
+  if (!input || typeof input !== 'string') return '';
+
+  // Escape single quotes by ending the quote, adding escaped quote, and reopening
+  const escaped = input.replace(/'/g, "'\\''");
+
+  // Wrap in single quotes for safety
+  return `'${escaped}'`;
+}

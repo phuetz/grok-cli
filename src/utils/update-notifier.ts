@@ -61,16 +61,18 @@ interface CacheData {
  */
 function getCurrentVersion(): string {
   try {
-    // Try to find package.json relative to this file
+    // Try to find package.json from various locations
+    // Works in both local dev and npm global install
     const possiblePaths = [
-      join(__dirname, '../../package.json'),
-      join(__dirname, '../../../package.json'),
+      // Local development or npx
       join(process.cwd(), 'package.json'),
+      // npm global install (node_modules/@phuetz/grok-cli/package.json)
+      join(process.execPath, '..', '..', 'lib', 'node_modules', '@phuetz', 'grok-cli', 'package.json'),
     ];
 
     for (const pkgPath of possiblePaths) {
       if (existsSync(pkgPath)) {
-        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { name?: string; version?: string };
         if (pkg.name?.includes('grok-cli')) {
           return pkg.version || '0.0.0';
         }

@@ -5,7 +5,6 @@ import { getSettingsManager } from "./utils/settings-manager.js";
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
 
 // Types for dynamically imported modules
-import type { GrokAgent as GrokAgentType } from "./agent/grok-agent.js";
 import type { SecurityMode } from "./security/security-modes.js";
 
 // Lazy imports for heavy modules - only loaded when needed

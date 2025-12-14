@@ -24,8 +24,6 @@ import {
   LocalProviderManager,
   LocalProviderType,
   LocalLLMMessage,
-  LocalLLMResponse,
-  getLocalProviderManager,
   autoConfigureLocalProvider,
 } from '../providers/local-llm-provider.js';
 

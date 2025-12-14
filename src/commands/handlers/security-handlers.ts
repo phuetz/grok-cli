@@ -2,7 +2,7 @@ import { ChatEntry } from "../../agent/grok-agent.js";
 import { getSecurityManager, ApprovalMode } from "../../security/index.js";
 import { getCodeGuardianAgent, CodeGuardianMode } from "../../agent/specialized/code-guardian-agent.js";
 import { ConfirmationService } from "../../utils/confirmation-service.js";
-import { SecurityReviewAgent, getSecurityReviewAgent } from "../../agent/specialized/security-review-agent.js";
+import { getSecurityReviewAgent } from "../../agent/specialized/security-review-agent.js";
 
 export interface CommandHandlerResult {
   handled: boolean;
