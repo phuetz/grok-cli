@@ -35,7 +35,7 @@
 | 8.3 | 🔨 Construction du Graphe | Analyse des imports et types |
 | 8.4 | 🔍 Retrieval avec Dépendances | Algorithme d'expansion |
 | 8.5 | 🎯 Stratégies d'Expansion | Adapter selon le contexte |
-| 8.6 | 🛠️ Implémentation | Le module dans Grok-CLI |
+| 8.6 | 🛠️ Implémentation | Le module dans Code Buddy |
 | 8.7 | ⚡ Optimisations | Cache et mise à jour incrémentale |
 | 8.8 | 💼 Cas Pratiques | Exemples concrets d'utilisation |
 
@@ -734,7 +734,7 @@ async function selectiveExpand(
 
 ---
 
-## 8.6 🛠️ Implémentation Grok-CLI
+## 8.6 🛠️ Implémentation Code Buddy
 
 ### 8.6.1 Architecture du module
 
@@ -1122,7 +1122,7 @@ function getCallersStrategy(): ExpansionStrategy {
 |------|-----------|
 | 📄 Paper | Jimenez, C., et al. (2024). "CodeRAG: Retrieval-Augmented Generation for Code" |
 | 📄 Paper | Zhang, Y., et al. (2023). "RepoFusion: Training Code Models to Understand Your Repository" |
-| 💻 Code | Grok-CLI : `src/context/dependency-aware-rag.ts` |
+| 💻 Code | Code Buddy : `src/context/dependency-aware-rag.ts` |
 | 🔗 Tool | TypeScript Compiler API : AST analysis |
 
 ---

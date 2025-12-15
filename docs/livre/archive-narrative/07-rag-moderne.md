@@ -73,7 +73,7 @@ stripe.paymentIntents.create() avec les paramètres appropriés...
 | 7.3 | 🔄 Pipeline RAG | Les phases d'indexation et retrieval |
 | 7.4 | 🔀 Retrieval Hybride | Combiner sémantique et keywords |
 | 7.5 | 💉 Augmentation | Injecter le contexte dans le prompt |
-| 7.6 | 🛠️ Implémentation | Le module RAG de Grok-CLI |
+| 7.6 | 🛠️ Implémentation | Le module RAG de Code Buddy |
 | 7.7 | 📊 Évaluation | Mesurer la qualité du retrieval |
 
 ---
@@ -185,7 +185,7 @@ Le choix du modèle d'embedding impacte directement la qualité du retrieval. Vo
 
 ### 7.2.4 Embedding local avec Transformers.js
 
-Pour éviter les coûts API et les problèmes de latence, Grok-CLI utilise des embeddings locaux :
+Pour éviter les coûts API et les problèmes de latence, Code Buddy utilise des embeddings locaux :
 
 ```typescript
 // src/embeddings/local-embedder.ts
@@ -715,7 +715,7 @@ function fitToTokenLimit(
 
 ---
 
-## 7.6 🛠️ Implémentation Grok-CLI
+## 7.6 🛠️ Implémentation Code Buddy
 
 ### 7.6.1 Architecture du module RAG
 
@@ -1109,7 +1109,7 @@ Testez ces configurations sur votre benchmark :
 |:------------------------:|:--------:|--------------|
 | 1.0 / 0.0 | | Sémantique pur |
 | 0.8 / 0.2 | | |
-| 0.7 / 0.3 | | Défaut Grok-CLI |
+| 0.7 / 0.3 | | Défaut Code Buddy |
 | 0.5 / 0.5 | | Équilibré |
 
 ### Exercice 4 : Créer un benchmark
@@ -1132,7 +1132,7 @@ const myBenchmark: RAGBenchmark = {
 |------|-----------|
 | 📄 Paper | Lewis, P., et al. (2020). "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks" |
 | 📄 Paper | Gao, L., et al. (2023). "Retrieval-Augmented Generation for Large Language Models: A Survey" |
-| 💻 Code | Grok-CLI : `src/context/codebase-rag/` |
+| 💻 Code | Code Buddy : `src/context/codebase-rag/` |
 | 📖 Docs | Transformers.js : https://huggingface.co/docs/transformers.js |
 
 ---

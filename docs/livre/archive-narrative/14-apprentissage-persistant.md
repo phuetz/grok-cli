@@ -55,7 +55,7 @@
 
 **Lina** : "En théorie, oui. Mais ce n'est pas juste du stockage. Regarde ce que Sophie a expérimenté hier."
 
-*Elle ouvre Grok-CLI avec la branche expérimentale.*
+*Elle ouvre Code Buddy avec la branche expérimentale.*
 
 ```
 grok> Bonjour !
@@ -1456,7 +1456,7 @@ Créez un système de rappels contextuels intelligents :
 | **Mem0** | Memory layer for AI applications | [GitHub](https://github.com/mem0ai/mem0) |
 | **LangChain Memory** | Memory patterns for LLM apps | [Docs](https://python.langchain.com/docs/modules/memory/) |
 | **Cognitive Science** | Human memory systems | [Wikipedia](https://en.wikipedia.org/wiki/Memory) |
-| **Grok-CLI** | `src/memory/` | Local |
+| **Code Buddy** | `src/memory/` | Local |
 
 ---
 
@@ -1484,7 +1484,7 @@ Créez un système de rappels contextuels intelligents :
 
 *Elle secoue la tête, ouvre Slack.*
 
-**Karim** *(message)* : "@lina @marc Réunion demain 9h. Le board veut voir une démo complète de Grok-CLI. Tout le système. Architecture, features, performance. C'est notre chance de convaincre pour la série A."
+**Karim** *(message)* : "@lina @marc Réunion demain 9h. Le board veut voir une démo complète de Code Buddy. Tout le système. Architecture, features, performance. C'est notre chance de convaincre pour la série A."
 
 *Lina sent son cœur battre plus vite.*
 

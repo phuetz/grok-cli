@@ -1,4 +1,4 @@
-# Mistral Vibe vs Grok CLI - Analyse Comparative
+# Mistral Vibe vs Code Buddy - Analyse Comparative
 
 ## Résumé Exécutif
 
@@ -29,7 +29,7 @@ vibe/
 └── setup/
 ```
 
-### Grok CLI (TypeScript)
+### Code Buddy (TypeScript)
 ```
 src/
 ├── agent/
@@ -45,7 +45,7 @@ src/
 
 ---
 
-## 2. Fonctionnalités MANQUANTES dans Grok CLI
+## 2. Fonctionnalités MANQUANTES dans Code Buddy
 
 ### 2.1 Système de Middleware (CRITIQUE)
 
@@ -58,7 +58,7 @@ class MiddlewarePipeline:
     - ContextWarningMiddleware # Avertissement contexte plein
 ```
 
-**Grok CLI:** Pas de système middleware formalisé. Les limites sont codées en dur dans l'agent.
+**Code Buddy:** Pas de système middleware formalisé. Les limites sont codées en dur dans l'agent.
 
 **Impact:** Impossible d'ajouter facilement des contrôles de conversation (limites, warnings, actions automatiques).
 
@@ -75,7 +75,7 @@ class InteractionLogger:
     - Recherche par ID partiel
 ```
 
-**Grok CLI:**
+**Code Buddy:**
 - `SessionStore` existe mais limité
 - Pas de replay de sessions
 - Pas de recherche par ID
@@ -105,7 +105,7 @@ permission = "ask"
 timeout = 30
 ```
 
-**Grok CLI:**
+**Code Buddy:**
 - JSON uniquement (settings.json)
 - Pas de configuration par outil
 - Pas de hiérarchie provider/model claire
@@ -128,7 +128,7 @@ allowlist = ["git *", "npm *", "cargo *"]
 denylist = ["rm -rf *", "sudo *"]
 ```
 
-**Grok CLI:**
+**Code Buddy:**
 - ConfirmationService global
 - Pas de configuration par outil
 - Patterns de sécurité codés en dur
@@ -146,7 +146,7 @@ class AutoCompactMiddleware:
     - Préserve contexte essentiel
 ```
 
-**Grok CLI:**
+**Code Buddy:**
 - Commande `/compact` manuelle
 - Pas d'auto-compaction
 - Pas de détection de dépassement
@@ -165,7 +165,7 @@ class AutoCompactMiddleware:
 
 Chaque agent a son propre system prompt et configuration.
 
-**Grok CLI:**
+**Code Buddy:**
 - Modes prédéfinis (AgentMode)
 - Pas de personnalisation utilisateur simple
 - Pas de fichiers .md pour agents
@@ -179,7 +179,7 @@ Chaque agent a son propre system prompt et configuration.
 - Autocompletion contextuelle
 - Insertion automatique du contenu
 
-**Grok CLI:**
+**Code Buddy:**
 - Pas d'autocompletion `@`
 - Commande `/add` existe mais différente
 
@@ -192,16 +192,16 @@ Chaque agent a son propre system prompt et configuration.
 - Notifie l'utilisateur
 - Configurable on/off
 
-**Grok CLI:**
+**Code Buddy:**
 - Pas de vérification de mise à jour
 
 ---
 
-## 3. Problèmes d'IMPLÉMENTATION dans Grok CLI
+## 3. Problèmes d'IMPLÉMENTATION dans Code Buddy
 
 ### 3.1 Pas de Séparation Provider/Model Claire
 
-**Problème:** `GrokClient` mélange logique client et configuration model.
+**Problème:** `CodeBuddyClient` mélange logique client et configuration model.
 
 **Mistral Vibe:**
 ```python
@@ -255,7 +255,7 @@ encoding = locale.getpreferredencoding() if windows else 'utf-8'
 env = {"CI": "true", "NO_TTY": "1", "NO_COLOR": "1"}
 ```
 
-**Grok CLI:**
+**Code Buddy:**
 - Isolation moins stricte
 - Pas de kill process group
 - Encoding moins robuste
@@ -272,7 +272,7 @@ class GrepTool:
     was_truncated: bool  # Indique si tronqué
 ```
 
-**Grok CLI:**
+**Code Buddy:**
 - Limites moins configurables
 - Pas d'indication de troncature claire
 
@@ -298,13 +298,13 @@ def get_universal_system_prompt():
     return "\n\n".join(sections)
 ```
 
-**Grok CLI:**
+**Code Buddy:**
 - Prompt plus monolithique
 - Moins de sections conditionnelles
 
 ---
 
-## 4. Ce que Grok CLI fait MIEUX
+## 4. Ce que Code Buddy fait MIEUX
 
 ### 4.1 Plus d'Outils Spécialisés
 - 36+ outils vs 6 dans Mistral Vibe
@@ -413,7 +413,7 @@ def get_universal_system_prompt():
 
 ## Conclusion
 
-Mistral Vibe est plus **simple et élégant** avec une architecture bien pensée (middleware, config TOML, separation of concerns). Grok CLI est plus **riche en features** mais avec une architecture moins clean.
+Mistral Vibe est plus **simple et élégant** avec une architecture bien pensée (middleware, config TOML, separation of concerns). Code Buddy est plus **riche en features** mais avec une architecture moins clean.
 
 Les priorités d'amélioration devraient être:
 1. Middleware pipeline pour contrôle conversation

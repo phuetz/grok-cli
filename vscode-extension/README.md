@@ -1,6 +1,6 @@
-# Grok CLI VS Code Extension
+# Code Buddy VS Code Extension
 
-Bring the power of Grok CLI directly into Visual Studio Code.
+Bring the power of Code Buddy directly into Visual Studio Code.
 
 ## Features
 
@@ -33,7 +33,7 @@ Bring the power of Grok CLI directly into Visual Studio Code.
 ### From VS Code Marketplace
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "Grok CLI"
+3. Search for "Code Buddy"
 4. Click Install
 
 ### From Source

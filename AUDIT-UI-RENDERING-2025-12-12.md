@@ -1,4 +1,4 @@
-# Audit Approfondi UI/Rendering - Grok CLI
+# Audit Approfondi UI/Rendering - Code Buddy
 **Date:** 12 Décembre 2025
 **Version auditée:** 1.0.0
 **Auditeur:** Claude (Sonnet 4.5)

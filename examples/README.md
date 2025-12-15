@@ -1,6 +1,6 @@
-# Grok CLI Examples
+# Code Buddy Examples
 
-This directory contains example configuration files and usage examples for Grok CLI.
+This directory contains example configuration files and usage examples for Code Buddy.
 
 ## Configuration Examples
 
@@ -114,7 +114,7 @@ grok
 
 ## Configuration Priority
 
-Grok CLI resolves configuration in this order (highest to lowest priority):
+Code Buddy resolves configuration in this order (highest to lowest priority):
 
 1. **Command-line arguments** (`--api-key`, `--model`, etc.)
 2. **Environment variables** (`GROK_API_KEY`, `GROK_MODEL`, etc.)

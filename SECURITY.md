@@ -11,7 +11,7 @@ We release patches for security vulnerabilities in the following versions:
 
 ## Reporting a Vulnerability
 
-We take the security of Grok CLI seriously. If you believe you have found a security vulnerability, please report it to us as described below.
+We take the security of Code Buddy seriously. If you believe you have found a security vulnerability, please report it to us as described below.
 
 ### Please DO NOT
 
@@ -30,7 +30,7 @@ We take the security of Grok CLI seriously. If you believe you have found a secu
 
 2. **Email**
    - Send an email to: security@example.com (replace with actual security contact)
-   - Use the subject line: `[SECURITY] Grok CLI Vulnerability Report`
+   - Use the subject line: `[SECURITY] Code Buddy Vulnerability Report`
 
 ### What to Include
 
@@ -55,7 +55,7 @@ Please include the following information in your report:
 
 ### Current Security Features
 
-Grok CLI implements several security measures:
+Code Buddy implements several security measures:
 
 1. **Input Validation**
    - All user inputs are validated and sanitized
@@ -100,7 +100,7 @@ Grok CLI implements several security measures:
    - Don't blindly trust AI-generated commands
 
 4. **Updates**
-   - Keep Grok CLI updated to the latest version
+   - Keep Code Buddy updated to the latest version
    - Check CHANGELOG.md for security fixes
    - Subscribe to security advisories
 
@@ -108,7 +108,7 @@ Grok CLI implements several security measures:
 
 ### Bash Command Execution
 
-Grok CLI can execute arbitrary bash commands. While we implement validation:
+Code Buddy can execute arbitrary bash commands. While we implement validation:
 
 - ⚠️ **Always review** commands before execution
 - ⚠️ **Be cautious** in production environments

@@ -1,6 +1,6 @@
-# Custom Instructions for Grok CLI
+# Custom Instructions for Code Buddy
 
-This file contains custom instructions that will be loaded by Grok CLI when working in this directory.
+This file contains custom instructions that will be loaded by Code Buddy when working in this directory.
 
 Place this file at `.grok/GROK.md` in your project root to customize Grok's behavior.
 

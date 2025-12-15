@@ -28,7 +28,7 @@
 |:-------:|-------|-------------|
 | 10.1 | 🔩 Anatomie d'un Outil | Interface et structure |
 | 10.2 | 🔄 Protocole de Tool-Calling | Le flow complet |
-| 10.3 | 📦 Les 41 Outils Grok-CLI | Catalogue complet |
+| 10.3 | 📦 Les 41 Outils Code Buddy | Catalogue complet |
 | 10.4 | 🔒 Validation et Sécurité | Protéger l'exécution |
 | 10.5 | ⚙️ Orchestration | Exécution et parallélisme |
 | 10.6 | 🚨 Gestion des Erreurs | Récupération automatique |
@@ -288,13 +288,13 @@ const results = await Promise.all(
 
 ---
 
-## 10.3 📦 Les 41 Outils de Grok-CLI
+## 10.3 📦 Les 41 Outils de Code Buddy
 
 ### 10.3.1 Catalogue complet
 
-Grok-CLI inclut 41 outils organisés par catégorie :
+Code Buddy inclut 41 outils organisés par catégorie :
 
-![Catalogue d'outils Grok-CLI](images/tool-catalog.svg)
+![Catalogue d'outils Code Buddy](images/tool-catalog.svg)
 
 | Catégorie | Nombre | Exemples |
 |-----------|:------:|----------|
@@ -1121,7 +1121,7 @@ class NetworkRecovery {
 |------|-----------|
 | 📖 Docs | OpenAI. "Function Calling Documentation" |
 | 📖 Docs | Anthropic. "Tool Use with Claude" |
-| 💻 Code | Grok-CLI : `src/tools/` |
+| 💻 Code | Code Buddy : `src/tools/` |
 
 ---
 

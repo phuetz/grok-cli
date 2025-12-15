@@ -1,4 +1,4 @@
-# Cahier de Tests - Grok CLI
+# Cahier de Tests - Code Buddy
 
 ## Table des Matières
 
@@ -21,7 +21,7 @@
 
 ### 1.1 Objectif du Document
 
-Ce cahier de tests définit la stratégie complète de validation de Grok CLI, un outil d'assistance au développement alimenté par l'IA. Il couvre tous les aspects fonctionnels et non-fonctionnels du système.
+Ce cahier de tests définit la stratégie complète de validation de Code Buddy, un outil d'assistance au développement alimenté par l'IA. Il couvre tous les aspects fonctionnels et non-fonctionnels du système.
 
 ### 1.2 Portée
 
@@ -154,7 +154,7 @@ tests/
 
 ### 4.1 Module Agent (`src/agent/`)
 
-#### 4.1.1 GrokAgent
+#### 4.1.1 CodeBuddyAgent
 
 | ID | Cas de Test | Entrée | Résultat Attendu | Priorité |
 |----|-------------|--------|------------------|----------|
@@ -168,9 +168,9 @@ tests/
 
 ```typescript
 // Exemple de test AG-001
-describe('GrokAgent', () => {
+describe('CodeBuddyAgent', () => {
   it('should initialize with valid config', async () => {
-    const agent = new GrokAgent({
+    const agent = new CodeBuddyAgent({
       apiKey: 'test-key',
       model: 'grok-beta',
     });
@@ -758,7 +758,7 @@ npm test -- --testPathPattern="tools"
 npm test -- --verbose
 
 # Tests spécifiques
-npm test -- -t "GrokAgent"
+npm test -- -t "CodeBuddyAgent"
 npm test -- -t "should initialize"
 
 # Générer rapport HTML
@@ -819,8 +819,8 @@ tests/
 
 ```typescript
 // Mock API Grok
-jest.mock('../src/grok/client', () => ({
-  GrokClient: jest.fn().mockImplementation(() => ({
+jest.mock('../src/codebuddy/client', () => ({
+  CodeBuddyClient: jest.fn().mockImplementation(() => ({
     chat: jest.fn().mockResolvedValue({ content: 'mocked response' }),
     stream: jest.fn().mockImplementation(async function* () {
       yield { content: 'chunk1' };
@@ -898,8 +898,8 @@ Modules with coverage < 80%:
 
 | Version | Date | Auteur | Modifications |
 |---------|------|--------|---------------|
-| 1.0.0 | 2025-12-11 | Grok CLI Team | Version initiale |
+| 1.0.0 | 2025-12-11 | Code Buddy Team | Version initiale |
 
 ---
 
-*Document généré pour Grok CLI v1.0.0*
+*Document généré pour Code Buddy v1.0.0*

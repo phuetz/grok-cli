@@ -1,4 +1,4 @@
-# Grok CLI Competitor Audit & Improvement Recommendations
+# Code Buddy Competitor Audit & Improvement Recommendations
 
 **Date**: 2025-11-23
 **Auditor**: Claude

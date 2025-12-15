@@ -1,9 +1,9 @@
-# Architecture Documentation - Grok CLI
+# Architecture Documentation - Code Buddy
 
 > **Version**: 0.0.12
 > **Last Updated**: November 14, 2025
 
-This document provides a comprehensive overview of the Grok CLI architecture, design patterns, and technical decisions.
+This document provides a comprehensive overview of the Code Buddy architecture, design patterns, and technical decisions.
 
 ## Table of Contents
 
@@ -20,7 +20,7 @@ This document provides a comprehensive overview of the Grok CLI architecture, de
 
 ## System Overview
 
-Grok CLI is an AI-powered command-line interface that enables developers to interact with their codebase through natural language. It implements an agentic architecture where an AI agent can autonomously use tools to accomplish tasks.
+Code Buddy is an AI-powered command-line interface that enables developers to interact with their codebase through natural language. It implements an agentic architecture where an AI agent can autonomously use tools to accomplish tasks.
 
 ### High-Level Architecture
 
@@ -45,7 +45,7 @@ Grok CLI is an AI-powered command-line interface that enables developers to inte
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Grok Agent                                │
+│                 CodeBuddy Agent                              │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  • Message Processing                                  │  │
 │  │  • Tool Orchestration                                  │  │
@@ -110,10 +110,10 @@ Grok CLI is an AI-powered command-line interface that enables developers to inte
 
 **Responsibility**: Core business logic and orchestration
 
-**Main Class**: `GrokAgent`
+**Main Class**: `CodeBuddyAgent`
 
 ```typescript
-class GrokAgent {
+class CodeBuddyAgent {
   processMessage(message: string): AsyncIterator<AgentEvent>
   handleToolCalls(toolCalls: ToolCall[]): Promise<ToolResult[]>
   streamResponse(messages: Message[]): AsyncIterator<Chunk>
@@ -135,12 +135,12 @@ class GrokAgent {
 
 ### 3. API Layer (Grok Client)
 
-**Location**: `src/grok/`
+**Location**: `src/codebuddy/`
 
 **Responsibility**: Communication with Grok API
 
 **Components**:
-- `GrokClient`: OpenAI SDK wrapper
+- `CodeBuddyClient`: OpenAI SDK wrapper
 - `tools.ts`: Tool definitions and schemas
 
 **Configuration**:
@@ -237,7 +237,7 @@ countTokens(text: string): number
 
 ## Core Components
 
-### GrokAgent (src/agent/grok-agent.ts)
+### CodeBuddyAgent (src/agent/codebuddy-agent.ts)
 
 **Design**: Event-driven async iterator pattern
 
@@ -442,11 +442,11 @@ User Input
 ChatInterface
     │
     ▼
-GrokAgent.processMessage()
+CodeBuddyAgent.processMessage()
     │
     ├─▶ Add to conversation history
     │
-    ├─▶ GrokClient.streamChat()
+    ├─▶ CodeBuddyClient.streamChat()
     │       │
     │       ▼
     │   Grok API (streaming)
@@ -592,7 +592,7 @@ const DANGEROUS = [
 
 ### Adding a New Tool
 
-1. **Define tool schema** in `src/grok/tools.ts`:
+1. **Define tool schema** in `src/codebuddy/tools.ts`:
 ```typescript
 {
   name: 'my_tool',
@@ -616,7 +616,7 @@ export async function executeTool(args: Args): Promise<Result> {
 }
 ```
 
-3. **Register in agent** in `src/agent/grok-agent.ts`:
+3. **Register in agent** in `src/agent/codebuddy-agent.ts`:
 ```typescript
 case 'my_tool':
   return await executeMyTool(args);
@@ -709,9 +709,9 @@ index.ts
     │       ├─▶ ConfirmationDialog
     │       └─▶ DiffRenderer
     │
-    └─▶ GrokAgent
+    └─▶ CodeBuddyAgent
             │
-            ├─▶ GrokClient
+            ├─▶ CodeBuddyClient
             │
             ├─▶ ConfirmationService
             │
@@ -726,7 +726,7 @@ index.ts
 
 ## Conclusion
 
-Grok CLI's architecture prioritizes:
+Code Buddy's architecture prioritizes:
 - **Modularity**: Clear separation of concerns
 - **Security**: Multiple validation layers
 - **Extensibility**: Easy to add new tools and features

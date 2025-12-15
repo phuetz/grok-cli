@@ -1,4 +1,4 @@
-# Audit des Fonctionnalités - Grok CLI
+# Audit des Fonctionnalités - Code Buddy
 
 **Date**: 29 Novembre 2025
 **Dernière mise à jour**: 6 Décembre 2025
@@ -8,7 +8,7 @@
 
 ## Résumé Exécutif
 
-Grok CLI est un projet **complet et mature** qui rivalise avec les meilleurs outils du marché (Claude Code, Cursor, Aider). Après audit complet du code source, **toutes les fonctionnalités critiques ont été implémentées**.
+Code Buddy est un projet **complet et mature** qui rivalise avec les meilleurs outils du marché (Claude Code, Cursor, Aider). Après audit complet du code source, **toutes les fonctionnalités critiques ont été implémentées**.
 
 ### Score Global: 98/100
 
@@ -179,7 +179,7 @@ Grok CLI est un projet **complet et mature** qui rivalise avec les meilleurs out
 
 ### 2.1 vs Claude Code
 
-| Fonctionnalité | Claude Code | Grok CLI | Avantage |
+| Fonctionnalité | Claude Code | Code Buddy | Avantage |
 |----------------|-------------|----------|----------|
 | IDE Integration | VS Code, JetBrains | VS Code, LSP | = |
 | Extended thinking | ✅ | ✅ | = |
@@ -192,7 +192,7 @@ Grok CLI est un projet **complet et mature** qui rivalise avec les meilleurs out
 
 ### 2.2 vs Cursor
 
-| Fonctionnalité | Cursor | Grok CLI | Avantage |
+| Fonctionnalité | Cursor | Code Buddy | Avantage |
 |----------------|--------|----------|----------|
 | Parallel agents | ✅ (8) | ✅ (16) | **Grok** |
 | Codebase indexing | ✅ | ✅ | = |
@@ -204,7 +204,7 @@ Grok CLI est un projet **complet et mature** qui rivalise avec les meilleurs out
 
 ### 2.3 vs Aider
 
-| Fonctionnalité | Aider | Grok CLI | Avantage |
+| Fonctionnalité | Aider | Code Buddy | Avantage |
 |----------------|-------|----------|----------|
 | Git-focused | ✅ | ✅ | = |
 | Multi-model | ✅ | ✅ | = |
@@ -253,7 +253,7 @@ Grok CLI est un projet **complet et mature** qui rivalise avec les meilleurs out
 
 ## 5. Conclusion
 
-**Grok CLI est maintenant un outil de classe mondiale** qui surpasse ses concurrents sur plusieurs aspects clés:
+**Code Buddy est maintenant un outil de classe mondiale** qui surpasse ses concurrents sur plusieurs aspects clés:
 
 ### Points Forts Uniques
 

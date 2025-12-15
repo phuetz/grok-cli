@@ -1,4 +1,4 @@
-# Audit de Documentation - Grok CLI
+# Audit de Documentation - Code Buddy
 
 **Date**: 9 Décembre 2025
 **Auditeur**: Analyse automatisée Claude
@@ -24,7 +24,7 @@
 
 ### Synthèse
 
-Grok-CLI dispose d'une **documentation globalement excellente** (score: **87/100**), avec un README complet, un guide CLAUDE.md détaillé et un livre technique de 165 000 mots. Cependant, plusieurs modules récents ne sont pas documentés dans CLAUDE.md et certains fichiers manquent de JSDoc.
+Code Buddy dispose d'une **documentation globalement excellente** (score: **87/100**), avec un README complet, un guide CLAUDE.md détaillé et un livre technique de 165 000 mots. Cependant, plusieurs modules récents ne sont pas documentés dans CLAUDE.md et certains fichiers manquent de JSDoc.
 
 ### Points Forts ✅
 
@@ -266,7 +266,7 @@ A: [...]
     *
     * @example
     * ```typescript
-    * const agent = new GrokAgent(apiKey, baseURL, model);
+    * const agent = new CodeBuddyAgent(apiKey, baseURL, model);
     * ```
     */
    ```
@@ -525,7 +525,7 @@ examples/
 ## Objectif
 Créer une application React TypeScript avec tests et CI/CD.
 
-## Étapes avec Grok-CLI
+## Étapes avec Code Buddy
 
 1. **Initialiser le projet**
    ```bash
@@ -553,18 +553,18 @@ Créer une application React TypeScript avec tests et CI/CD.
    ```
 
 ## Temps estimé
-15 minutes avec Grok-CLI vs 2 heures manuellement
+15 minutes avec Code Buddy vs 2 heures manuellement
 ```
 
 2. **`examples/api-usage/as-library.ts`**:
 ```typescript
 /**
- * Using Grok-CLI as a library in your Node.js app
+ * Using Code Buddy as a library in your Node.js app
  */
-import { GrokAgent } from '@phuetz/code-buddy';
+import { CodeBuddyAgent } from '@phuetz/code-buddy';
 
 async function main() {
-  const agent = new GrokAgent(
+  const agent = new CodeBuddyAgent(
     process.env.GROK_API_KEY!,
     'https://api.x.ai/v1',
     'grok-4-latest'
@@ -740,7 +740,7 @@ main();
 
 - **90-100**: Excellence (Documentation de référence)
 - **80-89**: Très bien (Documentation professionnelle)
-- **70-79**: Bien (Documentation complète mais améliorable) ← **Grok-CLI**
+- **70-79**: Bien (Documentation complète mais améliorable) ← **Code Buddy**
 - **60-69**: Acceptable (Documentation basique)
 - **<60**: Insuffisant (Documentation lacunaire)
 
@@ -760,14 +760,14 @@ main();
 
 ## Conclusion
 
-Grok-CLI dispose d'une **excellente base documentaire**, avec notamment un livre technique exceptionnel de 165k mots. Les principaux axes d'amélioration sont:
+Code Buddy dispose d'une **excellente base documentaire**, avec notamment un livre technique exceptionnel de 165k mots. Les principaux axes d'amélioration sont:
 
 1. **Mettre à jour CLAUDE.md** pour refléter tous les modules actuels
 2. **Améliorer la couverture JSDoc** pour atteindre 80%+
 3. **Créer des exemples pratiques** de workflows et d'intégration
 4. **Générer une documentation API** avec TypeDoc
 
-Une fois ces améliorations effectuées, Grok-CLI aura une documentation de niveau **excellence** (90+) comparable aux meilleurs projets open-source.
+Une fois ces améliorations effectuées, Code Buddy aura une documentation de niveau **excellence** (90+) comparable aux meilleurs projets open-source.
 
 ---
 

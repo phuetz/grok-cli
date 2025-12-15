@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/🤖-Grok_CLI-blueviolet?style=for-the-badge&labelColor=1a1a2e" alt="Grok CLI"/>
+<img src="https://img.shields.io/badge/🤖-Code_Buddy-blueviolet?style=for-the-badge&labelColor=1a1a2e" alt="Code Buddy"/>
 
-# ✨ Grok CLI ✨
+# ✨ Code Buddy ✨
 
 ### 🚀 L'Agent IA de Développement Nouvelle Génération pour Votre Terminal
 
@@ -37,7 +37,7 @@
 
 ---
 
-## 💖 Grok-CLI — L'Assistant Dev Fait avec Amour
+## 💖 Code Buddy — L'Assistant Dev Fait avec Amour
 
 > *"Parce que refactorer, c'est mieux quand on sourit."*
 
@@ -248,7 +248,7 @@ L'IA ne se contente pas de répondre. Elle :
 
 ### 💾 Système de Persistance
 
-> *"Nouveau ! Grok-CLI se souvient de tout... vraiment tout."*
+> *"Nouveau ! Code Buddy se souvient de tout... vraiment tout."*
 
 <table>
 <tr>
@@ -386,7 +386,7 @@ const similar = await searchSimilar(queryEmbedding);
 
 ### 🎓 Apprentissage Persistant
 
-> *"Grok-CLI apprend de ses erreurs... pour ne plus jamais les refaire."*
+> *"Code Buddy apprend de ses erreurs... pour ne plus jamais les refaire."*
 
 <table>
 <tr>
@@ -585,7 +585,7 @@ grok --model hermes-4-14b
 
 ## 🔬 Fonctionnalités Basées sur la Recherche
 
-> *"Grok CLI intègre les dernières avancées de la recherche en IA pour le développement logiciel."*
+> *"Code Buddy intègre les dernières avancées de la recherche en IA pour le développement logiciel."*
 
 <table>
 <tr>
@@ -838,7 +838,7 @@ npm test
 
 ## 📖 Le Livre : "Construire un Agent LLM Moderne"
 
-> *Un guide complet de 60 000 mots pour comprendre et construire des agents IA comme Grok-CLI*
+> *Un guide complet de 60 000 mots pour comprendre et construire des agents IA comme Code Buddy*
 
 <table>
 <tr>
@@ -854,7 +854,7 @@ npm test
 | **IV. Actions** | 10-11 | Tool-use, MCP, plugins |
 | **V. Optimisation** | 12-13 | Cache, routing, parallélisation |
 | **VI. Apprentissage** | 14 | Mémoire persistante |
-| **VII. Architecture** | 15 | Grok-CLI de A à Z |
+| **VII. Architecture** | 15 | Code Buddy de A à Z |
 
 </td>
 <td width="40%">
@@ -908,7 +908,7 @@ MIT License — voir [LICENSE](LICENSE) pour les détails.
 
 <div align="center">
 
-### 💖 Fait avec amour par la communauté Grok CLI
+### 💖 Fait avec amour par la communauté Code Buddy
 
 <br/>
 

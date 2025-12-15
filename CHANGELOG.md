@@ -172,7 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 60-second TTL cache for search operations
   - Automatic expiration and cleanup
 - Resource cleanup
-  - dispose() method for GrokAgent
+  - dispose() method for CodeBuddyAgent
   - Proper cleanup in token counter
 - GitHub Actions workflows
   - CI workflow for automated testing
@@ -220,7 +220,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features
 - Basic file editing capabilities
 - Bash command execution
-- Initial release of Grok CLI
+- Initial release of Code Buddy
 
 ---
 

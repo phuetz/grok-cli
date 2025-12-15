@@ -29,7 +29,7 @@
 | 11.1 | 🏗️ Architecture des Plugins | Pourquoi et comment |
 | 11.2 | 📦 Plugin Loader | Découverte et chargement |
 | 11.3 | 🔗 Model Context Protocol | Le standard MCP |
-| 11.4 | 🛠️ Intégration Grok-CLI | Configuration et usage |
+| 11.4 | 🛠️ Intégration Code Buddy | Configuration et usage |
 | 11.5 | 🔧 Créer un Serveur MCP | Guide pratique |
 | 11.6 | 🏪 Marketplace | Découverte et distribution |
 | 11.7 | 🔒 Sécurité | Sandboxing et vérification |
@@ -532,7 +532,7 @@ export class HTTPTransport implements MCPTransport {
 
 ---
 
-## 11.4 🛠️ Intégration Grok-CLI
+## 11.4 🛠️ Intégration Code Buddy
 
 ### 11.4.1 Configuration MCP
 
@@ -1175,7 +1175,7 @@ export class PluginVerifier {
 | Type | Référence |
 |------|-----------|
 | 📖 Spec | Anthropic. "Model Context Protocol Specification" |
-| 💻 Code | Grok-CLI : `src/plugins/`, `src/mcp/` |
+| 💻 Code | Code Buddy : `src/plugins/`, `src/mcp/` |
 | 📦 NPM | @modelcontextprotocol/sdk |
 
 ---

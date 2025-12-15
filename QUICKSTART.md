@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get up and running with Grok CLI in under 5 minutes!
+Get up and running with Code Buddy in under 5 minutes!
 
 ## Installation
 
@@ -161,4 +161,4 @@ npm config get prefix
 
 ---
 
-**Happy coding with Grok CLI! 🚀**
+**Happy coding with Code Buddy! 🚀**

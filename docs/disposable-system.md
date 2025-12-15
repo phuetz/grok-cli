@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Disposable system provides a standardized way to manage lifecycle and cleanup for singleton instances and other long-lived resources in the Grok CLI application.
+The Disposable system provides a standardized way to manage lifecycle and cleanup for singleton instances and other long-lived resources in the Code Buddy application.
 
 ## Architecture
 

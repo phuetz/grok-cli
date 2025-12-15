@@ -26,12 +26,12 @@ Tests are in `tests/` directory using Jest with ts-jest. Test files follow the p
 
 ## Architecture Overview
 
-Grok CLI is an AI-powered terminal agent using the Grok API (xAI) via OpenAI SDK. The core pattern is an **agentic loop** where the AI autonomously calls tools to complete tasks.
+Code Buddy is an AI-powered terminal agent using the Grok API (xAI) via OpenAI SDK. The core pattern is an **agentic loop** where the AI autonomously calls tools to complete tasks.
 
 ### Core Flow
 
 ```
-User Input → ChatInterface (Ink/React) → GrokAgent → Grok API
+User Input → ChatInterface (Ink/React) → CodeBuddyAgent → Grok API
                                               ↓
                                          Tool Calls (max 50/400 rounds)
                                               ↓
@@ -42,9 +42,9 @@ User Input → ChatInterface (Ink/React) → GrokAgent → Grok API
 
 ### Key Architecture Decisions
 
-1. **Lazy Loading** - Heavy modules are loaded on-demand via getters in `GrokAgent` and lazy imports in `src/index.ts` to improve startup time
+1. **Lazy Loading** - Heavy modules are loaded on-demand via getters in `CodeBuddyAgent` and lazy imports in `src/index.ts` to improve startup time
 
-2. **Tool Selection** - RAG-based tool filtering (`src/grok/tools.ts`) selects only relevant tools per query, reducing prompt tokens. Tools are cached after first selection round.
+2. **Tool Selection** - RAG-based tool filtering (`src/codebuddy/tools.ts`) selects only relevant tools per query, reducing prompt tokens. Tools are cached after first selection round.
 
 3. **Context Management** - `ContextManagerV2` compresses conversation history as it approaches token limits, using summarization to preserve context across long sessions
 
@@ -55,9 +55,9 @@ User Input → ChatInterface (Ink/React) → GrokAgent → Grok API
 ### Key Entry Points
 
 - `src/index.ts` - CLI entry, Commander setup, lazy loading
-- `src/agent/grok-agent.ts` - Main orchestrator (agentic loop, tool execution)
-- `src/grok/client.ts` - Grok API client (OpenAI SDK wrapper)
-- `src/grok/tools.ts` - Tool definitions and RAG selection
+- `src/agent/codebuddy-agent.ts` - Main orchestrator (agentic loop, tool execution)
+- `src/codebuddy/client.ts` - Grok API client (OpenAI SDK wrapper)
+- `src/codebuddy/tools.ts` - Tool definitions and RAG selection
 - `src/ui/components/chat-interface.tsx` - React/Ink terminal UI
 
 ### Tool Implementation Pattern
@@ -74,8 +74,8 @@ interface ToolResult {
 
 To add a new tool:
 1. Create tool class in `src/tools/`
-2. Add tool definition in `src/grok/tools.ts` (OpenAI function calling format)
-3. Add execution case in `GrokAgent.executeTool()`
+2. Add tool definition in `src/codebuddy/tools.ts` (OpenAI function calling format)
+3. Add execution case in `CodeBuddyAgent.executeTool()`
 
 ### Special Modes
 

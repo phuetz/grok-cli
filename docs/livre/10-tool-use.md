@@ -493,7 +493,7 @@ function shouldExecute(toolName: string, args?: string): Decision {
 
 ## 8. Input Multimodal : Images et Voix
 
-Les modèles modernes supportent l'entrée multimodale. Grok-CLI permet d'inclure des images et de dicter les prompts.
+Les modèles modernes supportent l'entrée multimodale. Code Buddy permet d'inclure des images et de dicter les prompts.
 
 ### Images (Vision)
 

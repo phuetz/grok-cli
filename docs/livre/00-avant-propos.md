@@ -15,9 +15,9 @@ Ce livre est pour vous si :
 
 ## Ce Que Vous Allez Construire
 
-À la fin de ce livre, vous aurez construit **Grok-CLI** — un agent de terminal complet :
+À la fin de ce livre, vous aurez construit **Code Buddy** — un agent de terminal complet :
 
-| Ce que fait Grok-CLI | Chapitre |
+| Ce que fait Code Buddy | Chapitre |
 |---------------------|:--------:|
 | Lit et modifie votre code intelligemment | 3, 10 |
 | Raisonne avec Tree-of-Thought et MCTS | 4, 5 |

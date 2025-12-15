@@ -2,7 +2,7 @@
 
 ## 📋 Overview
 
-This document describes the 4 major UI/UX improvements added to Grok CLI:
+This document describes the 4 major UI/UX improvements added to Code Buddy:
 
 1. **Status Bar Component** - Comprehensive session metrics display
 2. **Toast Notifications System** - Non-intrusive user feedback
@@ -512,7 +512,7 @@ To add new UI components:
 
 ---
 
-**Maintained by:** Grok CLI Team
+**Maintained by:** Code Buddy Team
 **Last Updated:** December 12, 2025
 **Version:** 1.1.0
 

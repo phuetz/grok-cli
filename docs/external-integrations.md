@@ -84,7 +84,7 @@ JSON-RPC 2.0 over stdin/stdout (line-delimited JSON).
 const { spawn } = require('child_process');
 const readline = require('readline');
 
-class GrokClient {
+class CodeBuddyClient {
   constructor() {
     this.process = spawn('grok', ['--json-rpc']);
     this.pending = new Map();
@@ -135,7 +135,7 @@ class GrokClient {
 }
 
 // Usage
-const grok = new GrokClient();
+const grok = new CodeBuddyClient();
 await grok.initialize();
 const result = await grok.complete('Explain async/await in JavaScript');
 console.log(result);
@@ -309,7 +309,7 @@ public class GrokCLIProvider : ICopilotProvider
 {
     private GrokJsonRpcClient? _client;
 
-    public string Name => "Grok CLI";
+    public string Name => "Code Buddy";
     public CopilotProviderType ProviderType => CopilotProviderType.LocalModel;
 
     public async Task<bool> InitializeAsync(string? apiKey, CopilotProviderConfig? config, CancellationToken ct)

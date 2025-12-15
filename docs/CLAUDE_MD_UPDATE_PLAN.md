@@ -494,7 +494,7 @@ Key interactive commands available during sessions:
 + **src/embeddings/** - Vector embeddings for semantic search
 +   - **src/embeddings/embedding-provider.ts** - Local (transformers.js) or API-based embeddings
 + **src/features/** - Feature flags and experimental features
-- **src/grok/** - Grok API client wrapper and tool definitions
+- **src/codebuddy/** - Grok API client wrapper and tool definitions
 - **src/hooks/** - Event hooks system (PreToolUse, PostToolUse, etc.)
 + **src/input/** - Advanced input handling and validation
 + **src/integrations/** - External service integrations

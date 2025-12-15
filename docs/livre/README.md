@@ -25,7 +25,7 @@ Ce livre existe en deux versions selon votre style d'apprentissage :
 
 ## Ce Que Vous Allez Construire
 
-À la fin de ce livre, vous aurez **Grok-CLI** — un agent de terminal complet :
+À la fin de ce livre, vous aurez **Code Buddy** — un agent de terminal complet :
 
 | Fonctionnalité | Chapitre | Code |
 |----------------|:--------:|:----:|
@@ -86,7 +86,7 @@ Ce livre existe en deux versions selon votre style d'apprentissage :
 | Ch. | Titre | Ce que vous obtenez |
 |:---:|-------|---------------------|
 | **14** | [Apprentissage Persistant](14-apprentissage-persistant.md) | Agent qui apprend de ses erreurs |
-| **15** | [Architecture Complète](15-architecture-complete.md) | Grok-CLI de A à Z |
+| **15** | [Architecture Complète](15-architecture-complete.md) | Code Buddy de A à Z |
 | **16** | [Sécurité : Le Chapitre le Plus Important](16-system-prompts-securite.md) | Défense contre prompt injection |
 | **17** | [Ce Qui Arrive en 2025](17-perspectives-futures.md) | Préparez-vous |
 | **18** | [Productivité CLI Avancée](18-productivite-cli.md) | Watch mode, voice, images, /delegate |

@@ -1,6 +1,6 @@
 # RAG-Based Tool Selection
 
-Grok CLI implements a Retrieval-Augmented Generation (RAG) based tool selection system that significantly improves tool selection accuracy and reduces token usage.
+Code Buddy implements a Retrieval-Augmented Generation (RAG) based tool selection system that significantly improves tool selection accuracy and reduces token usage.
 
 ## Overview
 
@@ -82,14 +82,14 @@ Tools are organized into semantic categories for better classification:
 RAG tool selection is enabled by default:
 
 ```typescript
-const agent = new GrokAgent(apiKey);
+const agent = new CodeBuddyAgent(apiKey);
 // RAG is automatically used
 ```
 
 ### Disable RAG (use all tools)
 
 ```typescript
-const agent = new GrokAgent(apiKey, baseURL, model, maxRounds, false);
+const agent = new CodeBuddyAgent(apiKey, baseURL, model, maxRounds, false);
 // or
 agent.setRAGToolSelection(false);
 ```
@@ -162,7 +162,7 @@ interface ToolSelectionResult {
 
 ## Parallel Tool Execution
 
-When the LLM returns multiple tool calls, Grok CLI can execute them in parallel for faster response times.
+When the LLM returns multiple tool calls, Code Buddy can execute them in parallel for faster response times.
 
 ### Safety Rules
 

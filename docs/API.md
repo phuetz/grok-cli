@@ -1,12 +1,12 @@
-# Grok CLI API Documentation
+# Code Buddy API Documentation
 
 ## Overview
 
-Grok CLI is an AI-powered terminal agent using the Grok API (xAI) via OpenAI SDK. This document covers the main public APIs for developers.
+Code Buddy is an AI-powered terminal agent using the Grok API (xAI) via OpenAI SDK. This document covers the main public APIs for developers.
 
 ## Table of Contents
 
-1. [GrokAgent](#1-grokagent)
+1. [CodeBuddyAgent](#1-grokagent)
 2. [Tool Executor](#2-tool-executor)
 3. [Tools](#3-tools)
 4. [Providers](#4-providers)
@@ -17,7 +17,7 @@ Grok CLI is an AI-powered terminal agent using the Grok API (xAI) via OpenAI SDK
 
 ---
 
-## 1. GrokAgent
+## 1. CodeBuddyAgent
 
 **File:** `src/agent/grok-agent.ts`
 
@@ -26,7 +26,7 @@ Main orchestrator implementing the agentic loop.
 ### Constructor
 
 ```typescript
-const agent = new GrokAgent(
+const agent = new CodeBuddyAgent(
   apiKey: string,
   baseURL?: string,
   model?: string,

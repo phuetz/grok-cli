@@ -1,4 +1,4 @@
-# Audit Approfondi de Sécurité et Utilisabilité - Grok CLI
+# Audit Approfondi de Sécurité et Utilisabilité - Code Buddy
 **Date:** 12 Décembre 2025
 **Version auditée:** 1.0.0
 **Auditeur:** Claude (Sonnet 4.5)

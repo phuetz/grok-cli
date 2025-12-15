@@ -2,7 +2,7 @@
 
 > *"Un bon outil disparaît dans le flux de travail. Un excellent outil l'amplifie."*
 
-Ce chapitre couvre les fonctionnalités avancées inspirées des meilleurs CLI du marché (Claude Code, Aider, Gemini CLI, GitHub Copilot CLI). Ces features transforment Grok-CLI d'un simple chatbot en un véritable assistant de développement intégré.
+Ce chapitre couvre les fonctionnalités avancées inspirées des meilleurs CLI du marché (Claude Code, Aider, Gemini CLI, GitHub Copilot CLI). Ces features transforment Code Buddy d'un simple chatbot en un véritable assistant de développement intégré.
 
 ---
 
@@ -617,7 +617,7 @@ export async function delegate(config: DelegateConfig): Promise<DelegateResult> 
   await pushBranch(branchName);
 
   // Créer la PR
-  const prBody = `## Task\n\n${config.task}\n\n## Status\n\nCréé par Grok CLI via \`/delegate\`.`;
+  const prBody = `## Task\n\n${config.task}\n\n## Status\n\nCréé par Code Buddy via \`/delegate\`.`;
 
   const pr = await createPullRequest(
     `[Grok] ${config.task.slice(0, 60)}`,

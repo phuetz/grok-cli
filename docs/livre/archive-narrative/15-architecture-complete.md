@@ -1,4 +1,4 @@
-# 🏗️ Chapitre 15 : Architecture Complète — Grok-CLI de A à Z
+# 🏗️ Chapitre 15 : Architecture Complète — Code Buddy de A à Z
 
 ---
 
@@ -6,7 +6,7 @@
 
 *Un an après le premier commit...*
 
-Lina se tenait devant l'écran de la salle de conférence. Derrière elle, le schéma complet de Grok-CLI occupait tout le mur — des dizaines de composants interconnectés, le fruit d'une année de développement itératif.
+Lina se tenait devant l'écran de la salle de conférence. Derrière elle, le schéma complet de Code Buddy occupait tout le mur — des dizaines de composants interconnectés, le fruit d'une année de développement itératif.
 
 — "Et voilà où nous en sommes," dit-elle à l'équipe réunie. "Ce qui a commencé comme un simple wrapper autour de l'API Grok est devenu... ça."
 
@@ -28,7 +28,7 @@ Marcus, l'un des nouveaux, leva la main.
 |---------|-------|-------------|
 | 15.1 | 🌍 Vue Aérienne | Les 6 couches et le flux de données |
 | 15.2 | 🖥️ Couche Interface | React/Ink, streaming, composants UI |
-| 15.3 | 🎯 Couche Orchestration | GrokAgent, boucle agentique, multi-agent |
+| 15.3 | 🎯 Couche Orchestration | CodeBuddyAgent, boucle agentique, multi-agent |
 | 15.4 | 🧠 Couche Raisonnement | ToT, MCTS, Repair, stratégies hybrides |
 | 15.5 | 💾 Couche Contexte & Mémoire | RAG, compression, mémoire unifiée |
 | 15.6 | ⚡ Couche Actions | 41 outils, registre, MCP |
@@ -45,14 +45,14 @@ Marcus, l'un des nouveaux, leva la main.
 
 ### 15.1.1 Les Six Couches
 
-L'architecture de Grok-CLI suit le principe de **séparation des responsabilités**. Chaque couche a un rôle précis et communique uniquement avec ses voisines immédiates.
+L'architecture de Code Buddy suit le principe de **séparation des responsabilités**. Chaque couche a un rôle précis et communique uniquement avec ses voisines immédiates.
 
-![Architecture Grok-CLI](images/grok-architecture-layers.svg)
+![Architecture Code Buddy](images/grok-architecture-layers.svg)
 
 | Couche | Responsabilité | Composants Clés |
 |--------|----------------|-----------------|
 | 🖥️ Interface | Interaction utilisateur | ChatInterface, StreamingText, ToolProgress |
-| 🎯 Orchestration | Coordination globale | GrokAgent, MultiAgentCoordinator |
+| 🎯 Orchestration | Coordination globale | CodeBuddyAgent, MultiAgentCoordinator |
 | 🧠 Raisonnement | Stratégies de résolution | ToT, MCTS, IterativeRepair |
 | 💾 Contexte | Gestion de l'information | RAGPipeline, ContextCompressor, UnifiedMemory |
 | ⚡ Actions | Exécution des tâches | ToolRegistry, ParallelExecutor, MCPClient |
@@ -242,7 +242,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
 ### 15.3.1 L'Agent Central
 
-Le **GrokAgent** est le chef d'orchestre du système. Il coordonne toutes les autres couches et gère la boucle agentique principale.
+Le **CodeBuddyAgent** est le chef d'orchestre du système. Il coordonne toutes les autres couches et gère la boucle agentique principale.
 
 ![Grok Agent](images/grok-agent.svg)
 
@@ -252,8 +252,8 @@ Le **GrokAgent** est le chef d'orchestre du système. Il coordonne toutes les au
 /**
  * 🎯 Agent principal - Orchestrateur central
  */
-export class GrokAgent extends EventEmitter {
-  private client: GrokClient;
+export class CodeBuddyAgent extends EventEmitter {
+  private client: CodeBuddyClient;
   private tools: ToolRegistry;
   private router: ModelRouter;
   private executor: ParallelExecutor;
@@ -746,7 +746,7 @@ export class SecurityManager {
 | Limite | Description | Mitigation |
 |--------|-------------|------------|
 | **Complexité émergente** | 6 couches = nombreuses interactions non prévues | Tests d'intégration exhaustifs |
-| **Single point of failure** | GrokAgent centralise tout | Graceful degradation, circuit breakers |
+| **Single point of failure** | CodeBuddyAgent centralise tout | Graceful degradation, circuit breakers |
 | **Couplage vertical** | Changement de couche = cascade de modifications | Interfaces stables, versioning |
 | **Overhead mémoire** | Chaque couche maintient son état | Lazy loading, garbage collection |
 | **Latence bout-en-bout** | Traversée des 6 couches à chaque requête | Optimisation hot paths, caching |
@@ -795,9 +795,9 @@ export class SecurityManager {
 
 | Aspect | Détails |
 |--------|---------|
-| **Titre** | Architecture Complète de Grok-CLI |
+| **Titre** | Architecture Complète de Code Buddy |
 | **6 Couches** | Interface, Orchestration, Raisonnement, Contexte, Actions, Sécurité |
-| **Orchestrateur** | GrokAgent avec boucle agentique (max 30 rounds) |
+| **Orchestrateur** | CodeBuddyAgent avec boucle agentique (max 30 rounds) |
 | **Multi-Agent** | Décomposition en sous-tâches spécialisées |
 | **Raisonnement** | Sélection auto ToT/MCTS/Repair selon complexité |
 | **Mémoire** | 4 types : épisodique, sémantique, procédurale, prospective |
@@ -813,7 +813,7 @@ export class SecurityManager {
 | Concept | Description | Impact |
 |---------|-------------|--------|
 | 🏗️ 6 Couches | Interface, Orchestration, Raisonnement, Contexte, Actions, Sécurité | Séparation des responsabilités |
-| 🎯 GrokAgent | Orchestrateur central avec boucle agentique | Max 30 rounds, streaming |
+| 🎯 CodeBuddyAgent | Orchestrateur central avec boucle agentique | Max 30 rounds, streaming |
 | 👥 Multi-Agent | Décomposition en sous-tâches spécialisées | Parallélisme, expertise |
 | 🧠 Raisonnement | Sélection automatique ToT/MCTS/Repair | Adaptation à la complexité |
 | 💾 Mémoire Unifiée | 4 types : épisodique, sémantique, procédurale, prospective | Apprentissage continu |
@@ -827,13 +827,13 @@ export class SecurityManager {
 
 ## 🔬 15.11 De la Recherche à l'Implémentation
 
-Un aspect clé de Grok-CLI est son ancrage dans la **recherche académique récente**. Chaque optimisation majeure est inspirée d'un article scientifique.
+Un aspect clé de Code Buddy est son ancrage dans la **recherche académique récente**. Chaque optimisation majeure est inspirée d'un article scientifique.
 
 ### 15.11.1 Tableau de Mapping Recherche → Code
 
 ![Mapping Recherche](images/research-mapping.svg)
 
-| Technique | Article de Recherche | Fichier Grok-CLI | Amélioration |
+| Technique | Article de Recherche | Fichier Code Buddy | Amélioration |
 |-----------|---------------------|------------------|--------------|
 | **Context Compression** | JetBrains Research (2024) | `context-compressor.ts` | -7% coûts, +2.6% succès |
 | **Iterative Repair** | ChatRepair (ISSTA 2024, Distinguished Paper) | `iterative-repair.ts` | Boucle feedback tests |
@@ -857,7 +857,7 @@ L'article **FrugalGPT** (Chen et al., Stanford 2023) propose de router les requ�
 **Extrait de l'article :**
 > "FrugalGPT can match GPT-4's performance with up to 98% cost reduction by learning to route queries to appropriate LLMs."
 
-**Implémentation dans Grok-CLI :**
+**Implémentation dans Code Buddy :**
 
 ```typescript
 // src/optimization/model-routing.ts
@@ -894,7 +894,7 @@ export function routeToOptimalModel(task: TaskAnalysis): string {
 
 ## 🏠 15.12 LLM Local en JavaScript/TypeScript
 
-Grok-CLI utilise principalement l'API Grok (cloud), mais peut également fonctionner avec des **LLM locaux** pour la confidentialité ou le mode hors-ligne.
+Code Buddy utilise principalement l'API Grok (cloud), mais peut également fonctionner avec des **LLM locaux** pour la confidentialité ou le mode hors-ligne.
 
 ### 15.12.1 Solutions Disponibles
 
@@ -910,7 +910,7 @@ Grok-CLI utilise principalement l'API Grok (cloud), mais peut également fonctio
 ### 15.12.2 node-llama-cpp : LLM Natif pour Node.js
 
 ```bash
-# Installation (dépendance optionnelle dans Grok-CLI)
+# Installation (dépendance optionnelle dans Code Buddy)
 npm install node-llama-cpp
 
 # Télécharger un modèle GGUF
@@ -1269,7 +1269,7 @@ async callLocalLLM(prompt: string, options: {...}): Promise<string | null> {
 | **Environnement** | Tout | Serveur | Node.js | Browser |
 | **Dépendances** | API key | Daemon | CMake, C++ | WebGPU |
 
-**Fichiers implémentés dans Grok-CLI** :
+**Fichiers implémentés dans Code Buddy** :
 
 | Fichier | Providers | Rôle |
 |---------|-----------|------|
@@ -1359,13 +1359,13 @@ Elle fit une pause.
 | 4 | La sécurité n'est pas optionnelle | Intégrée dès le début, pas en afterthought |
 | 5 | L'apprentissage est continu | Comme l'agent lui-même |
 
-Le code de Grok-CLI est open-source. Explorez-le. Modifiez-le. Construisez dessus.
+Le code de Code Buddy est open-source. Explorez-le. Modifiez-le. Construisez dessus.
 
 *Fin.*
 
 ---
 
-*Merci d'avoir lu "Construire un Agent LLM Moderne — De la Théorie à Grok-CLI".*
+*Merci d'avoir lu "Construire un Agent LLM Moderne — De la Théorie à Code Buddy".*
 
 ---
 

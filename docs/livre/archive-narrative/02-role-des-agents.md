@@ -169,7 +169,7 @@ C'est le saut qualitatif majeur : le contrôle de la boucle d'exécution passe d
 | Agent | Spécialité | Points forts |
 |-------|------------|--------------|
 | **Claude Code** | Développement généraliste | Contexte large, raisonnement avancé |
-| **Grok-CLI** | Terminal-first, multi-modèles | Outils personnalisables, MCP |
+| **Code Buddy** | Terminal-first, multi-modèles | Outils personnalisables, MCP |
 | **Aider** | Pair programming terminal | Git natif, multi-fichiers |
 | **Devin** | "Ingénieur IA autonome" | Environnement sandbox complet |
 
@@ -234,7 +234,7 @@ Un chatbot sans outils ne peut pas faire de dégâts — au pire, il donne une m
 - Consommer des ressources de manière incontrôlée
 - Exposer des données sensibles
 
-C'est pourquoi les agents modernes (Claude Code, Grok-CLI) intègrent des systèmes de permission sophistiqués :
+C'est pourquoi les agents modernes (Claude Code, Code Buddy) intègrent des systèmes de permission sophistiqués :
 
 | Mécanisme | Description | Exemple |
 |-----------|-------------|---------|
@@ -351,7 +351,7 @@ L'autonomie des agents crée des risques qui n'existaient pas avec les chatbots 
 | **Critère Distinctif** | Qui contrôle la boucle d'exécution ? |
 | **Pattern Fondamental** | ReAct = Reasoning + Acting (Think → Act → Observe) |
 | **Année Charnière** | 2023 — Function Calling + modèles puissants |
-| **Exemples Agents** | Claude Code, Grok-CLI, Aider, Devin |
+| **Exemples Agents** | Claude Code, Code Buddy, Aider, Devin |
 | **Trade-off Central** | Plus d'autonomie = plus de productivité MAIS plus de risques |
 | **Garde-fous Essentiels** | Modes d'approbation, sandbox, limites, audit |
 | **Prérequis Chapitre Suivant** | Comprendre les 6 composants d'un agent |

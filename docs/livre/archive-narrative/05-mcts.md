@@ -265,7 +265,7 @@ interface MCTSConfig {
 
 ### 5.4.2 💻 Implémentation Réelle
 
-Voici la véritable implémentation de MCTS dans `Grok-CLI` (extraite de `src/agent/reasoning/mcts.ts`), incluant le mécanisme de **Rethink** qui permet de raffiner les pensées erronées :
+Voici la véritable implémentation de MCTS dans `Code Buddy` (extraite de `src/agent/reasoning/mcts.ts`), incluant le mécanisme de **Rethink** qui permet de raffiner les pensées erronées :
 
 ```typescript
 // src/agent/reasoning/mcts.ts
@@ -298,7 +298,7 @@ export class MCTS {
       // 4️⃣ BACKPROPAGATION
       this.backpropagate(selectedNode);
 
-      // 5️⃣ RETHINK (Nouveauté Grok-CLI)
+      // 5️⃣ RETHINK (Nouveauté Code Buddy)
       // Si une pensée a échoué mais semble prometteuse, on la "repense"
       if (this.config.useRethink) {
         await this.rethink(selectedNode, problem);
@@ -346,7 +346,7 @@ export class MCTS {
 
 ---
 
-## 📁 5.5 Implémentation Grok-CLI
+## 📁 5.5 Implémentation Code Buddy
 
 ### 5.5.1 📂 Architecture du Module
 
@@ -717,7 +717,7 @@ Ajoutez le support multi-thread avec virtual loss pour éviter que plusieurs wor
 
 ### Code Source
 
-- Grok-CLI : `src/agent/reasoning/mcts.ts`
+- Code Buddy : `src/agent/reasoning/mcts.ts`
 - UCB1 : `src/agent/reasoning/selection/ucb1.ts`
 - Rollouts : `src/agent/reasoning/rollout/`
 

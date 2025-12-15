@@ -261,7 +261,7 @@ const compressionConfig = {
 
 ## Ce Qui Vient Ensuite
 
-Le contexte est optimisé, mais l'agent a besoin d'**outils** pour agir. Le **Chapitre 10** détaille les 41+ outils de Grok-CLI : lecture, écriture, exécution, avec sécurité intégrée.
+Le contexte est optimisé, mais l'agent a besoin d'**outils** pour agir. Le **Chapitre 10** détaille les 41+ outils de Code Buddy : lecture, écriture, exécution, avec sécurité intégrée.
 
 ---
 

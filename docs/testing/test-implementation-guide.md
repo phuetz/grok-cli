@@ -1,6 +1,6 @@
-# Guide d'Implémentation des Tests - Grok-CLI
+# Guide d'Implémentation des Tests - Code Buddy
 
-Ce guide fournit des exemples concrets et des templates pour implémenter les tests manquants dans Grok-CLI.
+Ce guide fournit des exemples concrets et des templates pour implémenter les tests manquants dans Code Buddy.
 
 ---
 
@@ -106,23 +106,23 @@ describe('Event-based System', () => {
  * Tests for grok-agent.ts - Agent Core
  */
 
-import { GrokAgent } from '../src/agent/grok-agent.js';
+import { CodeBuddyAgent } from '../src/agent/grok-agent.js';
 import { jest } from '@jest/globals';
 
-// Mock GrokClient
-jest.mock('../src/grok/client.js', () => ({
-  GrokClient: jest.fn().mockImplementation(() => ({
+// Mock CodeBuddyClient
+jest.mock('../src/codebuddy/client.js', () => ({
+  CodeBuddyClient: jest.fn().mockImplementation(() => ({
     chat: jest.fn().mockResolvedValue({
       choices: [{ message: { content: 'response' } }],
     }),
   })),
 }));
 
-describe('GrokAgent', () => {
-  let agent: GrokAgent;
+describe('CodeBuddyAgent', () => {
+  let agent: CodeBuddyAgent;
 
   beforeEach(() => {
-    agent = new GrokAgent({
+    agent = new CodeBuddyAgent({
       apiKey: 'test-key',
       workingDirectory: '/test/dir',
     });
@@ -649,4 +649,4 @@ node --inspect-brk node_modules/.bin/jest --runInBand
 
 ---
 
-*Guide maintenu par l'équipe Grok-CLI - 2025-12-09*
+*Guide maintenu par l'équipe Code Buddy - 2025-12-09*

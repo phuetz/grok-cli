@@ -95,7 +95,7 @@
 - **Graphe de dépendances** — [Ch.08](08-dependency-aware-rag.md)
 - **Grep (outil)** — [Ch.10](10-tool-use.md)
 - **Grok** — [Ch.01](01-comprendre-les-llms.md), [Ch.15](15-architecture-complete.md)
-- **Grok-CLI** — [Ch.00](00-avant-propos.md), [Ch.15](15-architecture-complete.md)
+- **Code Buddy** — [Ch.00](00-avant-propos.md), [Ch.15](15-architecture-complete.md)
 - **Guardrails** — [Ch.03](03-anatomie-agent.md), [Ch.15](15-architecture-complete.md)
 
 ## H

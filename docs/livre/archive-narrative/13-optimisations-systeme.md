@@ -4,7 +4,7 @@
 
 ## 🎬 Scène d'ouverture
 
-*Trois mois après le lancement de Grok-CLI en production. La salle de réunion est tendue.*
+*Trois mois après le lancement de Code Buddy en production. La salle de réunion est tendue.*
 
 *Sur le grand écran, un graphique qui ne laisse place à aucune interprétation : la courbe des coûts API, qui monte en flèche. En dessous, les plaintes utilisateurs — "trop lent", "j'attends 10 secondes", "c'est plus rapide de chercher sur Google".*
 
@@ -962,7 +962,7 @@ async function main() {
   const startTime = Date.now();
 
   // 1️⃣ Configuration de base (~5ms)
-  console.log('🚀 Starting Grok-CLI...');
+  console.log('🚀 Starting Code Buddy...');
   const config = await loadConfig();
 
   // 2️⃣ Interface utilisateur (critique, ~20ms)
@@ -970,8 +970,8 @@ async function main() {
   const ui = new ChatInterface(config);
 
   // 3️⃣ Agent minimal (critique, ~10ms)
-  const { GrokAgent } = await import('./agent/grok-agent.js');
-  const agent = new GrokAgent(config);
+  const { CodeBuddyAgent } = await import('./agent/grok-agent.js');
+  const agent = new CodeBuddyAgent(config);
 
   // ✅ Prêt à répondre en ~37ms
   console.log(`✅ Ready in ${Date.now() - startTime}ms`);
@@ -1447,7 +1447,7 @@ Construisez un dashboard avec blessed ou ink affichant :
 | **Less-is-More** | Dynamic tool filtering | [arXiv 2024](https://arxiv.org/abs/2402.06472) |
 | **AsyncLM** | Async tool calling | [Paper](https://arxiv.org/abs/2401.00132) |
 | **Flow State** | Human-AI latency research | [Replit Research](https://replit.com) |
-| **Grok-CLI** | `src/optimization/` | Local |
+| **Code Buddy** | `src/optimization/` | Local |
 
 ---
 
@@ -1503,7 +1503,7 @@ Construisez un dashboard avec blessed ou ink affichant :
 
 *Elle se retourne vers Sophie.*
 
-**Lina** : "Sophie, tu n'as pas utilisé Grok-CLI standard, n'est-ce pas ? Tu as testé la branche expérimentale ?"
+**Lina** : "Sophie, tu n'as pas utilisé Code Buddy standard, n'est-ce pas ? Tu as testé la branche expérimentale ?"
 
 **Sophie** *(rougissant)* : "Euh... oui. J'étais curieuse."
 

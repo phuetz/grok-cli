@@ -1,4 +1,4 @@
-# Grok CLI Competitor Audit - November 2025 Update
+# Code Buddy Competitor Audit - November 2025 Update
 
 **Date**: 2025-11-23
 **Auditor**: Claude
@@ -333,7 +333,7 @@ interface SymbolIndex {
 // Generate compact repo map for context
 function generateRepoMap(): string {
   // Returns condensed representation like:
-  // src/agent/grok-agent.ts: GrokAgent{processMessage, executeTool, handleStream}
+  // src/agent/grok-agent.ts: CodeBuddyAgent{processMessage, executeTool, handleStream}
   // src/tools/bash.ts: BashTool{execute, validateCommand}
 }
 ```

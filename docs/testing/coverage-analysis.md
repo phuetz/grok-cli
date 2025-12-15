@@ -1,4 +1,4 @@
-# Audit de Couverture de Tests - Grok-CLI
+# Audit de Couverture de Tests - Code Buddy
 
 **Date**: 2025-12-09  
 **Version**: 1.0.0  

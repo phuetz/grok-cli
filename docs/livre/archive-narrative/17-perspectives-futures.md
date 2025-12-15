@@ -51,7 +51,7 @@ Lina sourit.
 
 Les 12-18 prochains mois verront des evolutions majeures dans les capacites des agents LLM :
 
-| Tendance | Description | Impact sur Grok-CLI |
+| Tendance | Description | Impact sur Code Buddy |
 |----------|-------------|---------------------|
 | **Context windows geants** | 1M+ tokens (Gemini, Claude) | Moins de compression necessaire |
 | **Tool calling natif** | Standard dans tous les modeles | Simplification de l'integration |
@@ -71,7 +71,7 @@ Texte seulement          →    Multimodal natif
 Stateless par defaut     →    Stateful integre
 ```
 
-### 17.1.3 Ce Que Ca Change pour Grok-CLI
+### 17.1.3 Ce Que Ca Change pour Code Buddy
 
 | Composant | Evolution |
 |-----------|-----------|
@@ -415,7 +415,7 @@ Listez les 10 informations les plus importantes qu'un agent devrait "savoir" sur
 
 ### Exercice 4 : Ethique
 
-Pour chaque fonctionnalite de Grok-CLI, identifiez un risque ethique potentiel et une mitigation.
+Pour chaque fonctionnalite de Code Buddy, identifiez un risque ethique potentiel et une mitigation.
 
 ---
 
@@ -480,6 +480,6 @@ Elle se leva.
 
 *Fin du livre.*
 
-*Merci d'avoir lu "Construire un Agent LLM Moderne — De la Theorie a Grok-CLI".*
+*Merci d'avoir lu "Construire un Agent LLM Moderne — De la Theorie a Code Buddy".*
 
 *Le code continue. L'apprentissage aussi.*

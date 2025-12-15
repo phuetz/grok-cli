@@ -200,8 +200,8 @@ IEEE Big Data 2019
 
 ```bibtex
 @book{code-buddy-book-2024,
-  title     = {Construire un Agent LLM Moderne: De la Théorie à Grok-CLI},
-  author    = {Contributeurs Grok-CLI},
+  title     = {Construire un Agent LLM Moderne: De la Théorie à Code Buddy},
+  author    = {Contributeurs Code Buddy},
   year      = {2024},
   publisher = {GitHub},
   url       = {https://github.com/phuetz/code-buddy/docs/livre}

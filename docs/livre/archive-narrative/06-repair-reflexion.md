@@ -277,7 +277,7 @@ Explication courte :
 
 ### 6.4.3 📚 Templates de Réparation
 
-Certains patterns de bugs sont **très récurrents**. Grok-CLI maintient une bibliothèque de templates :
+Certains patterns de bugs sont **très récurrents**. Code Buddy maintient une bibliothèque de templates :
 
 ![Templates de réparation](images/repair-templates.svg)
 
@@ -319,7 +319,7 @@ export const REPAIR_TEMPLATES: RepairTemplate[] = [
 
 ## 🔁 6.5 La Boucle de Réparation Complète
 
-### 6.5.1 💻 Implémentation Grok-CLI
+### 6.5.1 💻 Implémentation Code Buddy
 
 ```typescript
 // src/agent/repair/iterative-repair.ts
@@ -413,7 +413,7 @@ Le feedback des tentatives précédentes est **crucial** :
 
 ### 6.6.1 💾 Mémoriser Ce Qui Fonctionne
 
-Grok-CLI mémorise les patterns de réparation qui fonctionnent :
+Code Buddy mémorise les patterns de réparation qui fonctionnent :
 
 ```typescript
 // src/learning/repair-learning.ts
@@ -739,7 +739,7 @@ Après 50 réparations, analysez la table `repair_learning` :
 
 ### Code Source
 
-- Grok-CLI : `src/agent/repair/`
+- Code Buddy : `src/agent/repair/`
 - Localisation : `src/agent/repair/fault-localization.ts`
 - Templates : `src/agent/repair/repair-templates.ts`
 - Learning : `src/learning/repair-learning.ts`

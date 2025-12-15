@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Grok CLI implements a comprehensive per-tool timeout system to prevent runaway tool executions and provide better control over long-running operations.
+The Code Buddy implements a comprehensive per-tool timeout system to prevent runaway tool executions and provide better control over long-running operations.
 
 ## Features
 
@@ -129,7 +129,7 @@ The timeout system is implemented across three main components:
 - Manages abort controllers for cleanup
 - Tracks timeout metrics
 
-#### 3. Tool Definitions (`src/grok/tools.ts`)
+#### 3. Tool Definitions (`src/codebuddy/tools.ts`)
 
 - Provides timeout hints for each tool
 - Documents recommended timeouts
@@ -413,7 +413,7 @@ class SettingsManager {
 - **Implementation**:
   - `/src/utils/settings-manager.ts` - Configuration management
   - `/src/agent/tool-executor.ts` - Timeout enforcement
-  - `/src/grok/tools.ts` - Timeout hints
+  - `/src/codebuddy/tools.ts` - Timeout hints
 
 - **Tests**:
   - `/tests/agent/tool-timeout.test.ts` - Timeout tests

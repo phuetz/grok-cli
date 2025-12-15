@@ -107,7 +107,7 @@ convert -density 300 cover-template.svg cover.png
 │    │                         │      │
 │    └─────────────────────────┘      │
 │                                     │
-│     De la Théorie à Grok-CLI        │ ← Sous-titre
+│     De la Théorie à Code Buddy        │ ← Sous-titre
 │                                     │
 │  Transformers • RAG • ToT • MCTS    │ ← Features
 │  Tool-Use • Mémoire • Multi-Agent   │

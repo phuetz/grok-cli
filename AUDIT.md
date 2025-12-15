@@ -1,4 +1,4 @@
-# 📊 Audit Technique Complet - Grok CLI
+# 📊 Audit Technique Complet - Code Buddy
 
 > **Date de l'audit** : 14 Novembre 2025
 > **Version auditée** : 0.0.12
@@ -26,7 +26,7 @@
 
 ## 🎯 Résumé Exécutif
 
-**Grok CLI** est un agent AI en ligne de commande **mature et bien architecturé** qui permet d'interagir avec l'API Grok (X.AI) pour effectuer des opérations de développement intelligentes via une interface conversationnelle.
+**Code Buddy** est un agent AI en ligne de commande **mature et bien architecturé** qui permet d'interagir avec l'API Grok (X.AI) pour effectuer des opérations de développement intelligentes via une interface conversationnelle.
 
 ### Verdict Global : ⭐⭐⭐⭐ (4/5 étoiles)
 
@@ -916,7 +916,7 @@ export function sanitizeCommand(command: string): string {
 
 ### Évaluation Globale : ⭐⭐⭐⭐ (4/5)
 
-**Grok CLI** est un projet **exceptionnellement bien conçu** avec une architecture solide, une UX remarquable et des fonctionnalités avancées. Le code est propre, modulaire et démontre une excellente maîtrise de TypeScript et React.
+**Code Buddy** est un projet **exceptionnellement bien conçu** avec une architecture solide, une UX remarquable et des fonctionnalités avancées. Le code est propre, modulaire et démontre une excellente maîtrise de TypeScript et React.
 
 ### Points Exceptionnels
 
@@ -940,7 +940,7 @@ export function sanitizeCommand(command: string): string {
 
 ### Verdict Final
 
-**Grok CLI est un excellent exemple d'agent AI CLI moderne**, démontrant des compétences avancées en architecture logicielle, UX design et intégration AI. Avec l'ajout d'une suite de tests et l'activation du strict mode TypeScript, ce projet deviendrait **un standard de référence** dans le domaine des AI CLI tools.
+**Code Buddy est un excellent exemple d'agent AI CLI moderne**, démontrant des compétences avancées en architecture logicielle, UX design et intégration AI. Avec l'ajout d'une suite de tests et l'activation du strict mode TypeScript, ce projet deviendrait **un standard de référence** dans le domaine des AI CLI tools.
 
 **Recommandation** : ⭐ **APPROUVÉ pour usage production** avec roadmap de stabilisation à court terme.
 

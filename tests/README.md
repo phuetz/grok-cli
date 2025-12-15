@@ -1,6 +1,6 @@
-# Grok CLI Tests
+# Code Buddy Tests
 
-This directory contains the test suite for Grok CLI.
+This directory contains the test suite for Code Buddy.
 
 ## Running Tests
 

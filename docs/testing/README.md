@@ -1,6 +1,6 @@
-# Documentation des Tests - Grok-CLI
+# Documentation des Tests - Code Buddy
 
-Cette documentation fournit une vue d'ensemble complète de la couverture de tests et des stratégies de test pour Grok-CLI.
+Cette documentation fournit une vue d'ensemble complète de la couverture de tests et des stratégies de test pour Code Buddy.
 
 ## 📋 Fichiers Disponibles
 
@@ -232,5 +232,5 @@ Pour questions ou suggestions sur les tests:
 
 ---
 
-*Documentation maintenue par l'équipe Grok-CLI*
+*Documentation maintenue par l'équipe Code Buddy*
 *Dernière mise à jour: 2025-12-09*

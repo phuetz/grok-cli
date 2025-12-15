@@ -1,6 +1,6 @@
-# Contributing to Grok CLI
+# Contributing to Code Buddy
 
-First off, thank you for considering contributing to Grok CLI! It's people like you that make Grok CLI such a great tool.
+First off, thank you for considering contributing to Code Buddy! It's people like you that make Code Buddy such a great tool.
 
 ## Table of Contents
 
@@ -180,7 +180,7 @@ npm run lint:fix
 ```
 src/
 ├── agent/        # Core agent logic
-├── grok/         # Grok API client and tools
+├── codebuddy/    # Grok API client and tools
 ├── tools/        # Tool implementations
 ├── ui/           # UI components
 ├── utils/        # Utility functions
@@ -359,8 +359,8 @@ code-buddy/
 │   └── workflows/        # CI/CD workflows
 ├── .husky/               # Git hooks
 ├── src/
-│   ├── agent/            # Core agent logic (GrokAgent)
-│   ├── grok/             # Grok API client and tool definitions
+│   ├── agent/            # Core agent logic (CodeBuddyAgent)
+│   ├── codebuddy/        # Grok API client and tool definitions
 │   ├── tools/            # Tool implementations
 │   │   ├── bash-tool.ts
 │   │   ├── file-tool.ts

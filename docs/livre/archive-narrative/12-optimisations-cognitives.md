@@ -375,7 +375,7 @@ export class SemanticCache {
 
 ```typescript
 // src/agent/grok-agent.ts
-export class GrokAgent {
+export class CodeBuddyAgent {
   private semanticCache: SemanticCache;
   private cacheHits = 0;
   private cacheMisses = 0;
@@ -1390,7 +1390,7 @@ Mesurez : coûts, latence, qualité des réponses.
 | **Cosine Similarity** | Mesure de similarité vectorielle | [Wikipedia](https://en.wikipedia.org/wiki/Cosine_similarity) |
 | **LSH** | Locality-Sensitive Hashing | [Stanford](https://cs.stanford.edu/~jtyler/lsh.pdf) |
 | **LRU Cache** | Least Recently Used éviction | [npm lru-cache](https://www.npmjs.com/package/lru-cache) |
-| **Grok-CLI** | `src/utils/semantic-cache.ts`, `src/performance/tool-cache.ts` | Local |
+| **Code Buddy** | `src/utils/semantic-cache.ts`, `src/performance/tool-cache.ts` | Local |
 
 ---
 
@@ -1431,7 +1431,7 @@ Cache entries:  12,847
 
 *Elle fait défiler jusqu'aux logs de tool calls.*
 
-**Lina** : "Grok-CLI a 41 outils. À chaque requête, mon agent reçoit la description de ces 41 outils. Même quand la tâche est simple — genre lire un fichier — il doit traiter 41 descriptions avant de choisir."
+**Lina** : "Code Buddy a 41 outils. À chaque requête, mon agent reçoit la description de ces 41 outils. Même quand la tâche est simple — genre lire un fichier — il doit traiter 41 descriptions avant de choisir."
 
 **Marc** *(fronçant les sourcils)* : "3,000 tokens juste pour la liste des outils..."
 

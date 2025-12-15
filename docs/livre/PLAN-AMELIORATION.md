@@ -1,6 +1,6 @@
 # Plan d'Amélioration Exhaustif du Livre
 
-**"Construire un Agent LLM Moderne — De la Théorie à Grok-CLI"**
+**"Construire un Agent LLM Moderne — De la Théorie à Code Buddy"**
 
 > Document de travail : plan structuré et actionnable pour améliorer le livre
 
@@ -207,9 +207,9 @@ Total estimé : ~65,000 mots (~200 pages imprimées)
 
 | ID | Schéma | Description | Format |
 |----|--------|-------------|--------|
-| 15-1 | `6-layers-architecture.svg` | Les 6 couches de Grok-CLI | SVG |
+| 15-1 | `6-layers-architecture.svg` | Les 6 couches de Code Buddy | SVG |
 | 15-2 | `complete-data-flow.svg` | Flux de données complet | SVG |
-| 15-3 | `grok-agent-internals.svg` | Structure interne de GrokAgent | SVG |
+| 15-3 | `grok-agent-internals.svg` | Structure interne de CodeBuddyAgent | SVG |
 | 15-4 | `security-layers.svg` | Les 4 couches de sécurité | SVG |
 
 #### Chapitre 16 — System Prompts et Sécurité
@@ -398,7 +398,7 @@ export function validateEmail(email: string): ValidationResult {
 >
 > - [RAG Paper original](https://arxiv.org/abs/2005.11401) (Lewis et al., 2020)
 > - [Tutoriel LangChain RAG](https://docs.langchain.com/docs/use-cases/qa-docs)
-> - Code Grok-CLI : `src/context/rag-pipeline.ts`
+> - Code Code Buddy : `src/context/rag-pipeline.ts`
 ```
 
 ### 4.3 Encadrés à Ajouter par Chapitre
@@ -457,7 +457,7 @@ Ce jour-là, j'ai décidé de comprendre. Vraiment comprendre. Comment construir
 
 ## Ce Que Vous Allez Construire
 
-À travers ce livre, nous allons construire **Grok-CLI** ensemble — un agent IA de terminal complet avec :
+À travers ce livre, nous allons construire **Code Buddy** ensemble — un agent IA de terminal complet avec :
 
 - 🧠 **Raisonnement avancé** : Tree-of-Thought, MCTS
 - 💾 **Mémoire persistante** : L'agent se souvient de vos préférences
@@ -761,7 +761,7 @@ Créer un nouveau chapitre : **17-perspectives-futures.md**
 
 ### 17.1.1 Court Terme (2024-2025)
 
-| Tendance | Description | Impact sur Grok-CLI |
+| Tendance | Description | Impact sur Code Buddy |
 |----------|-------------|---------------------|
 | **Modèles plus longs** | Context windows de 1M+ tokens | Moins de compression nécessaire |
 | **Tool calling natif** | Tous les modèles supportent les outils | Simplification de l'intégration |
@@ -1004,8 +1004,8 @@ echo "PDF généré : $OUTPUT"
 ```yaml
 ---
 title: "Construire un Agent LLM Moderne"
-subtitle: "De la Théorie à Grok-CLI"
-author: "Contributeurs Grok-CLI"
+subtitle: "De la Théorie à Code Buddy"
+author: "Contributeurs Code Buddy"
 date: "Décembre 2024"
 lang: fr-FR
 papersize: a4
@@ -1297,4 +1297,4 @@ git push origin v1.0.0
 ---
 
 *Document généré le 8 décembre 2024*
-*Pour le projet Grok-CLI — github.com/phuetz/code-buddy*
+*Pour le projet Code Buddy — github.com/phuetz/code-buddy*

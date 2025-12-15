@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Le system prompt est le fondement de tout agent IA. C'est l'ensemble d'instructions qui définit l'identité, les capacités, les limites et le comportement de l'assistant. Dans le contexte des CLI (Command Line Interfaces) comme Grok CLI, Claude Code ou Cursor, le system prompt prend une importance critique car l'agent a accès direct au système de fichiers et peut exécuter des commandes shell.
+Le system prompt est le fondement de tout agent IA. C'est l'ensemble d'instructions qui définit l'identité, les capacités, les limites et le comportement de l'assistant. Dans le contexte des CLI (Command Line Interfaces) comme Code Buddy, Claude Code ou Cursor, le system prompt prend une importance critique car l'agent a accès direct au système de fichiers et peut exécuter des commandes shell.
 
 Ce chapitre explore les meilleures pratiques issues de la recherche académique et de l'industrie pour concevoir des system prompts robustes et sécurisés.
 
@@ -16,7 +16,7 @@ D'après l'analyse des system prompts des principaux assistants IA (Claude Code,
 
 | Pattern | Description | Exemple |
 |---------|-------------|---------|
-| **Role Definition** | Définir clairement l'identité et le scope | "You are Grok CLI, a terminal assistant..." |
+| **Role Definition** | Définir clairement l'identité et le scope | "You are Code Buddy, a terminal assistant..." |
 | **Structured Organization** | Organiser avec des balises XML ou Markdown | `<security_rules>`, `<tool_usage>` |
 | **Tool Integration** | Décrire précisément les outils disponibles | Schémas, paramètres, cas d'usage |
 | **Planning & Reasoning** | Imposer des phases de réflexion | Chain-of-thought, todo lists |
@@ -53,11 +53,11 @@ Style de communication attendu
 </response_style>
 ```
 
-### 16.1.3 Exemple : Prompt Grok CLI
+### 16.1.3 Exemple : Prompt Code Buddy
 
 ```typescript
 <identity>
-You are Grok CLI, an AI-powered terminal assistant for software development.
+You are Code Buddy, an AI-powered terminal assistant for software development.
 You help users with file editing, code generation, and system operations.
 </identity>
 
@@ -221,7 +221,7 @@ function redactSensitive(text: string): string {
 
 ### 16.3.3 Modes de Sécurité
 
-Grok CLI implémente 3 niveaux de sécurité :
+Code Buddy implémente 3 niveaux de sécurité :
 
 | Mode | Confirmations | Commandes | Cas d'usage |
 |------|--------------|-----------|-------------|
@@ -250,7 +250,7 @@ Pour les modèles locaux sans tool calling, utiliser un prompt simplifié :
 
 ```xml
 <identity>
-Tu es Grok CLI, un assistant IA intelligent spécialisé
+Tu es Code Buddy, un assistant IA intelligent spécialisé
 dans le développement logiciel.
 </identity>
 
@@ -338,7 +338,7 @@ avec suffisamment de tentatives, la plupart des safeguards peuvent être contour
 
 ---
 
-## 16.6 Implémentation dans Grok CLI
+## 16.6 Implémentation dans Code Buddy
 
 ### 16.6.1 Structure des Fichiers
 

@@ -141,7 +141,7 @@ interface LLMProvider {
 // Potential implementation
 public class GrokCLIProvider : ICopilotProvider
 {
-    public string Name => "Grok CLI";
+    public string Name => "Code Buddy";
     public CopilotProviderType ProviderType => CopilotProviderType.LocalModel;
 
     private Process? _grokProcess;

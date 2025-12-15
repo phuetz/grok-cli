@@ -1,6 +1,6 @@
 # Migration Guide
 
-This guide helps you migrate between major versions of Grok CLI.
+This guide helps you migrate between major versions of Code Buddy.
 
 ## Table of Contents
 

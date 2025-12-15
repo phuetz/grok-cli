@@ -60,7 +60,7 @@ Elle prit un marqueur rouge et commença à tracer les connexions entre les comp
 | **Objectifs** | • Comprendre les 6 composants d'un agent<br>• Implémenter la boucle ReAct<br>• Configurer la sécurité multi-couches |
 | **Concepts Clés** | Orchestrateur, Reasoning, Memory, Action, Learning, Security |
 | **Mots-Clés** | `agent`, `ReAct`, `tool-use`, `context-window`, `sandbox` |
-| **Outils/Techniques** | GrokAgent, ToolRegistry, SecurityManager |
+| **Outils/Techniques** | CodeBuddyAgent, ToolRegistry, SecurityManager |
 | **Fichiers Code** | `src/agent/grok-agent.ts`, `src/tools/`, `src/security/` |
 | **Références** | ReAct (Yao 2022), Cognitive Architectures (Sumers 2023) |
 | **Prérequis** | Ch.01 (LLMs), Ch.02 (Agents) |
@@ -107,7 +107,7 @@ Toutes les données permanentes — base de données, embeddings, caches, logs �
 
 Le tableau suivant résume le rôle de chaque composant, avec une analogie humaine pour faciliter la compréhension :
 
-| Composant        | Rôle Principal                           | Analogie Humaine          | Implémentation Grok-CLI      |
+| Composant        | Rôle Principal                           | Analogie Humaine          | Implémentation Code Buddy      |
 |:-----------------|:-----------------------------------------|:--------------------------|:-----------------------------|
 | **Orchestrateur** | Coordonne le flux, gère la boucle agentique | Conscience, attention    | `src/agent/grok-agent.ts`    |
 | **Reasoning**     | Résout les problèmes complexes            | Réflexion, analyse        | `src/agent/reasoning/`       |
@@ -175,11 +175,11 @@ Voici une implémentation simplifiée mais complète de l'orchestrateur, montran
 
 ```typescript
 // src/agent/grok-agent.ts (structure simplifiée pour pédagogie)
-export class GrokAgent {
+export class CodeBuddyAgent {
   private maxRounds: number = 30;          // Limite anti-boucle infinie
   private currentRound: number = 0;
   private messages: Message[] = [];        // Historique de conversation
-  private client: GrokClient;              // Client API
+  private client: CodeBuddyClient;              // Client API
   private tools: Tool[];                   // Outils disponibles
 
   async run(userMessage: string): Promise<string> {
@@ -743,9 +743,9 @@ Cette interface standardisée permet :
 
 ### 3.5.2 Le Catalogue des 41 Outils
 
-Grok-CLI dispose de 41 outils organisés en catégories fonctionnelles :
+Code Buddy dispose de 41 outils organisés en catégories fonctionnelles :
 
-![Catalogue des 41 outils Grok-CLI](images/tools-catalog.svg)
+![Catalogue des 41 outils Code Buddy](images/tools-catalog.svg)
 
 ### 3.5.3 Flux d'Exécution Sécurisé
 
@@ -1198,7 +1198,7 @@ Un pattern de réparation a été utilisé 15 fois avec succès et 3 fois sans s
 
 ## 3.12 Références
 
-### Code Source Grok-CLI
+### Code Source Code Buddy
 
 | Composant    | Fichiers principaux                         |
 |:-------------|:--------------------------------------------|

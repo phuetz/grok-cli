@@ -26,7 +26,7 @@ Ce que vous avez :
 ┌─────────────────────────────────────────────────────────┐
 │  1. INTERFACE          React/Ink, streaming, UI          │
 ├─────────────────────────────────────────────────────────┤
-│  2. ORCHESTRATION      GrokAgent, boucle, multi-agent    │
+│  2. ORCHESTRATION      CodeBuddyAgent, boucle, multi-agent    │
 ├─────────────────────────────────────────────────────────┤
 │  3. RAISONNEMENT       ToT, MCTS, Repair, sélection auto │
 ├─────────────────────────────────────────────────────────┤
@@ -41,7 +41,7 @@ Ce que vous avez :
 | Couche | Responsabilité | Composants Clés |
 |--------|----------------|-----------------|
 | Interface | Interaction utilisateur | ChatInterface, StreamingText |
-| Orchestration | Coordination globale | GrokAgent, MultiAgentCoordinator |
+| Orchestration | Coordination globale | CodeBuddyAgent, MultiAgentCoordinator |
 | Raisonnement | Stratégies de résolution | ToT, MCTS, IterativeRepair |
 | Contexte | Gestion de l'information | RAGPipeline, ContextCompressor, UnifiedMemory |
 | Actions | Exécution des tâches | ToolRegistry, ParallelExecutor, MCPClient |
@@ -54,7 +54,7 @@ Ce que vous avez :
 ### 3.1 Couche Orchestration — Le Cœur
 
 ```typescript
-class GrokAgent {
+class CodeBuddyAgent {
   private tools: ToolRegistry;
   private router: ModelRouter;
   private executor: ParallelExecutor;
@@ -411,7 +411,7 @@ User Response
 | Couche | Chapitre | Composants |
 |--------|:--------:|------------|
 | Interface | - | React/Ink, streaming |
-| Orchestration | - | GrokAgent, multi-agent |
+| Orchestration | - | CodeBuddyAgent, multi-agent |
 | Raisonnement | Ch.4-6 | ToT, MCTS, Repair |
 | Contexte | Ch.7-9, 14 | RAG, compression, mémoire |
 | Actions | Ch.10-11 | 41 outils, MCP |

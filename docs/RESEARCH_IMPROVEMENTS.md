@@ -1,4 +1,4 @@
-# Rapport d'Amélioration Grok-CLI
+# Rapport d'Amélioration Code Buddy
 ## Comparaison avec les Meilleurs Outils et Recherche Scientifique
 
 *Date: 29 Novembre 2025*
@@ -18,9 +18,9 @@
 
 ## Résumé Exécutif
 
-Grok-CLI est un assistant IA en ligne de commande **complet et mature** qui rivalise avec les meilleurs outils du marché. Après analyse du code source, **toutes les améliorations majeures basées sur la recherche scientifique ont été implémentées**.
+Code Buddy est un assistant IA en ligne de commande **complet et mature** qui rivalise avec les meilleurs outils du marché. Après analyse du code source, **toutes les améliorations majeures basées sur la recherche scientifique ont été implémentées**.
 
-### Forces de Grok-CLI
+### Forces de Code Buddy
 
 | Catégorie | Fonctionnalités | Statut |
 |-----------|-----------------|--------|
@@ -34,7 +34,7 @@ Grok-CLI est un assistant IA en ligne de commande **complet et mature** qui riva
 
 ### Comparaison avec les Concurrents
 
-| Fonctionnalité | Claude Code | Cursor | Aider | Grok CLI |
+| Fonctionnalité | Claude Code | Cursor | Aider | Code Buddy |
 |----------------|-------------|--------|-------|----------|
 | Extended thinking | ✅ | ❌ | ❌ | ✅ |
 | Tree-of-Thought/MCTS | ❌ | ❌ | ❌ | ✅ |
@@ -53,7 +53,7 @@ Grok-CLI est un assistant IA en ligne de commande **complet et mature** qui riva
 
 ### 1. Claude Code (Anthropic)
 
-| Fonctionnalité | Claude Code | Grok-CLI |
+| Fonctionnalité | Claude Code | Code Buddy |
 |----------------|-------------|----------|
 | Plan Mode | ✅ | ✅ `agent-mode.ts` |
 | Extended thinking | ✅ | ✅ `thinking-keywords.ts` |
@@ -64,7 +64,7 @@ Grok-CLI est un assistant IA en ligne de commande **complet et mature** qui riva
 
 ### 2. Cursor
 
-| Fonctionnalité | Cursor | Grok-CLI |
+| Fonctionnalité | Cursor | Code Buddy |
 |----------------|--------|----------|
 | Parallel agents | ✅ | ✅ `multi-agent-system.ts` |
 | Codebase indexing | ✅ | ✅ `dependency-aware-rag.ts` |
@@ -73,7 +73,7 @@ Grok-CLI est un assistant IA en ligne de commande **complet et mature** qui riva
 
 ### 3. Aider
 
-| Fonctionnalité | Aider | Grok-CLI |
+| Fonctionnalité | Aider | Code Buddy |
 |----------------|-------|----------|
 | Git-aware context | ✅ | ✅ |
 | Repository map | ✅ | ✅ `repository-map.ts` |
@@ -86,7 +86,7 @@ Grok-CLI est un assistant IA en ligne de commande **complet et mature** qui riva
 
 ### Implémentations Basées sur la Recherche
 
-| Publication | Concept | Fichier Grok-CLI | Amélioration |
+| Publication | Concept | Fichier Code Buddy | Amélioration |
 |-------------|---------|------------------|--------------|
 | JetBrains 2024 | Context Compression | `context-compressor.ts` | -7% coûts, +2.6% succès |
 | ChatRepair (ISSTA 2024) | Iterative Repair | `iterative-repair.ts` | Feedback-driven repair |
@@ -222,7 +222,7 @@ src/
 
 ## Conclusion
 
-**Grok-CLI implémente TOUTES les améliorations recommandées par la recherche scientifique.**
+**Code Buddy implémente TOUTES les améliorations recommandées par la recherche scientifique.**
 
 Le projet est maintenant **plus avancé** que la plupart des concurrents sur plusieurs aspects:
 - Seul outil avec Tree-of-Thought + MCTS pour le raisonnement

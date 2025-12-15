@@ -28,7 +28,7 @@ A clear and concise description of what actually happened.
 
 ## Environment
 
-- **Grok CLI version**: [e.g., 0.0.12] (run `grok --version`)
+- **Code Buddy version**: [e.g., 0.0.12] (run `grok --version`)
 - **Node.js version**: [e.g., 18.0.0] (run `node --version`)
 - **npm version**: [e.g., 9.0.0] (run `npm --version`)
 - **Operating System**: [e.g., macOS 13.0, Ubuntu 22.04, Windows 11]
@@ -59,5 +59,5 @@ If you have any ideas on how to solve this issue, please share them here.
 
 - [ ] I have searched for similar issues before creating this one
 - [ ] I have provided all the required information above
-- [ ] I am using the latest version of Grok CLI
+- [ ] I am using the latest version of Code Buddy
 - [ ] I have included error logs or screenshots where relevant

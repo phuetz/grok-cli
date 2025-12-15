@@ -33,7 +33,7 @@ Ce livre est ma reponse a cette question.
 
 ## Ce Que Vous Allez Construire
 
-A travers ce livre, nous construirons ensemble **Grok-CLI** — un agent IA de terminal complet avec :
+A travers ce livre, nous construirons ensemble **Code Buddy** — un agent IA de terminal complet avec :
 
 | Capacite | Description | Chapitre |
 |----------|-------------|----------|
@@ -69,7 +69,7 @@ Tout au long de ce livre, vous suivrez **Lina**, une developpeuse fictive mais r
 
 Lina n'est pas une experte en machine learning. Elle est pragmatique, curieuse, et parfois frustree. Elle veut des **resultats**, pas des theories abstraites. Son collegue **Marc** l'accompagne, apportant tantot du scepticisme sain, tantot des idees brillantes.
 
-A travers leur parcours, vous vivrez les memes defis, les memes "eureka", et les memes solutions que j'ai decouvertes en construisant Grok-CLI.
+A travers leur parcours, vous vivrez les memes defis, les memes "eureka", et les memes solutions que j'ai decouvertes en construisant Code Buddy.
 
 > Astuce : Les dialogues entre Lina et Marc ne sont pas juste decoratifs. Ils introduisent souvent des concepts importants de maniere accessible avant la theorie formelle.
 
@@ -107,7 +107,7 @@ PARTIE VI : APPRENTISSAGE
   Ch.14 Apprentissage Persistant... 4 types de memoire, consolidation
 
 PARTIE VII : ETUDE DE CAS
-  Ch.15 Architecture Complete...... Grok-CLI de A a Z
+  Ch.15 Architecture Complete...... Code Buddy de A a Z
   Ch.16 System Prompts & Securite.. Prompt injection, defenses
 
 ANNEXES
@@ -128,7 +128,7 @@ Sautez directement aux chapitres qui vous interessent. Chaque chapitre inclut se
 
 ### Option 3 : Hands-on
 
-Clonez Grok-CLI et experimentez en parallele de votre lecture :
+Clonez Code Buddy et experimentez en parallele de votre lecture :
 
 ```bash
 git clone https://github.com/phuetz/code-buddy.git
@@ -144,11 +144,11 @@ npm run dev
 
 ### Code
 
-Tous les exemples sont en **TypeScript** et proviennent du code reel de Grok-CLI :
+Tous les exemples sont en **TypeScript** et proviennent du code reel de Code Buddy :
 
 ```typescript
 // src/agent/grok-agent.ts
-export class GrokAgent {
+export class CodeBuddyAgent {
   private maxRounds = 30;
 
   async process(input: string): Promise<string> {
@@ -177,7 +177,7 @@ Repérez ces marqueurs tout au long du livre :
 
 ## Le Code Source
 
-Tous les exemples proviennent de **Grok-CLI**, un agent open-source complet :
+Tous les exemples proviennent de **Code Buddy**, un agent open-source complet :
 
 ```
 https://github.com/phuetz/code-buddy
@@ -217,7 +217,7 @@ Ce livre n'existerait pas sans :
 
 - La **communaute open-source** qui a partage recherches, idees et code
 - Les **chercheurs** derriere ToT, MCTS, FrugalGPT, LLMCompiler, ChatRepair et tant d'autres publications
-- Les **early adopters** de Grok-CLI qui ont teste, rapporte des bugs et suggere des ameliorations
+- Les **early adopters** de Code Buddy qui ont teste, rapporte des bugs et suggere des ameliorations
 - **Ma famille** qui a supporte mes soirees de coding
 - **Vous**, lecteur, qui prenez le temps d'apprendre
 
@@ -1336,7 +1336,7 @@ C'est le saut qualitatif majeur : le contrôle de la boucle d'exécution passe d
 | Agent | Spécialité | Points forts |
 |-------|------------|--------------|
 | **Claude Code** | Développement généraliste | Contexte large, raisonnement avancé |
-| **Grok-CLI** | Terminal-first, multi-modèles | Outils personnalisables, MCP |
+| **Code Buddy** | Terminal-first, multi-modèles | Outils personnalisables, MCP |
 | **Aider** | Pair programming terminal | Git natif, multi-fichiers |
 | **Devin** | "Ingénieur IA autonome" | Environnement sandbox complet |
 
@@ -1401,7 +1401,7 @@ Un chatbot sans outils ne peut pas faire de dégâts — au pire, il donne une m
 - Consommer des ressources de manière incontrôlée
 - Exposer des données sensibles
 
-C'est pourquoi les agents modernes (Claude Code, Grok-CLI) intègrent des systèmes de permission sophistiqués :
+C'est pourquoi les agents modernes (Claude Code, Code Buddy) intègrent des systèmes de permission sophistiqués :
 
 | Mécanisme | Description | Exemple |
 |-----------|-------------|---------|
@@ -1518,7 +1518,7 @@ L'autonomie des agents crée des risques qui n'existaient pas avec les chatbots 
 | **Critère Distinctif** | Qui contrôle la boucle d'exécution ? |
 | **Pattern Fondamental** | ReAct = Reasoning + Acting (Think → Act → Observe) |
 | **Année Charnière** | 2023 — Function Calling + modèles puissants |
-| **Exemples Agents** | Claude Code, Grok-CLI, Aider, Devin |
+| **Exemples Agents** | Claude Code, Code Buddy, Aider, Devin |
 | **Trade-off Central** | Plus d'autonomie = plus de productivité MAIS plus de risques |
 | **Garde-fous Essentiels** | Modes d'approbation, sandbox, limites, audit |
 | **Prérequis Chapitre Suivant** | Comprendre les 6 composants d'un agent |
@@ -1681,7 +1681,7 @@ Elle prit un marqueur rouge et commença à tracer les connexions entre les comp
 | **Objectifs** | • Comprendre les 6 composants d'un agent<br>• Implémenter la boucle ReAct<br>• Configurer la sécurité multi-couches |
 | **Concepts Clés** | Orchestrateur, Reasoning, Memory, Action, Learning, Security |
 | **Mots-Clés** | `agent`, `ReAct`, `tool-use`, `context-window`, `sandbox` |
-| **Outils/Techniques** | GrokAgent, ToolRegistry, SecurityManager |
+| **Outils/Techniques** | CodeBuddyAgent, ToolRegistry, SecurityManager |
 | **Fichiers Code** | `src/agent/grok-agent.ts`, `src/tools/`, `src/security/` |
 | **Références** | ReAct (Yao 2022), Cognitive Architectures (Sumers 2023) |
 | **Prérequis** | Ch.01 (LLMs), Ch.02 (Agents) |
@@ -1728,7 +1728,7 @@ Toutes les données permanentes — base de données, embeddings, caches, logs �
 
 Le tableau suivant résume le rôle de chaque composant, avec une analogie humaine pour faciliter la compréhension :
 
-| Composant        | Rôle Principal                           | Analogie Humaine          | Implémentation Grok-CLI      |
+| Composant        | Rôle Principal                           | Analogie Humaine          | Implémentation Code Buddy      |
 |:-----------------|:-----------------------------------------|:--------------------------|:-----------------------------|
 | **Orchestrateur** | Coordonne le flux, gère la boucle agentique | Conscience, attention    | `src/agent/grok-agent.ts`    |
 | **Reasoning**     | Résout les problèmes complexes            | Réflexion, analyse        | `src/agent/reasoning/`       |
@@ -1796,11 +1796,11 @@ Voici une implémentation simplifiée mais complète de l'orchestrateur, montran
 
 ```typescript
 // src/agent/grok-agent.ts (structure simplifiée pour pédagogie)
-export class GrokAgent {
+export class CodeBuddyAgent {
   private maxRounds: number = 30;          // Limite anti-boucle infinie
   private currentRound: number = 0;
   private messages: Message[] = [];        // Historique de conversation
-  private client: GrokClient;              // Client API
+  private client: CodeBuddyClient;              // Client API
   private tools: Tool[];                   // Outils disponibles
 
   async run(userMessage: string): Promise<string> {
@@ -2364,9 +2364,9 @@ Cette interface standardisée permet :
 
 ### 3.5.2 Le Catalogue des 41 Outils
 
-Grok-CLI dispose de 41 outils organisés en catégories fonctionnelles :
+Code Buddy dispose de 41 outils organisés en catégories fonctionnelles :
 
-![Catalogue des 41 outils Grok-CLI](images/tools-catalog.svg)
+![Catalogue des 41 outils Code Buddy](images/tools-catalog.svg)
 
 ### 3.5.3 Flux d'Exécution Sécurisé
 
@@ -2819,7 +2819,7 @@ Un pattern de réparation a été utilisé 15 fois avec succès et 3 fois sans s
 
 ## 3.12 Références
 
-### Code Source Grok-CLI
+### Code Source Code Buddy
 
 | Composant    | Fichiers principaux                         |
 |:-------------|:--------------------------------------------|
@@ -3124,7 +3124,7 @@ async function selfEvaluate(thought: ThoughtNode, problem: string): Promise<numb
 
 ---
 
-## 💻 4.5 Implémentation Grok-CLI
+## 💻 4.5 Implémentation Code Buddy
 
 ### 4.5.1 📁 Architecture du Module
 
@@ -3588,7 +3588,7 @@ interface MCTSConfig {
 
 ### 5.4.2 💻 Implémentation Réelle
 
-Voici la véritable implémentation de MCTS dans `Grok-CLI` (extraite de `src/agent/reasoning/mcts.ts`), incluant le mécanisme de **Rethink** qui permet de raffiner les pensées erronées :
+Voici la véritable implémentation de MCTS dans `Code Buddy` (extraite de `src/agent/reasoning/mcts.ts`), incluant le mécanisme de **Rethink** qui permet de raffiner les pensées erronées :
 
 ```typescript
 // src/agent/reasoning/mcts.ts
@@ -3621,7 +3621,7 @@ export class MCTS {
       // 4️⃣ BACKPROPAGATION
       this.backpropagate(selectedNode);
 
-      // 5️⃣ RETHINK (Nouveauté Grok-CLI)
+      // 5️⃣ RETHINK (Nouveauté Code Buddy)
       // Si une pensée a échoué mais semble prometteuse, on la "repense"
       if (this.config.useRethink) {
         await this.rethink(selectedNode, problem);
@@ -3669,7 +3669,7 @@ export class MCTS {
 
 ---
 
-## 📁 5.5 Implémentation Grok-CLI
+## 📁 5.5 Implémentation Code Buddy
 
 ### 5.5.1 📂 Architecture du Module
 
@@ -4040,7 +4040,7 @@ Ajoutez le support multi-thread avec virtual loss pour éviter que plusieurs wor
 
 ### Code Source
 
-- Grok-CLI : `src/agent/reasoning/mcts.ts`
+- Code Buddy : `src/agent/reasoning/mcts.ts`
 - UCB1 : `src/agent/reasoning/selection/ucb1.ts`
 - Rollouts : `src/agent/reasoning/rollout/`
 
@@ -4364,7 +4364,7 @@ Explication courte :
 
 ### 6.4.3 📚 Templates de Réparation
 
-Certains patterns de bugs sont **très récurrents**. Grok-CLI maintient une bibliothèque de templates :
+Certains patterns de bugs sont **très récurrents**. Code Buddy maintient une bibliothèque de templates :
 
 ![Templates de réparation](images/repair-templates.svg)
 
@@ -4406,7 +4406,7 @@ export const REPAIR_TEMPLATES: RepairTemplate[] = [
 
 ## 🔁 6.5 La Boucle de Réparation Complète
 
-### 6.5.1 💻 Implémentation Grok-CLI
+### 6.5.1 💻 Implémentation Code Buddy
 
 ```typescript
 // src/agent/repair/iterative-repair.ts
@@ -4500,7 +4500,7 @@ Le feedback des tentatives précédentes est **crucial** :
 
 ### 6.6.1 💾 Mémoriser Ce Qui Fonctionne
 
-Grok-CLI mémorise les patterns de réparation qui fonctionnent :
+Code Buddy mémorise les patterns de réparation qui fonctionnent :
 
 ```typescript
 // src/learning/repair-learning.ts
@@ -4826,7 +4826,7 @@ Après 50 réparations, analysez la table `repair_learning` :
 
 ### Code Source
 
-- Grok-CLI : `src/agent/repair/`
+- Code Buddy : `src/agent/repair/`
 - Localisation : `src/agent/repair/fault-localization.ts`
 - Templates : `src/agent/repair/repair-templates.ts`
 - Learning : `src/learning/repair-learning.ts`
@@ -4954,7 +4954,7 @@ stripe.paymentIntents.create() avec les paramètres appropriés...
 | 7.3 | 🔄 Pipeline RAG | Les phases d'indexation et retrieval |
 | 7.4 | 🔀 Retrieval Hybride | Combiner sémantique et keywords |
 | 7.5 | 💉 Augmentation | Injecter le contexte dans le prompt |
-| 7.6 | 🛠️ Implémentation | Le module RAG de Grok-CLI |
+| 7.6 | 🛠️ Implémentation | Le module RAG de Code Buddy |
 | 7.7 | 📊 Évaluation | Mesurer la qualité du retrieval |
 
 ---
@@ -5066,7 +5066,7 @@ Le choix du modèle d'embedding impacte directement la qualité du retrieval. Vo
 
 ### 7.2.4 Embedding local avec Transformers.js
 
-Pour éviter les coûts API et les problèmes de latence, Grok-CLI utilise des embeddings locaux :
+Pour éviter les coûts API et les problèmes de latence, Code Buddy utilise des embeddings locaux :
 
 ```typescript
 // src/embeddings/local-embedder.ts
@@ -5596,7 +5596,7 @@ function fitToTokenLimit(
 
 ---
 
-## 7.6 🛠️ Implémentation Grok-CLI
+## 7.6 🛠️ Implémentation Code Buddy
 
 ### 7.6.1 Architecture du module RAG
 
@@ -5990,7 +5990,7 @@ Testez ces configurations sur votre benchmark :
 |:------------------------:|:--------:|--------------|
 | 1.0 / 0.0 | | Sémantique pur |
 | 0.8 / 0.2 | | |
-| 0.7 / 0.3 | | Défaut Grok-CLI |
+| 0.7 / 0.3 | | Défaut Code Buddy |
 | 0.5 / 0.5 | | Équilibré |
 
 ### Exercice 4 : Créer un benchmark
@@ -6013,7 +6013,7 @@ const myBenchmark: RAGBenchmark = {
 |------|-----------|
 | 📄 Paper | Lewis, P., et al. (2020). "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks" |
 | 📄 Paper | Gao, L., et al. (2023). "Retrieval-Augmented Generation for Large Language Models: A Survey" |
-| 💻 Code | Grok-CLI : `src/context/codebase-rag/` |
+| 💻 Code | Code Buddy : `src/context/codebase-rag/` |
 | 📖 Docs | Transformers.js : https://huggingface.co/docs/transformers.js |
 
 ---
@@ -6102,7 +6102,7 @@ const myBenchmark: RAGBenchmark = {
 | 8.3 | 🔨 Construction du Graphe | Analyse des imports et types |
 | 8.4 | 🔍 Retrieval avec Dépendances | Algorithme d'expansion |
 | 8.5 | 🎯 Stratégies d'Expansion | Adapter selon le contexte |
-| 8.6 | 🛠️ Implémentation | Le module dans Grok-CLI |
+| 8.6 | 🛠️ Implémentation | Le module dans Code Buddy |
 | 8.7 | ⚡ Optimisations | Cache et mise à jour incrémentale |
 | 8.8 | 💼 Cas Pratiques | Exemples concrets d'utilisation |
 
@@ -6801,7 +6801,7 @@ async function selectiveExpand(
 
 ---
 
-## 8.6 🛠️ Implémentation Grok-CLI
+## 8.6 🛠️ Implémentation Code Buddy
 
 ### 8.6.1 Architecture du module
 
@@ -7189,7 +7189,7 @@ function getCallersStrategy(): ExpansionStrategy {
 |------|-----------|
 | 📄 Paper | Jimenez, C., et al. (2024). "CodeRAG: Retrieval-Augmented Generation for Code" |
 | 📄 Paper | Zhang, Y., et al. (2023). "RepoFusion: Training Code Models to Understand Your Repository" |
-| 💻 Code | Grok-CLI : `src/context/dependency-aware-rag.ts` |
+| 💻 Code | Code Buddy : `src/context/dependency-aware-rag.ts` |
 | 🔗 Tool | TypeScript Compiler API : AST analysis |
 
 ---
@@ -7302,7 +7302,7 @@ function getCallersStrategy(): ExpansionStrategy {
 | 9.3 | ⚖️ Compression Priority-Based | Garder le critique, supprimer le bruit |
 | 9.4 | 📝 Summarization Intelligente | Résumer sans perdre l'essentiel |
 | 9.5 | 🎭 Observation Masking | Cacher les outputs d'outils anciens |
-| 9.6 | 🛠️ Implémentation | Le module dans Grok-CLI |
+| 9.6 | 🛠️ Implémentation | Le module dans Code Buddy |
 | 9.7 | 📊 Métriques et Monitoring | Mesurer l'efficacité |
 | 9.8 | 💼 Cas Pratiques | Exemples concrets |
 
@@ -7897,7 +7897,7 @@ ${summary}
 
 ---
 
-## 9.6 🛠️ Implémentation Grok-CLI
+## 9.6 🛠️ Implémentation Code Buddy
 
 ### 9.6.1 Architecture du module
 
@@ -7908,7 +7908,7 @@ ${summary}
 ```typescript
 // src/agent/grok-agent.ts
 
-export class GrokAgent {
+export class CodeBuddyAgent {
   private compressor: ContextCompressor;
   private masker: ObservationMasker;
   private tokenBudget: number = 100_000;
@@ -8207,8 +8207,8 @@ const myMaskingRules: Record<string, ToolMaskingRule> = {
 |------|-----------|
 | 📄 Paper | JetBrains Research. (2024). "Context Compression for LLM-based Code Generation" |
 | 📄 Paper | Liu, N., et al. (2023). "Lost in the Middle: How Language Models Use Long Contexts" |
-| 💻 Code | Grok-CLI : `src/context/context-compressor.ts` |
-| 💻 Code | Grok-CLI : `src/context/observation-masking.ts` |
+| 💻 Code | Code Buddy : `src/context/context-compressor.ts` |
+| 💻 Code | Code Buddy : `src/context/observation-masking.ts` |
 
 ---
 
@@ -8319,7 +8319,7 @@ const myMaskingRules: Record<string, ToolMaskingRule> = {
 |:-------:|-------|-------------|
 | 10.1 | 🔩 Anatomie d'un Outil | Interface et structure |
 | 10.2 | 🔄 Protocole de Tool-Calling | Le flow complet |
-| 10.3 | 📦 Les 41 Outils Grok-CLI | Catalogue complet |
+| 10.3 | 📦 Les 41 Outils Code Buddy | Catalogue complet |
 | 10.4 | 🔒 Validation et Sécurité | Protéger l'exécution |
 | 10.5 | ⚙️ Orchestration | Exécution et parallélisme |
 | 10.6 | 🚨 Gestion des Erreurs | Récupération automatique |
@@ -8579,13 +8579,13 @@ const results = await Promise.all(
 
 ---
 
-## 10.3 📦 Les 41 Outils de Grok-CLI
+## 10.3 📦 Les 41 Outils de Code Buddy
 
 ### 10.3.1 Catalogue complet
 
-Grok-CLI inclut 41 outils organisés par catégorie :
+Code Buddy inclut 41 outils organisés par catégorie :
 
-![Catalogue d'outils Grok-CLI](images/tool-catalog.svg)
+![Catalogue d'outils Code Buddy](images/tool-catalog.svg)
 
 | Catégorie | Nombre | Exemples |
 |-----------|:------:|----------|
@@ -9412,7 +9412,7 @@ class NetworkRecovery {
 |------|-----------|
 | 📖 Docs | OpenAI. "Function Calling Documentation" |
 | 📖 Docs | Anthropic. "Tool Use with Claude" |
-| 💻 Code | Grok-CLI : `src/tools/` |
+| 💻 Code | Code Buddy : `src/tools/` |
 
 ---
 
@@ -9500,7 +9500,7 @@ class NetworkRecovery {
 | 11.1 | 🏗️ Architecture des Plugins | Pourquoi et comment |
 | 11.2 | 📦 Plugin Loader | Découverte et chargement |
 | 11.3 | 🔗 Model Context Protocol | Le standard MCP |
-| 11.4 | 🛠️ Intégration Grok-CLI | Configuration et usage |
+| 11.4 | 🛠️ Intégration Code Buddy | Configuration et usage |
 | 11.5 | 🔧 Créer un Serveur MCP | Guide pratique |
 | 11.6 | 🏪 Marketplace | Découverte et distribution |
 | 11.7 | 🔒 Sécurité | Sandboxing et vérification |
@@ -10003,7 +10003,7 @@ export class HTTPTransport implements MCPTransport {
 
 ---
 
-## 11.4 🛠️ Intégration Grok-CLI
+## 11.4 🛠️ Intégration Code Buddy
 
 ### 11.4.1 Configuration MCP
 
@@ -10646,7 +10646,7 @@ export class PluginVerifier {
 | Type | Référence |
 |------|-----------|
 | 📖 Spec | Anthropic. "Model Context Protocol Specification" |
-| 💻 Code | Grok-CLI : `src/plugins/`, `src/mcp/` |
+| 💻 Code | Code Buddy : `src/plugins/`, `src/mcp/` |
 | 📦 NPM | @modelcontextprotocol/sdk |
 
 ---
@@ -11097,7 +11097,7 @@ export class SemanticCache {
 
 ```typescript
 // src/agent/grok-agent.ts
-export class GrokAgent {
+export class CodeBuddyAgent {
   private semanticCache: SemanticCache;
   private cacheHits = 0;
   private cacheMisses = 0;
@@ -12112,7 +12112,7 @@ Mesurez : coûts, latence, qualité des réponses.
 | **Cosine Similarity** | Mesure de similarité vectorielle | [Wikipedia](https://en.wikipedia.org/wiki/Cosine_similarity) |
 | **LSH** | Locality-Sensitive Hashing | [Stanford](https://cs.stanford.edu/~jtyler/lsh.pdf) |
 | **LRU Cache** | Least Recently Used éviction | [npm lru-cache](https://www.npmjs.com/package/lru-cache) |
-| **Grok-CLI** | `src/utils/semantic-cache.ts`, `src/performance/tool-cache.ts` | Local |
+| **Code Buddy** | `src/utils/semantic-cache.ts`, `src/performance/tool-cache.ts` | Local |
 
 ---
 
@@ -12153,7 +12153,7 @@ Cache entries:  12,847
 
 *Elle fait défiler jusqu'aux logs de tool calls.*
 
-**Lina** : "Grok-CLI a 41 outils. À chaque requête, mon agent reçoit la description de ces 41 outils. Même quand la tâche est simple — genre lire un fichier — il doit traiter 41 descriptions avant de choisir."
+**Lina** : "Code Buddy a 41 outils. À chaque requête, mon agent reçoit la description de ces 41 outils. Même quand la tâche est simple — genre lire un fichier — il doit traiter 41 descriptions avant de choisir."
 
 **Marc** *(fronçant les sourcils)* : "3,000 tokens juste pour la liste des outils..."
 
@@ -12204,7 +12204,7 @@ Cache entries:  12,847
 
 ## 🎬 Scène d'ouverture
 
-*Trois mois après le lancement de Grok-CLI en production. La salle de réunion est tendue.*
+*Trois mois après le lancement de Code Buddy en production. La salle de réunion est tendue.*
 
 *Sur le grand écran, un graphique qui ne laisse place à aucune interprétation : la courbe des coûts API, qui monte en flèche. En dessous, les plaintes utilisateurs — "trop lent", "j'attends 10 secondes", "c'est plus rapide de chercher sur Google".*
 
@@ -13162,7 +13162,7 @@ async function main() {
   const startTime = Date.now();
 
   // 1️⃣ Configuration de base (~5ms)
-  console.log('🚀 Starting Grok-CLI...');
+  console.log('🚀 Starting Code Buddy...');
   const config = await loadConfig();
 
   // 2️⃣ Interface utilisateur (critique, ~20ms)
@@ -13170,8 +13170,8 @@ async function main() {
   const ui = new ChatInterface(config);
 
   // 3️⃣ Agent minimal (critique, ~10ms)
-  const { GrokAgent } = await import('./agent/grok-agent.js');
-  const agent = new GrokAgent(config);
+  const { CodeBuddyAgent } = await import('./agent/grok-agent.js');
+  const agent = new CodeBuddyAgent(config);
 
   // ✅ Prêt à répondre en ~37ms
   console.log(`✅ Ready in ${Date.now() - startTime}ms`);
@@ -13647,7 +13647,7 @@ Construisez un dashboard avec blessed ou ink affichant :
 | **Less-is-More** | Dynamic tool filtering | [arXiv 2024](https://arxiv.org/abs/2402.06472) |
 | **AsyncLM** | Async tool calling | [Paper](https://arxiv.org/abs/2401.00132) |
 | **Flow State** | Human-AI latency research | [Replit Research](https://replit.com) |
-| **Grok-CLI** | `src/optimization/` | Local |
+| **Code Buddy** | `src/optimization/` | Local |
 
 ---
 
@@ -13703,7 +13703,7 @@ Construisez un dashboard avec blessed ou ink affichant :
 
 *Elle se retourne vers Sophie.*
 
-**Lina** : "Sophie, tu n'as pas utilisé Grok-CLI standard, n'est-ce pas ? Tu as testé la branche expérimentale ?"
+**Lina** : "Sophie, tu n'as pas utilisé Code Buddy standard, n'est-ce pas ? Tu as testé la branche expérimentale ?"
 
 **Sophie** *(rougissant)* : "Euh... oui. J'étais curieuse."
 
@@ -13781,7 +13781,7 @@ Construisez un dashboard avec blessed ou ink affichant :
 
 **Lina** : "En théorie, oui. Mais ce n'est pas juste du stockage. Regarde ce que Sophie a expérimenté hier."
 
-*Elle ouvre Grok-CLI avec la branche expérimentale.*
+*Elle ouvre Code Buddy avec la branche expérimentale.*
 
 ```
 grok> Bonjour !
@@ -15182,7 +15182,7 @@ Créez un système de rappels contextuels intelligents :
 | **Mem0** | Memory layer for AI applications | [GitHub](https://github.com/mem0ai/mem0) |
 | **LangChain Memory** | Memory patterns for LLM apps | [Docs](https://python.langchain.com/docs/modules/memory/) |
 | **Cognitive Science** | Human memory systems | [Wikipedia](https://en.wikipedia.org/wiki/Memory) |
-| **Grok-CLI** | `src/memory/` | Local |
+| **Code Buddy** | `src/memory/` | Local |
 
 ---
 
@@ -15210,7 +15210,7 @@ Créez un système de rappels contextuels intelligents :
 
 *Elle secoue la tête, ouvre Slack.*
 
-**Karim** *(message)* : "@lina @marc Réunion demain 9h. Le board veut voir une démo complète de Grok-CLI. Tout le système. Architecture, features, performance. C'est notre chance de convaincre pour la série A."
+**Karim** *(message)* : "@lina @marc Réunion demain 9h. Le board veut voir une démo complète de Code Buddy. Tout le système. Architecture, features, performance. C'est notre chance de convaincre pour la série A."
 
 *Lina sent son cœur battre plus vite.*
 
@@ -15251,7 +15251,7 @@ Créez un système de rappels contextuels intelligents :
 **À suivre** : *Chapitre 15 — Architecture Complète*
 
 *Une nuit pour tout assembler. Six couches architecturales. Un agent qui peut expliquer sa propre structure. Lina et Marc vont découvrir que documenter un système, c'est aussi le comprendre vraiment — et que parfois, l'agent comprend mieux son architecture que ses créateurs.*
-# 🏗️ Chapitre 15 : Architecture Complète — Grok-CLI de A à Z
+# 🏗️ Chapitre 15 : Architecture Complète — Code Buddy de A à Z
 
 ---
 
@@ -15259,7 +15259,7 @@ Créez un système de rappels contextuels intelligents :
 
 *Un an après le premier commit...*
 
-Lina se tenait devant l'écran de la salle de conférence. Derrière elle, le schéma complet de Grok-CLI occupait tout le mur — des dizaines de composants interconnectés, le fruit d'une année de développement itératif.
+Lina se tenait devant l'écran de la salle de conférence. Derrière elle, le schéma complet de Code Buddy occupait tout le mur — des dizaines de composants interconnectés, le fruit d'une année de développement itératif.
 
 — "Et voilà où nous en sommes," dit-elle à l'équipe réunie. "Ce qui a commencé comme un simple wrapper autour de l'API Grok est devenu... ça."
 
@@ -15281,7 +15281,7 @@ Marcus, l'un des nouveaux, leva la main.
 |---------|-------|-------------|
 | 15.1 | 🌍 Vue Aérienne | Les 6 couches et le flux de données |
 | 15.2 | 🖥️ Couche Interface | React/Ink, streaming, composants UI |
-| 15.3 | 🎯 Couche Orchestration | GrokAgent, boucle agentique, multi-agent |
+| 15.3 | 🎯 Couche Orchestration | CodeBuddyAgent, boucle agentique, multi-agent |
 | 15.4 | 🧠 Couche Raisonnement | ToT, MCTS, Repair, stratégies hybrides |
 | 15.5 | 💾 Couche Contexte & Mémoire | RAG, compression, mémoire unifiée |
 | 15.6 | ⚡ Couche Actions | 41 outils, registre, MCP |
@@ -15298,14 +15298,14 @@ Marcus, l'un des nouveaux, leva la main.
 
 ### 15.1.1 Les Six Couches
 
-L'architecture de Grok-CLI suit le principe de **séparation des responsabilités**. Chaque couche a un rôle précis et communique uniquement avec ses voisines immédiates.
+L'architecture de Code Buddy suit le principe de **séparation des responsabilités**. Chaque couche a un rôle précis et communique uniquement avec ses voisines immédiates.
 
-![Architecture Grok-CLI](images/grok-architecture-layers.svg)
+![Architecture Code Buddy](images/grok-architecture-layers.svg)
 
 | Couche | Responsabilité | Composants Clés |
 |--------|----------------|-----------------|
 | 🖥️ Interface | Interaction utilisateur | ChatInterface, StreamingText, ToolProgress |
-| 🎯 Orchestration | Coordination globale | GrokAgent, MultiAgentCoordinator |
+| 🎯 Orchestration | Coordination globale | CodeBuddyAgent, MultiAgentCoordinator |
 | 🧠 Raisonnement | Stratégies de résolution | ToT, MCTS, IterativeRepair |
 | 💾 Contexte | Gestion de l'information | RAGPipeline, ContextCompressor, UnifiedMemory |
 | ⚡ Actions | Exécution des tâches | ToolRegistry, ParallelExecutor, MCPClient |
@@ -15495,7 +15495,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
 ### 15.3.1 L'Agent Central
 
-Le **GrokAgent** est le chef d'orchestre du système. Il coordonne toutes les autres couches et gère la boucle agentique principale.
+Le **CodeBuddyAgent** est le chef d'orchestre du système. Il coordonne toutes les autres couches et gère la boucle agentique principale.
 
 ![Grok Agent](images/grok-agent.svg)
 
@@ -15505,8 +15505,8 @@ Le **GrokAgent** est le chef d'orchestre du système. Il coordonne toutes les au
 /**
  * 🎯 Agent principal - Orchestrateur central
  */
-export class GrokAgent extends EventEmitter {
-  private client: GrokClient;
+export class CodeBuddyAgent extends EventEmitter {
+  private client: CodeBuddyClient;
   private tools: ToolRegistry;
   private router: ModelRouter;
   private executor: ParallelExecutor;
@@ -15999,7 +15999,7 @@ export class SecurityManager {
 | Limite | Description | Mitigation |
 |--------|-------------|------------|
 | **Complexité émergente** | 6 couches = nombreuses interactions non prévues | Tests d'intégration exhaustifs |
-| **Single point of failure** | GrokAgent centralise tout | Graceful degradation, circuit breakers |
+| **Single point of failure** | CodeBuddyAgent centralise tout | Graceful degradation, circuit breakers |
 | **Couplage vertical** | Changement de couche = cascade de modifications | Interfaces stables, versioning |
 | **Overhead mémoire** | Chaque couche maintient son état | Lazy loading, garbage collection |
 | **Latence bout-en-bout** | Traversée des 6 couches à chaque requête | Optimisation hot paths, caching |
@@ -16048,9 +16048,9 @@ export class SecurityManager {
 
 | Aspect | Détails |
 |--------|---------|
-| **Titre** | Architecture Complète de Grok-CLI |
+| **Titre** | Architecture Complète de Code Buddy |
 | **6 Couches** | Interface, Orchestration, Raisonnement, Contexte, Actions, Sécurité |
-| **Orchestrateur** | GrokAgent avec boucle agentique (max 30 rounds) |
+| **Orchestrateur** | CodeBuddyAgent avec boucle agentique (max 30 rounds) |
 | **Multi-Agent** | Décomposition en sous-tâches spécialisées |
 | **Raisonnement** | Sélection auto ToT/MCTS/Repair selon complexité |
 | **Mémoire** | 4 types : épisodique, sémantique, procédurale, prospective |
@@ -16066,7 +16066,7 @@ export class SecurityManager {
 | Concept | Description | Impact |
 |---------|-------------|--------|
 | 🏗️ 6 Couches | Interface, Orchestration, Raisonnement, Contexte, Actions, Sécurité | Séparation des responsabilités |
-| 🎯 GrokAgent | Orchestrateur central avec boucle agentique | Max 30 rounds, streaming |
+| 🎯 CodeBuddyAgent | Orchestrateur central avec boucle agentique | Max 30 rounds, streaming |
 | 👥 Multi-Agent | Décomposition en sous-tâches spécialisées | Parallélisme, expertise |
 | 🧠 Raisonnement | Sélection automatique ToT/MCTS/Repair | Adaptation à la complexité |
 | 💾 Mémoire Unifiée | 4 types : épisodique, sémantique, procédurale, prospective | Apprentissage continu |
@@ -16080,13 +16080,13 @@ export class SecurityManager {
 
 ## 🔬 15.11 De la Recherche à l'Implémentation
 
-Un aspect clé de Grok-CLI est son ancrage dans la **recherche académique récente**. Chaque optimisation majeure est inspirée d'un article scientifique.
+Un aspect clé de Code Buddy est son ancrage dans la **recherche académique récente**. Chaque optimisation majeure est inspirée d'un article scientifique.
 
 ### 15.11.1 Tableau de Mapping Recherche → Code
 
 ![Mapping Recherche](images/research-mapping.svg)
 
-| Technique | Article de Recherche | Fichier Grok-CLI | Amélioration |
+| Technique | Article de Recherche | Fichier Code Buddy | Amélioration |
 |-----------|---------------------|------------------|--------------|
 | **Context Compression** | JetBrains Research (2024) | `context-compressor.ts` | -7% coûts, +2.6% succès |
 | **Iterative Repair** | ChatRepair (ISSTA 2024, Distinguished Paper) | `iterative-repair.ts` | Boucle feedback tests |
@@ -16110,7 +16110,7 @@ L'article **FrugalGPT** (Chen et al., Stanford 2023) propose de router les requ�
 **Extrait de l'article :**
 > "FrugalGPT can match GPT-4's performance with up to 98% cost reduction by learning to route queries to appropriate LLMs."
 
-**Implémentation dans Grok-CLI :**
+**Implémentation dans Code Buddy :**
 
 ```typescript
 // src/optimization/model-routing.ts
@@ -16147,7 +16147,7 @@ export function routeToOptimalModel(task: TaskAnalysis): string {
 
 ## 🏠 15.12 LLM Local en JavaScript/TypeScript
 
-Grok-CLI utilise principalement l'API Grok (cloud), mais peut également fonctionner avec des **LLM locaux** pour la confidentialité ou le mode hors-ligne.
+Code Buddy utilise principalement l'API Grok (cloud), mais peut également fonctionner avec des **LLM locaux** pour la confidentialité ou le mode hors-ligne.
 
 ### 15.12.1 Solutions Disponibles
 
@@ -16163,7 +16163,7 @@ Grok-CLI utilise principalement l'API Grok (cloud), mais peut également fonctio
 ### 15.12.2 node-llama-cpp : LLM Natif pour Node.js
 
 ```bash
-# Installation (dépendance optionnelle dans Grok-CLI)
+# Installation (dépendance optionnelle dans Code Buddy)
 npm install node-llama-cpp
 
 # Télécharger un modèle GGUF
@@ -16522,7 +16522,7 @@ async callLocalLLM(prompt: string, options: {...}): Promise<string | null> {
 | **Environnement** | Tout | Serveur | Node.js | Browser |
 | **Dépendances** | API key | Daemon | CMake, C++ | WebGPU |
 
-**Fichiers implémentés dans Grok-CLI** :
+**Fichiers implémentés dans Code Buddy** :
 
 | Fichier | Providers | Rôle |
 |---------|-----------|------|
@@ -16612,13 +16612,13 @@ Elle fit une pause.
 | 4 | La sécurité n'est pas optionnelle | Intégrée dès le début, pas en afterthought |
 | 5 | L'apprentissage est continu | Comme l'agent lui-même |
 
-Le code de Grok-CLI est open-source. Explorez-le. Modifiez-le. Construisez dessus.
+Le code de Code Buddy est open-source. Explorez-le. Modifiez-le. Construisez dessus.
 
 *Fin.*
 
 ---
 
-*Merci d'avoir lu "Construire un Agent LLM Moderne — De la Théorie à Grok-CLI".*
+*Merci d'avoir lu "Construire un Agent LLM Moderne — De la Théorie à Code Buddy".*
 
 ---
 
@@ -16627,7 +16627,7 @@ Le code de Grok-CLI est open-source. Explorez-le. Modifiez-le. Construisez dessu
 
 ## Introduction
 
-Le system prompt est le fondement de tout agent IA. C'est l'ensemble d'instructions qui définit l'identité, les capacités, les limites et le comportement de l'assistant. Dans le contexte des CLI (Command Line Interfaces) comme Grok CLI, Claude Code ou Cursor, le system prompt prend une importance critique car l'agent a accès direct au système de fichiers et peut exécuter des commandes shell.
+Le system prompt est le fondement de tout agent IA. C'est l'ensemble d'instructions qui définit l'identité, les capacités, les limites et le comportement de l'assistant. Dans le contexte des CLI (Command Line Interfaces) comme Code Buddy, Claude Code ou Cursor, le system prompt prend une importance critique car l'agent a accès direct au système de fichiers et peut exécuter des commandes shell.
 
 Ce chapitre explore les meilleures pratiques issues de la recherche académique et de l'industrie pour concevoir des system prompts robustes et sécurisés.
 
@@ -16641,7 +16641,7 @@ D'après l'analyse des system prompts des principaux assistants IA (Claude Code,
 
 | Pattern | Description | Exemple |
 |---------|-------------|---------|
-| **Role Definition** | Définir clairement l'identité et le scope | "You are Grok CLI, a terminal assistant..." |
+| **Role Definition** | Définir clairement l'identité et le scope | "You are Code Buddy, a terminal assistant..." |
 | **Structured Organization** | Organiser avec des balises XML ou Markdown | `<security_rules>`, `<tool_usage>` |
 | **Tool Integration** | Décrire précisément les outils disponibles | Schémas, paramètres, cas d'usage |
 | **Planning & Reasoning** | Imposer des phases de réflexion | Chain-of-thought, todo lists |
@@ -16678,11 +16678,11 @@ Style de communication attendu
 </response_style>
 ```
 
-### 16.1.3 Exemple : Prompt Grok CLI
+### 16.1.3 Exemple : Prompt Code Buddy
 
 ```typescript
 <identity>
-You are Grok CLI, an AI-powered terminal assistant for software development.
+You are Code Buddy, an AI-powered terminal assistant for software development.
 You help users with file editing, code generation, and system operations.
 </identity>
 
@@ -16846,7 +16846,7 @@ function redactSensitive(text: string): string {
 
 ### 16.3.3 Modes de Sécurité
 
-Grok CLI implémente 3 niveaux de sécurité :
+Code Buddy implémente 3 niveaux de sécurité :
 
 | Mode | Confirmations | Commandes | Cas d'usage |
 |------|--------------|-----------|-------------|
@@ -16875,7 +16875,7 @@ Pour les modèles locaux sans tool calling, utiliser un prompt simplifié :
 
 ```xml
 <identity>
-Tu es Grok CLI, un assistant IA intelligent spécialisé
+Tu es Code Buddy, un assistant IA intelligent spécialisé
 dans le développement logiciel.
 </identity>
 
@@ -16963,7 +16963,7 @@ avec suffisamment de tentatives, la plupart des safeguards peuvent être contour
 
 ---
 
-## 16.6 Implémentation dans Grok CLI
+## 16.6 Implémentation dans Code Buddy
 
 ### 16.6.1 Structure des Fichiers
 
@@ -17129,7 +17129,7 @@ Lina sourit.
 
 Les 12-18 prochains mois verront des evolutions majeures dans les capacites des agents LLM :
 
-| Tendance | Description | Impact sur Grok-CLI |
+| Tendance | Description | Impact sur Code Buddy |
 |----------|-------------|---------------------|
 | **Context windows geants** | 1M+ tokens (Gemini, Claude) | Moins de compression necessaire |
 | **Tool calling natif** | Standard dans tous les modeles | Simplification de l'integration |
@@ -17149,7 +17149,7 @@ Texte seulement          →    Multimodal natif
 Stateless par defaut     →    Stateful integre
 ```
 
-### 17.1.3 Ce Que Ca Change pour Grok-CLI
+### 17.1.3 Ce Que Ca Change pour Code Buddy
 
 | Composant | Evolution |
 |-----------|-----------|
@@ -17493,7 +17493,7 @@ Listez les 10 informations les plus importantes qu'un agent devrait "savoir" sur
 
 ### Exercice 4 : Ethique
 
-Pour chaque fonctionnalite de Grok-CLI, identifiez un risque ethique potentiel et une mitigation.
+Pour chaque fonctionnalite de Code Buddy, identifiez un risque ethique potentiel et une mitigation.
 
 ---
 
@@ -17558,6 +17558,6 @@ Elle se leva.
 
 *Fin du livre.*
 
-*Merci d'avoir lu "Construire un Agent LLM Moderne — De la Theorie a Grok-CLI".*
+*Merci d'avoir lu "Construire un Agent LLM Moderne — De la Theorie a Code Buddy".*
 
 *Le code continue. L'apprentissage aussi.*

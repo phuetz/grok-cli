@@ -1,14 +1,14 @@
 # Construire un Agent LLM Moderne
-## De la Théorie à Grok-CLI
+## De la Théorie à Code Buddy
 
 **Auteur** : Patrice Huetz
-**Basé sur** : Grok-CLI — Agent IA Open Source
+**Basé sur** : Code Buddy — Agent IA Open Source
 **Année** : 2025
 
 ---
 
 > **Tagline**
-> *De "simple chatbot" à agent autonome : comment penser, architecturer et optimiser un agent moderne, de Transformer à MCP, en passant par RAG, ToT, MCTS et Grok-CLI.*
+> *De "simple chatbot" à agent autonome : comment penser, architecturer et optimiser un agent moderne, de Transformer à MCP, en passant par RAG, ToT, MCTS et Code Buddy.*
 
 ---
 
@@ -23,7 +23,7 @@ On part des bases (transformers, attention, limites structurelles des LLMs) pour
 - **Optimisation** (FrugalGPT, LLMCompiler, caching)
 - **Apprentissage persistant**
 
-Le tout est illustré par une étude de cas complète : **Grok-CLI**, un agent open-source en ligne de commande pour développeurs.
+Le tout est illustré par une étude de cas complète : **Code Buddy**, un agent open-source en ligne de commande pour développeurs.
 
 ---
 
@@ -43,8 +43,8 @@ Le tout est illustré par une étude de cas complète : **Grok-CLI**, un agent o
 
 1. **Modéliser** un agent en termes de reasoning, mémoire, action, sécurité, observabilité
 2. **Comprendre** pourquoi des approches comme ToT, MCTS, FrugalGPT ou LLMCompiler sont utiles — et quand ne pas les utiliser
-3. **Concevoir** une architecture d'agent moderne inspirée de Grok-CLI : modules, flux, limites, évolutions possibles
-4. **Cloner ou étendre** un agent comme Grok-CLI pour ton propre contexte (IDE, navigateur, back-office, etc.)
+3. **Concevoir** une architecture d'agent moderne inspirée de Code Buddy : modules, flux, limites, évolutions possibles
+4. **Cloner ou étendre** un agent comme Code Buddy pour ton propre contexte (IDE, navigateur, back-office, etc.)
 
 ---
 
@@ -59,7 +59,7 @@ Le tout est illustré par une étude de cas complète : **Grok-CLI**, un agent o
 
 🧑‍💻 **Lina** — Une développeuse qui évolue d'un "prompt ChatGPT bricolé" vers un agent robuste. On la suit tout au long du livre, de ses premiers échecs à son architecture finale.
 
-🛠️ **Grok-CLI** — Exemple récurrent d'architecture et de choix techniques. Chaque concept est illustré par son implémentation dans le projet.
+🛠️ **Code Buddy** — Exemple récurrent d'architecture et de choix techniques. Chaque concept est illustré par son implémentation dans le projet.
 
 ---
 
@@ -111,7 +111,7 @@ Le tout est illustré par une étude de cas complète : **Grok-CLI**, un agent o
 - Autonomie contrôlée
 
 **Diagramme 1.1** : Architecture LLM vs Architecture Agent
-**Code Grok-CLI** : `src/grok/client.ts` — Wrapper OpenAI
+**Code Code Buddy** : `src/codebuddy/client.ts` — Wrapper OpenAI
 
 ---
 
@@ -123,7 +123,7 @@ Le tout est illustré par une étude de cas complète : **Grok-CLI**, un agent o
 |------|-----------|----------|
 | Chatbot | Conversation simple | ChatGPT vanilla |
 | Assistant | Conversation + contexte | Claude, Copilot |
-| Agent | Reasoning + Action + Mémoire | AutoGPT, Grok-CLI |
+| Agent | Reasoning + Action + Mémoire | AutoGPT, Code Buddy |
 | Multi-Agent | Coordination entre agents | MetaGPT, CrewAI |
 
 ### 2.2 Pourquoi 2023-2025 Représente un Tournant
@@ -142,7 +142,7 @@ Le tout est illustré par une étude de cas complète : **Grok-CLI**, un agent o
 | ChatRepair | Réparation itérative | 2024 |
 | CodeRAG | RAG avec dépendances | 2024 |
 
-**Référence Grok-CLI** : Toutes implémentées dans `src/agent/` et `src/optimization/`
+**Référence Code Buddy** : Toutes implémentées dans `src/agent/` et `src/optimization/`
 
 ---
 
@@ -173,31 +173,31 @@ Le tout est illustré par une étude de cas complète : **Grok-CLI**, un agent o
 - Décomposition de problèmes
 - Exploration d'hypothèses
 - Évaluation et sélection
-- **Grok-CLI** : `src/agent/reasoning/`
+- **Code Buddy** : `src/agent/reasoning/`
 
 ### 3.3 Mémoire
 - Court terme : conversation
 - Moyen terme : session
 - Long terme : embeddings + SQLite
-- **Grok-CLI** : `src/database/`, `src/memory/`
+- **Code Buddy** : `src/database/`, `src/memory/`
 
 ### 3.4 Action
 - Tool calling
 - Exécution sandboxée
 - Validation des résultats
-- **Grok-CLI** : `src/tools/`
+- **Code Buddy** : `src/tools/`
 
 ### 3.5 Apprentissage
 - Patterns de réparation
 - Conventions de code
 - Statistiques d'outils
-- **Grok-CLI** : `src/learning/`
+- **Code Buddy** : `src/learning/`
 
 ### 3.6 Sécurité & Observabilité
 - Modes d'approbation (read-only, auto, full)
 - Redaction de données sensibles
 - Logging structuré
-- **Grok-CLI** : `src/security/`
+- **Code Buddy** : `src/security/`
 
 ---
 
@@ -238,7 +238,7 @@ async function treeOfThought(problem: string): Promise<Solution> {
 }
 ```
 
-### 4.3 Implémentation Grok-CLI
+### 4.3 Implémentation Code Buddy
 - **Fichier** : `src/agent/reasoning/tree-of-thought.ts`
 - Callbacks personnalisables
 - Profondeur configurable (shallow/medium/deep/exhaustive)
@@ -288,7 +288,7 @@ UCB1(node) = (wins / visits) + C * sqrt(ln(parent_visits) / visits)
 - `C` : constante d'exploration (typiquement √2)
 - Balance exploration de nouveaux chemins vs exploitation des meilleurs
 
-### 5.4 Implémentation Grok-CLI
+### 5.4 Implémentation Code Buddy
 - **Fichier** : `src/agent/reasoning/mcts.ts`
 - Heuristiques adaptatives
 - Rollout avec exécution réelle de code
@@ -297,7 +297,7 @@ UCB1(node) = (wins / visits) + C * sqrt(ln(parent_visits) / visits)
 ### 5.5 Combinaison ToT + MCTS
 - ToT pour la structure
 - MCTS pour l'optimisation
-- Synergie unique de Grok-CLI
+- Synergie unique de Code Buddy
 
 **Diagramme 5.1** : MCTS avec UCB1 visualisé
 **Code complet** : Algorithme MCTS commenté
@@ -325,7 +325,7 @@ UCB1(node) = (wins / visits) + C * sqrt(ln(parent_visits) / visits)
 | DStar | `failed² / (passed + (total_failed - failed))` | High precision |
 | Tarantula | `(failed/total_failed) / ((failed/total_failed) + (passed/total_passed))` | Balanced |
 
-### 6.4 Implémentation Grok-CLI
+### 6.4 Implémentation Code Buddy
 - **Fichiers** :
   - `src/agent/repair/iterative-repair.ts`
   - `src/agent/repair/fault-localization.ts`
@@ -366,7 +366,7 @@ UCB1(node) = (wins / visits) + C * sqrt(ln(parent_visits) / visits)
 - Parsing AST
 - Chunking par fonction/classe
 - Embeddings spécialisés code
-- **Grok-CLI** : `src/context/codebase-rag/`
+- **Code Buddy** : `src/context/codebase-rag/`
 
 ### 7.3 Retrieval Hybride
 - TF-IDF pour keywords
@@ -429,7 +429,7 @@ UCB1(node) = (wins / visits) + C * sqrt(ln(parent_visits) / visits)
 ### 9.3 Observation Masking
 - Masquer les outputs d'outils non pertinents
 - Réduire le bruit
-- **Grok-CLI** : `src/context/observation-masking.ts`
+- **Code Buddy** : `src/context/observation-masking.ts`
 
 ---
 
@@ -455,7 +455,7 @@ interface ToolResult {
 }
 ```
 
-### 10.2 Les 41 Outils de Grok-CLI
+### 10.2 Les 41 Outils de Code Buddy
 | Catégorie | Outils | Fichiers |
 |-----------|--------|----------|
 | Fichiers | read, write, edit, multi-edit | `src/tools/text-editor.ts` |
@@ -484,7 +484,7 @@ interface ToolResult {
 - Standard Anthropic
 - Transport stdio/HTTP/SSE
 - Découverte de tools
-- **Grok-CLI** : `src/mcp/`
+- **Code Buddy** : `src/mcp/`
 
 ### 11.3 Marketplace Interne
 - **Fichier** : `src/plugins/marketplace.ts`
@@ -502,12 +502,12 @@ interface ToolResult {
 - Similarité cosine sur prompts
 - TTL intelligent
 - 68% réduction d'appels API
-- **Grok-CLI** : `src/utils/semantic-cache.ts`
+- **Code Buddy** : `src/utils/semantic-cache.ts`
 
 ### 12.2 Tool Result Cache
 - LRU + TTL
 - Clés basées sur arguments
-- **Grok-CLI** : `src/performance/tool-cache.ts`
+- **Code Buddy** : `src/performance/tool-cache.ts`
 
 ### 12.3 Pré-réflexions
 - Warming du contexte
@@ -548,7 +548,7 @@ interface ToolResult {
 ## Chapitre 14 — Persistent Learning
 *Pages estimées : 30-35*
 
-### 14.1 Ce que Grok-CLI Apprend
+### 14.1 Ce que Code Buddy Apprend
 
 | Type | Stockage | Usage |
 |------|----------|-------|
@@ -568,9 +568,9 @@ interface ToolResult {
 
 ---
 
-# PARTIE VII — Étude de Cas : Grok-CLI
+# PARTIE VII — Étude de Cas : Code Buddy
 
-## Chapitre 15 — Grok-CLI : Architecture Complète d'un Agent Moderne
+## Chapitre 15 — Code Buddy : Architecture Complète d'un Agent Moderne
 *Pages estimées : 50-60*
 
 ### 15.1 Vision
@@ -594,7 +594,7 @@ interface ToolResult {
 │  ┌─────────────────────────────▼───────────────────────────────────┐   │
 │  │                      AGENT CORE                                  │   │
 │  │  ┌─────────────────────────────────────────────────────────┐    │   │
-│  │  │                   GrokAgent                              │    │   │
+│  │  │                   CodeBuddyAgent                              │    │   │
 │  │  │  • Agentic loop (max 400 rounds)                        │    │   │
 │  │  │  • Tool orchestration                                    │    │   │
 │  │  │  • Self-healing                                          │    │   │
@@ -729,7 +729,7 @@ interface ToolResult {
 | Hallucinations | Repair loop + validation |
 | Contexte limité | RAG + compression |
 
-### 15.6 Comment Cloner ou Étendre Grok-CLI
+### 15.6 Comment Cloner ou Étendre Code Buddy
 
 ```bash
 # Cloner le projet
@@ -748,7 +748,7 @@ npm run dev
 # Étendre avec un nouvel outil
 # 1. Créer src/tools/my-tool.ts
 # 2. Implémenter l'interface Tool
-# 3. Enregistrer dans src/grok/tools.ts
+# 3. Enregistrer dans src/codebuddy/tools.ts
 ```
 
 ---

@@ -51,7 +51,7 @@
 | 9.3 | ⚖️ Compression Priority-Based | Garder le critique, supprimer le bruit |
 | 9.4 | 📝 Summarization Intelligente | Résumer sans perdre l'essentiel |
 | 9.5 | 🎭 Observation Masking | Cacher les outputs d'outils anciens |
-| 9.6 | 🛠️ Implémentation | Le module dans Grok-CLI |
+| 9.6 | 🛠️ Implémentation | Le module dans Code Buddy |
 | 9.7 | 📊 Métriques et Monitoring | Mesurer l'efficacité |
 | 9.8 | 💼 Cas Pratiques | Exemples concrets |
 
@@ -646,7 +646,7 @@ ${summary}
 
 ---
 
-## 9.6 🛠️ Implémentation Grok-CLI
+## 9.6 🛠️ Implémentation Code Buddy
 
 ### 9.6.1 Architecture du module
 
@@ -657,7 +657,7 @@ ${summary}
 ```typescript
 // src/agent/grok-agent.ts
 
-export class GrokAgent {
+export class CodeBuddyAgent {
   private compressor: ContextCompressor;
   private masker: ObservationMasker;
   private tokenBudget: number = 100_000;
@@ -956,8 +956,8 @@ const myMaskingRules: Record<string, ToolMaskingRule> = {
 |------|-----------|
 | 📄 Paper | JetBrains Research. (2024). "Context Compression for LLM-based Code Generation" |
 | 📄 Paper | Liu, N., et al. (2023). "Lost in the Middle: How Language Models Use Long Contexts" |
-| 💻 Code | Grok-CLI : `src/context/context-compressor.ts` |
-| 💻 Code | Grok-CLI : `src/context/observation-masking.ts` |
+| 💻 Code | Code Buddy : `src/context/context-compressor.ts` |
+| 💻 Code | Code Buddy : `src/context/observation-masking.ts` |
 
 ---
 

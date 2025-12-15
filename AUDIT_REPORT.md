@@ -1,4 +1,4 @@
-# Rapport d'Audit Complet - Grok CLI
+# Rapport d'Audit Complet - Code Buddy
 
 **Date:** 29 Novembre 2025
 **Projet:** @phuetz/code-buddy v1.0.0
@@ -8,7 +8,7 @@
 
 ## Résumé Exécutif
 
-Ce rapport présente un audit complet du projet Grok CLI, un assistant IA en ligne de commande utilisant l'API Grok. L'audit couvre la sécurité, la qualité du code, les dépendances, les tests et les bonnes pratiques.
+Ce rapport présente un audit complet du projet Code Buddy, un assistant IA en ligne de commande utilisant l'API Grok. L'audit couvre la sécurité, la qualité du code, les dépendances, les tests et les bonnes pratiques.
 
 ### Score Global: **B+** (Bon avec améliorations nécessaires)
 
@@ -280,7 +280,7 @@ export function getSandboxManager(config?: Partial<SandboxConfig>): SandboxManag
 
 ## Conclusion
 
-Le projet Grok CLI est globalement bien structuré avec une attention particulière à la sécurité (sandbox, validation des commandes, sanitization). Les principaux axes d'amélioration sont:
+Le projet Code Buddy est globalement bien structuré avec une attention particulière à la sécurité (sandbox, validation des commandes, sanitization). Les principaux axes d'amélioration sont:
 
 1. **Typage TypeScript** - Éliminer les `any` pour améliorer la maintenabilité
 2. **Couverture de tests** - Ajouter des tests pour les composants critiques

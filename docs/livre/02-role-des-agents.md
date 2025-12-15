@@ -208,7 +208,7 @@ function shouldUseAgent(task: TaskSpec): boolean {
 | **Boucle** | 1 échange | N échanges validés | Auto (supervisé) | Distribué |
 | **Mémoire** | Session | + Documents | Persistante | Partagée |
 | **Erreurs** | Vous les gérez | Vous les corrigez | Auto-corrige | Escalade |
-| **Exemples** | ChatGPT vanilla | Copilot, Cursor | Claude Code, Grok-CLI | MetaGPT, CrewAI |
+| **Exemples** | ChatGPT vanilla | Copilot, Cursor | Claude Code, Code Buddy | MetaGPT, CrewAI |
 | **Setup** | 5 min | 30 min | 2-4 heures | 1-2 jours |
 
 ---

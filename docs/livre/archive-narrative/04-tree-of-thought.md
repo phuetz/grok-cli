@@ -239,7 +239,7 @@ async function selfEvaluate(thought: ThoughtNode, problem: string): Promise<numb
 
 ---
 
-## 💻 4.5 Implémentation Grok-CLI
+## 💻 4.5 Implémentation Code Buddy
 
 ### 4.5.1 📁 Architecture du Module
 
