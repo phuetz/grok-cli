@@ -1,7 +1,7 @@
 {
   "name": "code-buddy-vscode",
-  "displayName": "Grok CLI",
-  "description": "AI-powered coding assistant powered by Grok - bring the power of Grok CLI to VS Code",
+  "displayName": "Code Buddy",
+  "description": "AI-powered coding assistant - bring the power of Code Buddy to VS Code with Grok, Claude, and more",
   "version": "0.1.0",
   "publisher": "phuetz",
   "engines": {
@@ -15,10 +15,14 @@
   "keywords": [
     "ai",
     "grok",
+    "claude",
+    "copilot",
     "assistant",
     "code generation",
     "code review",
-    "refactoring"
+    "refactoring",
+    "agentic",
+    "cascade"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -27,153 +31,385 @@
   "contributes": {
     "commands": [
       {
-        "command": "grok.chat",
-        "title": "Grok: Open Chat",
+        "command": "codebuddy.chat",
+        "title": "Code Buddy: Open Chat",
         "icon": "$(comment-discussion)"
       },
       {
-        "command": "grok.explain",
-        "title": "Grok: Explain Selection"
+        "command": "codebuddy.explain",
+        "title": "Code Buddy: Explain Selection"
       },
       {
-        "command": "grok.refactor",
-        "title": "Grok: Refactor Selection"
+        "command": "codebuddy.refactor",
+        "title": "Code Buddy: Refactor Selection"
       },
       {
-        "command": "grok.fix",
-        "title": "Grok: Fix Selection"
+        "command": "codebuddy.fix",
+        "title": "Code Buddy: Fix Selection"
       },
       {
-        "command": "grok.generateTests",
-        "title": "Grok: Generate Tests"
+        "command": "codebuddy.generateTests",
+        "title": "Code Buddy: Generate Tests"
       },
       {
-        "command": "grok.review",
-        "title": "Grok: Review Code"
+        "command": "codebuddy.review",
+        "title": "Code Buddy: Review Code"
       },
       {
-        "command": "grok.terminal",
-        "title": "Grok: Open Terminal"
+        "command": "codebuddy.terminal",
+        "title": "Code Buddy: Open Terminal"
       },
       {
-        "command": "grok.inlineEdit",
-        "title": "Grok: Inline Edit"
+        "command": "codebuddy.inlineEdit",
+        "title": "Code Buddy: Inline Edit (Cmd+K)",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "codebuddy.composer",
+        "title": "Code Buddy: Open Composer",
+        "icon": "$(files)"
+      },
+      {
+        "command": "codebuddy.cascade",
+        "title": "Code Buddy: Start Cascade (Agentic Mode)",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "codebuddy.generateCommit",
+        "title": "Code Buddy: Generate Commit Message"
+      },
+      {
+        "command": "codebuddy.acceptDiff",
+        "title": "Code Buddy: Accept Changes"
+      },
+      {
+        "command": "codebuddy.rejectDiff",
+        "title": "Code Buddy: Reject Changes"
+      },
+      {
+        "command": "codebuddy.addContext",
+        "title": "Code Buddy: Add File to Context"
+      },
+      {
+        "command": "codebuddy.suggestCommand",
+        "title": "Code Buddy: Suggest Terminal Command",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "codebuddy.explainTerminal",
+        "title": "Code Buddy: Explain Terminal Output"
+      },
+      {
+        "command": "codebuddy.generateCommand",
+        "title": "Code Buddy: Generate Command from Description"
+      },
+      {
+        "command": "codebuddy.addDocs",
+        "title": "Code Buddy: Add Documentation"
+      },
+      {
+        "command": "codebuddy.optimize",
+        "title": "Code Buddy: Optimize Code"
+      },
+      {
+        "command": "codebuddy.writeMode",
+        "title": "Code Buddy: Open Write Mode",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "codebuddy.showActionBar",
+        "title": "Code Buddy: Show Quick Actions"
+      },
+      {
+        "command": "codebuddy.quickExplain",
+        "title": "Code Buddy: Quick Explain"
+      },
+      {
+        "command": "codebuddy.quickRefactor",
+        "title": "Code Buddy: Quick Refactor"
+      },
+      {
+        "command": "codebuddy.quickFix",
+        "title": "Code Buddy: Quick Fix"
+      },
+      {
+        "command": "codebuddy.quickTests",
+        "title": "Code Buddy: Quick Generate Tests"
+      },
+      {
+        "command": "codebuddy.quickDoc",
+        "title": "Code Buddy: Quick Add Documentation"
       }
     ],
     "menus": {
       "editor/context": [
         {
-          "command": "grok.explain",
-          "when": "editorHasSelection",
-          "group": "grok@1"
+          "command": "codebuddy.inlineEdit",
+          "when": "editorTextFocus",
+          "group": "codebuddy@0"
         },
         {
-          "command": "grok.refactor",
+          "command": "codebuddy.explain",
           "when": "editorHasSelection",
-          "group": "grok@2"
+          "group": "codebuddy@1"
         },
         {
-          "command": "grok.fix",
+          "command": "codebuddy.refactor",
           "when": "editorHasSelection",
-          "group": "grok@3"
+          "group": "codebuddy@2"
         },
         {
-          "command": "grok.generateTests",
+          "command": "codebuddy.fix",
           "when": "editorHasSelection",
-          "group": "grok@4"
+          "group": "codebuddy@3"
+        },
+        {
+          "command": "codebuddy.generateTests",
+          "when": "editorHasSelection",
+          "group": "codebuddy@4"
+        },
+        {
+          "command": "codebuddy.addContext",
+          "group": "codebuddy@5"
         }
       ],
       "editor/title": [
         {
-          "command": "grok.review",
+          "command": "codebuddy.review",
           "group": "navigation"
+        },
+        {
+          "command": "codebuddy.cascade",
+          "group": "navigation"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "codebuddy.generateCommit",
+          "group": "navigation"
+        }
+      ],
+      "terminal/context": [
+        {
+          "command": "codebuddy.explainTerminal",
+          "group": "codebuddy"
+        },
+        {
+          "command": "codebuddy.suggestCommand",
+          "group": "codebuddy"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "codebuddy.suggestCommand"
+        },
+        {
+          "command": "codebuddy.generateCommand"
+        },
+        {
+          "command": "codebuddy.explainTerminal"
         }
       ]
     },
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "grok-sidebar",
-          "title": "Grok",
-          "icon": "resources/grok-icon.svg"
+          "id": "codebuddy-sidebar",
+          "title": "Code Buddy",
+          "icon": "resources/codebuddy-icon.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "codebuddy-panel",
+          "title": "Code Buddy",
+          "icon": "$(robot)"
         }
       ]
     },
     "views": {
-      "grok-sidebar": [
+      "codebuddy-sidebar": [
         {
           "type": "webview",
-          "id": "grok.chatView",
+          "id": "codebuddy.chatView",
           "name": "Chat"
         },
         {
-          "id": "grok.historyView",
+          "type": "webview",
+          "id": "codebuddy.composerView",
+          "name": "Composer"
+        },
+        {
+          "type": "webview",
+          "id": "codebuddy.writeMode",
+          "name": "Write"
+        },
+        {
+          "id": "codebuddy.contextView",
+          "name": "Context Files"
+        },
+        {
+          "id": "codebuddy.historyView",
           "name": "History"
         },
         {
-          "id": "grok.issuesView",
+          "id": "codebuddy.issuesView",
           "name": "Code Issues"
+        }
+      ],
+      "codebuddy-panel": [
+        {
+          "type": "webview",
+          "id": "codebuddy.cascadeView",
+          "name": "Cascade"
         }
       ]
     },
     "configuration": {
-      "title": "Grok CLI",
+      "title": "Code Buddy",
       "properties": {
-        "grok.apiKey": {
+        "codebuddy.provider": {
+          "type": "string",
+          "default": "grok",
+          "enum": ["grok", "claude", "openai", "ollama"],
+          "enumDescriptions": [
+            "Use Grok (xAI) - Fast and capable",
+            "Use Claude (Anthropic) - Best for complex reasoning",
+            "Use OpenAI GPT models",
+            "Use local Ollama models"
+          ],
+          "description": "AI provider to use"
+        },
+        "codebuddy.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Grok API key (or set GROK_API_KEY environment variable)"
+          "description": "API key for the selected provider (or use environment variables)"
         },
-        "grok.model": {
+        "codebuddy.model": {
           "type": "string",
           "default": "grok-3-latest",
-          "enum": [
-            "grok-3-latest",
-            "grok-3-fast",
-            "grok-2-1212",
-            "grok-code-fast-1"
-          ],
-          "description": "Default Grok model to use"
+          "description": "Model to use (depends on provider)"
         },
-        "grok.autoReview": {
+        "codebuddy.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Custom API base URL (for Ollama, LM Studio, etc.)"
+        },
+        "codebuddy.autoReview": {
           "type": "boolean",
           "default": false,
           "description": "Automatically review code on save"
         },
-        "grok.inlineCompletions": {
+        "codebuddy.inlineCompletions": {
           "type": "boolean",
           "default": true,
-          "description": "Enable inline code completions"
+          "description": "Enable inline code completions (ghost text)"
         },
-        "grok.maxTokens": {
+        "codebuddy.inlineEditStyle": {
+          "type": "string",
+          "default": "inline",
+          "enum": ["inline", "diff", "sideBySide"],
+          "description": "How to show inline edit changes"
+        },
+        "codebuddy.maxTokens": {
           "type": "number",
           "default": 4096,
           "description": "Maximum tokens per request"
         },
-        "grok.autonomyLevel": {
+        "codebuddy.autonomyLevel": {
           "type": "string",
           "default": "confirm",
           "enum": ["suggest", "confirm", "auto", "full"],
-          "description": "Level of autonomous operation"
+          "enumDescriptions": [
+            "Always ask before making changes",
+            "Confirm destructive changes only",
+            "Auto-apply safe changes",
+            "Full autonomy (YOLO mode)"
+          ],
+          "description": "Level of autonomous operation for Cascade"
+        },
+        "codebuddy.contextFiles": {
+          "type": "array",
+          "default": [],
+          "description": "Files to always include in context"
+        },
+        "codebuddy.showCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show AI action buttons above functions"
+        },
+        "codebuddy.cascadeMaxSteps": {
+          "type": "number",
+          "default": 20,
+          "description": "Maximum steps for Cascade agentic mode"
         }
       }
     },
     "keybindings": [
       {
-        "command": "grok.chat",
-        "key": "ctrl+shift+g",
-        "mac": "cmd+shift+g"
+        "command": "codebuddy.chat",
+        "key": "ctrl+shift+l",
+        "mac": "cmd+shift+l"
       },
       {
-        "command": "grok.inlineEdit",
+        "command": "codebuddy.inlineEdit",
         "key": "ctrl+k",
         "mac": "cmd+k",
         "when": "editorTextFocus"
       },
       {
-        "command": "grok.explain",
+        "command": "codebuddy.explain",
         "key": "ctrl+shift+e",
         "mac": "cmd+shift+e",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "codebuddy.cascade",
+        "key": "ctrl+shift+i",
+        "mac": "cmd+shift+i"
+      },
+      {
+        "command": "codebuddy.composer",
+        "key": "ctrl+i",
+        "mac": "cmd+i"
+      },
+      {
+        "command": "codebuddy.acceptDiff",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "codebuddy.diffVisible"
+      },
+      {
+        "command": "codebuddy.rejectDiff",
+        "key": "escape",
+        "when": "codebuddy.diffVisible"
+      },
+      {
+        "command": "codebuddy.generateCommit",
+        "key": "ctrl+shift+g",
+        "mac": "cmd+shift+g",
+        "when": "scmInputIsInLastPosition"
+      },
+      {
+        "command": "codebuddy.suggestCommand",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t"
+      },
+      {
+        "command": "codebuddy.review",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "codebuddy.writeMode",
+        "key": "ctrl+shift+w",
+        "mac": "cmd+shift+w"
+      },
+      {
+        "command": "codebuddy.showActionBar",
+        "key": "ctrl+.",
+        "mac": "cmd+.",
         "when": "editorHasSelection"
       }
     ]

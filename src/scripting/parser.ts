@@ -4,9 +4,8 @@
  * Parses tokens into an Abstract Syntax Tree (AST)
  */
 
-import {
+import type {
   Token,
-  TokenType,
   ProgramNode,
   StatementNode,
   ExpressionNode,
@@ -37,6 +36,7 @@ import {
   ArrowFunction,
   AwaitExpression,
 } from './types.js';
+import { TokenType } from './types.js';
 
 export class Parser {
   private tokens: Token[];
@@ -75,7 +75,7 @@ export class Parser {
         return this.importStatement();
       }
       return this.statement();
-    } catch (error) {
+    } catch (_error) {
       this.synchronize();
       return null;
     }

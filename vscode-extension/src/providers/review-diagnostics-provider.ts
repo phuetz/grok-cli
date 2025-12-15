@@ -5,19 +5,26 @@
  */
 
 import * as vscode from 'vscode';
-import { GrokClient } from '../code-buddyent';
+import { AIClient } from '../ai-client';
+
+interface CodeIssue {
+  line?: number;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+  suggestion?: string;
+}
 
 export class ReviewDiagnosticsProvider implements vscode.Disposable {
   private diagnosticCollection: vscode.DiagnosticCollection;
   private disposables: vscode.Disposable[] = [];
 
-  constructor(private readonly grokClient: GrokClient) {
-    this.diagnosticCollection = vscode.languages.createDiagnosticCollection('Grok');
+  constructor(private readonly aiClient: AIClient) {
+    this.diagnosticCollection = vscode.languages.createDiagnosticCollection('Code Buddy');
     this.disposables.push(this.diagnosticCollection);
 
     // Register fix command
     this.disposables.push(
-      vscode.commands.registerCommand('grok.fixDiagnostic', this.fixDiagnostic.bind(this))
+      vscode.commands.registerCommand('codebuddy.fixDiagnostic', this.fixDiagnostic.bind(this))
     );
   }
 
@@ -29,7 +36,7 @@ export class ReviewDiagnosticsProvider implements vscode.Disposable {
     const language = document.languageId;
 
     try {
-      const issues = await this.grokClient.reviewCode(code, language);
+      const issues = await this.reviewCode(code, language);
 
       const diagnostics: vscode.Diagnostic[] = issues.map(issue => {
         const line = Math.max(0, (issue.line || 1) - 1);
@@ -45,7 +52,7 @@ export class ReviewDiagnosticsProvider implements vscode.Disposable {
         const severity = this.mapSeverity(issue.severity);
 
         const diagnostic = new vscode.Diagnostic(range, issue.message, severity);
-        diagnostic.source = 'Grok';
+        diagnostic.source = 'Code Buddy';
         diagnostic.code = issue.suggestion ? 'fixable' : undefined;
 
         // Store suggestion for quick fix
@@ -58,7 +65,36 @@ export class ReviewDiagnosticsProvider implements vscode.Disposable {
 
       this.diagnosticCollection.set(document.uri, diagnostics);
     } catch (error) {
-      console.error('Grok review error:', error);
+      console.error('Code Buddy review error:', error);
+    }
+  }
+
+  /**
+   * Review code and return issues
+   */
+  private async reviewCode(code: string, language: string): Promise<CodeIssue[]> {
+    const response = await this.aiClient.chat([
+      {
+        role: 'system',
+        content: `You are an expert code reviewer for ${language}. Analyze the code and return a JSON array of issues.
+Each issue should have: { "line": number, "message": string, "severity": "error"|"warning"|"info", "suggestion": string }
+Return ONLY the JSON array, no explanations.`,
+      },
+      {
+        role: 'user',
+        content: `Review this ${language} code:\n\n\`\`\`${language}\n${code}\n\`\`\``,
+      },
+    ]);
+
+    try {
+      // Extract JSON from response
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      return [];
+    } catch {
+      return [];
     }
   }
 
@@ -72,15 +108,15 @@ export class ReviewDiagnosticsProvider implements vscode.Disposable {
     const suggestion = (diagnostic as any).suggestion;
 
     if (!suggestion) {
-      // No direct suggestion, ask Grok to fix
+      // No direct suggestion, ask AI to fix
       const line = document.lineAt(diagnostic.range.start.line);
       const code = line.text;
       const language = document.languageId;
 
       const response = await vscode.window.withProgress(
-        { location: vscode.ProgressLocation.Notification, title: 'Grok is fixing...' },
+        { location: vscode.ProgressLocation.Notification, title: 'Code Buddy is fixing...' },
         async () => {
-          return await this.grokClient.chat([
+          return await this.aiClient.chat([
             {
               role: 'system',
               content: `You are an expert ${language} developer. Fix the issue and return ONLY the fixed line of code.`,

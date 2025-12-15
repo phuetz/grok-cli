@@ -5,15 +5,15 @@
  */
 
 import * as vscode from 'vscode';
-import { GrokClient } from '../code-buddyent';
+import { AIClient } from '../ai-client';
 
-export class GrokCompletionProvider implements vscode.InlineCompletionItemProvider {
+export class CodeBuddyCompletionProvider implements vscode.InlineCompletionItemProvider {
   private lastRequest: AbortController | null = null;
   private cache: Map<string, string> = new Map();
   private debounceTimer: NodeJS.Timeout | null = null;
   private readonly debounceMs = 300;
 
-  constructor(private readonly grokClient: GrokClient) {}
+  constructor(private readonly aiClient: AIClient) {}
 
   async provideInlineCompletionItems(
     document: vscode.TextDocument,
@@ -52,7 +52,7 @@ export class GrokCompletionProvider implements vscode.InlineCompletionItemProvid
     }
 
     try {
-      const completion = await this.grokClient.getCompletion(prefix, suffix, language);
+      const completion = await this.getCompletion(prefix, suffix, language);
 
       if (token.isCancellationRequested || !completion) {
         return null;
@@ -71,7 +71,48 @@ export class GrokCompletionProvider implements vscode.InlineCompletionItemProvid
 
       return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
     } catch (error) {
-      console.error('Grok completion error:', error);
+      console.error('Code Buddy completion error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get completion from AI
+   */
+  private async getCompletion(prefix: string, suffix: string, language: string): Promise<string | null> {
+    const prompt = `Complete the following ${language} code. Return ONLY the completion text, nothing else.
+
+Code before cursor:
+\`\`\`${language}
+${prefix}
+\`\`\`
+
+Code after cursor:
+\`\`\`${language}
+${suffix}
+\`\`\`
+
+Complete the code at the cursor position:`;
+
+    try {
+      const response = await this.aiClient.chat([
+        {
+          role: 'system',
+          content: `You are an expert ${language} developer. Complete code naturally and concisely. Return ONLY the completion, no explanations or code fences.`,
+        },
+        { role: 'user', content: prompt },
+      ]);
+
+      // Clean up the response
+      let completion = response.trim();
+
+      // Remove code fences if present
+      if (completion.startsWith('```')) {
+        completion = completion.replace(/^```\w*\n?/, '').replace(/\n?```$/, '');
+      }
+
+      return completion || null;
+    } catch {
       return null;
     }
   }
