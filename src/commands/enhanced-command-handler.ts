@@ -67,6 +67,11 @@ import {
   handleScript,
   // FCS handlers (100% FileCommander Compatible)
   handleFCS,
+  // Research-based feature handlers
+  handleTDD,
+  handleWorkflow,
+  handleHooks,
+  handlePromptCache,
   // Type
   CommandHandlerResult,
 } from "./handlers/index.js";
@@ -256,6 +261,19 @@ export class EnhancedCommandHandler {
       // FCS execution (100% FileCommander Compatible)
       case "__FCS__":
         return handleFCS(args);
+
+      // Research-based features (TDD, CI/CD, Hooks, Caching)
+      case "__TDD_MODE__":
+        return handleTDD(args);
+
+      case "__WORKFLOW__":
+        return handleWorkflow(args);
+
+      case "__HOOKS__":
+        return handleHooks(args);
+
+      case "__PROMPT_CACHE__":
+        return handlePromptCache(args);
 
       default:
         return { handled: false };

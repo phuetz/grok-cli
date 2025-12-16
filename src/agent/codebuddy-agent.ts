@@ -36,6 +36,8 @@ import { ContextManagerV2, createContextManager } from "../context/context-manag
 import { sanitizeLLMOutput, extractCommentaryToolCalls } from "../utils/sanitize.js";
 import { getErrorMessage } from "../types/errors.js";
 import { logger } from "../utils/logger.js";
+import { getPromptCacheManager, PromptCacheManager } from "../optimization/prompt-cache.js";
+import { getHooksManager, HooksManager } from "../hooks/lifecycle-hooks.js";
 
 // Re-export types for backwards compatibility
 export { ChatEntry, StreamingChunk } from "./types.js";
@@ -143,6 +145,8 @@ export class CodeBuddyAgent extends EventEmitter {
   private sessionCost: number = 0;
   private costTracker: CostTracker;
   private contextManager: ContextManagerV2;
+  private promptCacheManager: PromptCacheManager;
+  private hooksManager: HooksManager;
 
   /**
    * Create a new CodeBuddyAgent instance
@@ -217,6 +221,8 @@ export class CodeBuddyAgent extends EventEmitter {
     this.modeManager = getAgentModeManager();
     this.sandboxManager = getSandboxManager();
     this.mcpClient = getMCPClient();
+    this.promptCacheManager = getPromptCacheManager();
+    this.hooksManager = getHooksManager(process.cwd());
 
     // Initialize MCP servers if configured
     this.initializeMCP();
@@ -278,6 +284,9 @@ export class CodeBuddyAgent extends EventEmitter {
           customInstructions || undefined
         );
       }
+
+      // Cache system prompt for optimization
+      this.promptCacheManager.cacheSystemPrompt(systemPrompt);
 
       // Initialize with system message
       this.messages.push({
@@ -486,10 +495,18 @@ export class CodeBuddyAgent extends EventEmitter {
       });
       this.lastToolSelection = selection;
       this.lastSelectedToolNames = selection.selectedTools.map(t => t.function.name);
+
+      // Cache tools for prompt caching optimization
+      this.promptCacheManager.cacheTools(selection.selectedTools);
+
       return { tools: selection.selectedTools, selection };
     } else {
       const tools = await getAllCodeBuddyTools();
       this.lastSelectedToolNames = tools.map(t => t.function.name);
+
+      // Cache tools for prompt caching optimization
+      this.promptCacheManager.cacheTools(tools);
+
       return { tools, selection: null };
     }
   }
@@ -1130,20 +1147,54 @@ export class CodeBuddyAgent extends EventEmitter {
               : undefined;
           return await this.textEditor.view(args.path, range);
 
-        case "create_file":
+        case "create_file": {
           // Create checkpoint before creating file
           this.checkpointManager.checkpointBeforeCreate(args.path);
-          return await this.textEditor.create(args.path, args.content);
 
-        case "str_replace_editor":
+          // Execute pre-edit hooks
+          await this.hooksManager.executeHooks("pre-edit", {
+            file: args.path,
+            content: args.content,
+          });
+
+          const createResult = await this.textEditor.create(args.path, args.content);
+
+          // Execute post-edit hooks
+          await this.hooksManager.executeHooks("post-edit", {
+            file: args.path,
+            content: args.content,
+            output: createResult.output,
+          });
+
+          return createResult;
+        }
+
+        case "str_replace_editor": {
           // Create checkpoint before editing file
           this.checkpointManager.checkpointBeforeEdit(args.path);
-          return await this.textEditor.strReplace(
+
+          // Execute pre-edit hooks
+          await this.hooksManager.executeHooks("pre-edit", {
+            file: args.path,
+            content: args.new_str,
+          });
+
+          const editResult = await this.textEditor.strReplace(
             args.path,
             args.old_str,
             args.new_str,
             args.replace_all
           );
+
+          // Execute post-edit hooks
+          await this.hooksManager.executeHooks("post-edit", {
+            file: args.path,
+            content: args.new_str,
+            output: editResult.output,
+          });
+
+          return editResult;
+        }
 
         case "edit_file":
           if (!this.morphEditor) {
@@ -1159,8 +1210,23 @@ export class CodeBuddyAgent extends EventEmitter {
             args.code_edit
           );
 
-        case "bash":
-          return await this.bash.execute(args.command);
+        case "bash": {
+          // Execute pre-bash hooks
+          await this.hooksManager.executeHooks("pre-bash", {
+            command: args.command,
+          });
+
+          const bashResult = await this.bash.execute(args.command);
+
+          // Execute post-bash hooks
+          await this.hooksManager.executeHooks("post-bash", {
+            command: args.command,
+            output: bashResult.output,
+            error: bashResult.error,
+          });
+
+          return bashResult;
+        }
 
         case "create_todo_list":
           return await this.todoTool.createTodoList(args.todos);
@@ -1765,6 +1831,45 @@ export class CodeBuddyAgent extends EventEmitter {
     compressionRatio?: number;
   }): void {
     this.contextManager.updateConfig(config);
+  }
+
+  // Prompt Cache methods
+
+  /**
+   * Get prompt cache manager
+   */
+  getPromptCacheManager(): PromptCacheManager {
+    return this.promptCacheManager;
+  }
+
+  /**
+   * Get prompt cache statistics
+   */
+  getPromptCacheStats() {
+    return this.promptCacheManager.getStats();
+  }
+
+  /**
+   * Format prompt cache stats for display
+   */
+  formatPromptCacheStats(): string {
+    return this.promptCacheManager.formatStats();
+  }
+
+  // Lifecycle Hooks methods
+
+  /**
+   * Get hooks manager
+   */
+  getHooksManager(): HooksManager {
+    return this.hooksManager;
+  }
+
+  /**
+   * Get hooks status
+   */
+  getHooksStatus(): string {
+    return this.hooksManager.formatStatus();
   }
 
   /**

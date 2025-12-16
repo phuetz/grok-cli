@@ -116,5 +116,13 @@ export {
   executeInlineFCS,
 } from './fcs-handlers.js';
 
+// Research-based feature handlers (TDD, CI/CD, Hooks, Caching)
+export {
+  handleTDD,
+  handleWorkflow,
+  handleHooks,
+  handlePromptCache,
+} from './research-handlers.js';
+
 // Re-export CommandHandlerResult type
 export type { CommandHandlerResult } from './branch-handlers.js';
