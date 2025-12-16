@@ -48,7 +48,7 @@ const ANSI = {
 // Configure marked with terminal renderer
 marked.setOptions({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TerminalRenderer has incompatible types with marked's Renderer
-  renderer: new (TerminalRenderer as unknown as new (options: Record<string, unknown>) => marked.Renderer)({
+  renderer: new (TerminalRenderer as any)({
     // Table options passed to cli-table3
     tableOptions: {
       chars: TABLE_CHARS,
