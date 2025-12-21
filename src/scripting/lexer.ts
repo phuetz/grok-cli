@@ -1,7 +1,7 @@
 /**
- * Grok Script Lexer
+ * Buddy Script Lexer
  *
- * Tokenizes Grok Script source code into tokens
+ * Tokenizes Buddy Script source code into tokens
  */
 
 import { Token, TokenType } from './types.js';

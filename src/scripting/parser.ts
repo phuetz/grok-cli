@@ -1,5 +1,5 @@
 /**
- * Grok Script Parser
+ * Buddy Script Parser
  *
  * Parses tokens into an Abstract Syntax Tree (AST)
  */

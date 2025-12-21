@@ -745,7 +745,7 @@ Be systematic and thorough in your analysis.`,
       // ==========================================
       {
         name: 'script',
-        description: 'Run Grok Script automation files (.gs)',
+        description: 'Run Buddy Script automation files (.bs)',
         prompt: '__SCRIPT__',
         filePath: '',
         isBuiltin: true,

@@ -1,12 +1,12 @@
 /**
- * Grok Script - Scripting Language for code-buddy automation
+ * Buddy Script - Scripting Language for code-buddy automation
  *
  * Inspired by FileCommander Enhanced Script (FCS)
  *
  * Usage:
- *   grok --script myscript.gs
- *   /script run myscript.gs
- *   /script new myscript.gs
+ *   grok --script myscript.bs
+ *   /script run myscript.bs
+ *   /script new myscript.bs
  */
 
 import * as fs from 'fs';
@@ -28,7 +28,7 @@ export { Runtime } from './runtime.js';
 export { createBuiltins } from './builtins.js';
 
 /**
- * Execute a Grok Script from source code
+ * Execute a Buddy Script from source code
  */
 export async function executeScript(
   source: string,
@@ -64,7 +64,7 @@ export async function executeScript(
 }
 
 /**
- * Execute a Grok Script from a file
+ * Execute a Buddy Script from a file
  */
 export async function executeScriptFile(
   filePath: string,
@@ -96,7 +96,7 @@ export async function executeScriptFile(
 }
 
 /**
- * Validate a Grok Script without executing it
+ * Validate a Buddy Script without executing it
  */
 export function validateScript(source: string): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
@@ -112,7 +112,7 @@ export function validateScript(source: string): { valid: boolean; errors: string
 }
 
 /**
- * Format/pretty-print a Grok Script AST
+ * Format/pretty-print a Buddy Script AST
  */
 export function formatAST(ast: ProgramNode): string {
   return JSON.stringify(ast, null, 2);
@@ -122,10 +122,10 @@ export function formatAST(ast: ProgramNode): string {
  * Create a new script template
  */
 export function createScriptTemplate(name: string, description: string = ''): string {
-  return `#!/usr/bin/env grok-script
+  return `#!/usr/bin/env buddy-script
 // ============================================
 // ${name}
-// ${description || 'Grok Script'}
+// ${description || 'Buddy Script'}
 // ============================================
 
 // Import code-buddy bindings
@@ -145,7 +145,7 @@ function main() {
     print("")
 
     // Your code here
-    print("Hello from Grok Script!")
+    print("Hello from Buddy Script!")
 
     // Example: File operations
     // let content = file.read("README.md")
@@ -176,15 +176,15 @@ try {
  * Get script file extension
  */
 export function getScriptExtension(): string {
-  return '.gs';
+  return '.bs';
 }
 
 /**
- * Check if a file is a Grok Script
+ * Check if a file is a Buddy Script
  */
-export function isGrokScript(filePath: string): boolean {
+export function isBuddyScript(filePath: string): boolean {
   const ext = path.extname(filePath).toLowerCase();
-  return ext === '.gs' || ext === '.codebuddy' || ext === '.codebuddyscript';
+  return ext === '.bs' || ext === '.codebuddy' || ext === '.codebuddyscript';
 }
 
 /**
@@ -256,7 +256,7 @@ class CodeBuddyScriptManager {
     if (!fs.existsSync(dir)) return [];
 
     return fs.readdirSync(dir)
-      .filter(f => isGrokScript(f))
+      .filter(f => isBuddyScript(f))
       .map(f => path.join(dir, f));
   }
 }

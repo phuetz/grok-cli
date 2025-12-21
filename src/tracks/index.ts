@@ -4,6 +4,6 @@
  * Implements a spec → plan → implement workflow inspired by Conductor.
  */
 
-export * from './types';
-export * from './track-manager';
-export * from './track-commands';
+export * from './types.js';
+export * from './track-manager.js';
+export * from './track-commands.js';

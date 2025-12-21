@@ -1,5 +1,5 @@
 /**
- * Grok Script Runtime
+ * Buddy Script Runtime
  *
  * Executes parsed AST nodes
  */

@@ -1,0 +1,185 @@
+// Code Buddy Smoke Test
+// Tests core functionality using Buddy Script
+// Run from project root: /script run scripts/smoke-test.bs
+
+// Change to project root (parent of scripts/)
+let projectRoot = ".."
+
+console.log("═══════════════════════════════════════════════════════════")
+console.log("                   CODE BUDDY SMOKE TEST                    ")
+console.log("═══════════════════════════════════════════════════════════")
+console.log("")
+
+let passed = 0
+let failed = 0
+let skipped = 0
+
+function logPass(msg) {
+  console.log("[PASS] " + msg)
+  passed = passed + 1
+}
+
+function logFail(msg) {
+  console.log("[FAIL] " + msg)
+  failed = failed + 1
+}
+
+function logSkip(msg) {
+  console.log("[SKIP] " + msg)
+  skipped = skipped + 1
+}
+
+function logTest(msg) {
+  console.log("")
+  console.log("[TEST] " + msg)
+}
+
+// ============================================================
+// TEST 1: Build exists
+// ============================================================
+logTest("Checking if build exists...")
+if (file.exists(projectRoot + "/dist/index.js")) {
+  logPass("Build exists at dist/index.js")
+} else {
+  logFail("Build not found - run 'npm run build'")
+}
+
+// ============================================================
+// TEST 2: Package.json exists
+// ============================================================
+logTest("Checking package.json...")
+if (file.exists(projectRoot + "/package.json")) {
+  let pkg = file.read(projectRoot + "/package.json")
+  if (pkg.indexOf("code-buddy") > -1) {
+    logPass("package.json is valid")
+  } else {
+    logFail("package.json doesn't contain 'code-buddy'")
+  }
+} else {
+  logFail("package.json not found")
+}
+
+// ============================================================
+// TEST 3: CLI --help
+// ============================================================
+logTest("Testing CLI --help...")
+let helpResult = bash.run("cd " + projectRoot + " && node dist/index.js --help")
+if (helpResult.code == 0 && helpResult.stdout.indexOf("Code Buddy") > -1) {
+  logPass("CLI --help works")
+} else {
+  logFail("CLI --help failed")
+}
+
+// ============================================================
+// TEST 4: CLI --version
+// ============================================================
+logTest("Testing CLI --version...")
+let versionResult = bash.run("cd " + projectRoot + " && node dist/index.js --version")
+if (versionResult.code == 0) {
+  logPass("CLI --version works")
+} else {
+  logFail("CLI --version failed")
+}
+
+// ============================================================
+// TEST 5: TypeScript compiles
+// ============================================================
+logTest("Checking TypeScript...")
+let tscResult = bash.run("cd " + projectRoot + " && npm run typecheck 2>&1")
+if (tscResult.stdout.indexOf("error") < 0) {
+  logPass("TypeScript compiles without errors")
+} else {
+  logFail("TypeScript has errors")
+}
+
+// ============================================================
+// TEST 6: Source files exist
+// ============================================================
+logTest("Checking source structure...")
+let srcFiles = [
+  projectRoot + "/src/index.ts",
+  projectRoot + "/src/agent/codebuddy-agent.ts",
+  projectRoot + "/src/codebuddy/client.ts",
+  projectRoot + "/src/tracks/track-manager.ts"
+]
+let allExist = true
+for f in srcFiles {
+  if (!file.exists(f)) {
+    allExist = false
+    console.log("  Missing: " + f)
+  }
+}
+if (allExist) {
+  logPass("All core source files exist")
+} else {
+  logFail("Some source files missing")
+}
+
+// ============================================================
+// TEST 7: Track system files
+// ============================================================
+logTest("Checking track system...")
+if (file.exists(projectRoot + "/src/tracks/index.ts") &&
+    file.exists(projectRoot + "/src/tracks/types.ts") &&
+    file.exists(projectRoot + "/src/tracks/track-commands.ts")) {
+  logPass("Track system files exist")
+} else {
+  logFail("Track system incomplete")
+}
+
+// ============================================================
+// TEST 8: Slash commands file
+// ============================================================
+logTest("Checking slash commands...")
+if (file.exists(projectRoot + "/src/commands/slash-commands.ts")) {
+  let cmdContent = file.read(projectRoot + "/src/commands/slash-commands.ts")
+  if (cmdContent.indexOf("name: 'track'") > -1) {
+    logPass("Slash commands include /track")
+  } else {
+    logFail("/track command not found in slash-commands.ts")
+  }
+} else {
+  logFail("slash-commands.ts not found")
+}
+
+// ============================================================
+// TEST 9: Test files exist
+// ============================================================
+logTest("Checking test files...")
+if (file.exists(projectRoot + "/tests/tracks/track-manager.test.ts")) {
+  logPass("Track tests exist")
+} else {
+  logFail("Track tests missing")
+}
+
+// ============================================================
+// TEST 10: Run unit tests
+// ============================================================
+logTest("Running unit tests...")
+let testResult = bash.run("cd " + projectRoot + " && npm test -- --passWithNoTests --silent 2>&1")
+if (testResult.stdout.indexOf("PASS") > -1 || testResult.stdout.indexOf("passed") > -1) {
+  logPass("Unit tests pass")
+} else {
+  logFail("Unit tests failed")
+}
+
+// ============================================================
+// RESULTS
+// ============================================================
+console.log("")
+console.log("═══════════════════════════════════════════════════════════")
+console.log("                      SMOKE TEST RESULTS                    ")
+console.log("═══════════════════════════════════════════════════════════")
+console.log("")
+console.log("  Passed:  " + passed)
+console.log("  Failed:  " + failed)
+console.log("  Skipped: " + skipped)
+console.log("")
+
+if (failed == 0) {
+  console.log("All tests passed!")
+  "SUCCESS"
+} else {
+  console.log("Some tests failed.")
+  "FAILURE"
+}

@@ -1,7 +1,7 @@
 /**
- * Grok Script Types
+ * Buddy Script Types
  *
- * Type definitions for the Grok Script language (.gs files)
+ * Type definitions for the Buddy Script language (.bs files)
  * Inspired by FileCommander Script (FCS)
  */
 

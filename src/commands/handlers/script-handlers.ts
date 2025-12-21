@@ -1,7 +1,7 @@
 /**
- * Script Handlers - Run and manage Grok Scripts
+ * Script Handlers - Run and manage Buddy Scripts
  *
- * Provides /script command for executing .gs automation scripts
+ * Provides /script command for executing .bs automation scripts
  */
 
 import * as fs from 'fs';
@@ -11,7 +11,7 @@ import {
   validateScript,
   createScriptTemplate,
   getScriptManager,
-  isGrokScript,
+  isBuddyScript,
 } from "../../scripting/index.js";
 
 export interface CommandHandlerResult {
@@ -79,12 +79,12 @@ function handleScriptRun(filePath: string): CommandHandlerResult {
       handled: true,
       entry: {
         type: "assistant",
-        content: `❌ Usage: /script run <file.gs>
+        content: `❌ Usage: /script run <file.bs>
 
 Examples:
-  /script run deploy.gs
-  /script run ./scripts/backup.gs
-  /script run ~/automation/daily.gs`,
+  /script run deploy.bs
+  /script run ./scripts/backup.bs
+  /script run ~/automation/daily.bs`,
         timestamp: new Date(),
       },
     };
@@ -156,17 +156,17 @@ async function executeScriptAsync(filePath: string): Promise<void> {
  */
 function handleScriptCreate(filePath: string): string {
   if (!filePath) {
-    return `❌ Usage: /script new <name.gs>
+    return `❌ Usage: /script new <name.bs>
 
 Examples:
-  /script new deploy.gs
-  /script new backup-database.gs`;
+  /script new deploy.bs
+  /script new backup-database.bs`;
   }
 
-  // Ensure .gs extension
+  // Ensure .bs extension
   let fullPath = filePath;
-  if (!isGrokScript(fullPath)) {
-    fullPath += '.gs';
+  if (!isBuddyScript(fullPath)) {
+    fullPath += '.bs';
   }
 
   // Resolve path
@@ -178,7 +178,7 @@ Examples:
     return `❌ Script already exists: ${fullPath}`;
   }
 
-  const name = path.basename(fullPath, '.gs');
+  const name = path.basename(fullPath, '.bs');
   const template = createScriptTemplate(name, `Automation script for ${name}`);
 
   try {
@@ -204,7 +204,7 @@ Edit the script and run with:
  */
 function handleScriptValidate(filePath: string): string {
   if (!filePath) {
-    return `❌ Usage: /script validate <file.gs>`;
+    return `❌ Usage: /script validate <file.bs>`;
   }
 
   const fullPath = path.isAbsolute(filePath)
@@ -244,7 +244,7 @@ function handleScriptList(dir?: string): string {
     return `📁 No scripts found in: ${searchDir}
 
 Create a new script with:
-  /script new myscript.gs`;
+  /script new myscript.bs`;
   }
 
   const lines = [
@@ -266,7 +266,7 @@ Create a new script with:
   lines.push('');
   lines.push(`Total: ${scripts.length} script(s)`);
   lines.push('');
-  lines.push('Run a script with: /script run <name.gs>');
+  lines.push('Run a script with: /script run <name.bs>');
 
   return lines.join('\n');
 }
@@ -282,7 +282,7 @@ function handleScriptHistory(): string {
     return `📜 No script execution history yet.
 
 Run a script with:
-  /script run <file.gs>`;
+  /script run <file.bs>`;
   }
 
   const lines = [
@@ -317,24 +317,24 @@ Run a script with:
  * Get help for script command
  */
 function getScriptHelp(): string {
-  return `📜 Grok Script - Automation Language
+  return `📜 Buddy Script - Automation Language
 ═══════════════════════════════════════════════════
 
-Run automation scripts written in Grok Script (.gs files).
+Run automation scripts written in Buddy Script (.bs files).
 Inspired by FileCommander Enhanced Script (FCS).
 
 📋 Commands:
   /script                      - Show this help
-  /script run <file.gs>        - Run a script
-  /script new <name.gs>        - Create new script
-  /script validate <file.gs>   - Check script syntax
+  /script run <file.bs>        - Run a script
+  /script new <name.bs>        - Create new script
+  /script validate <file.bs>   - Check script syntax
   /script list [dir]           - List available scripts
   /script history              - Show execution history
 
 📌 Examples:
-  /script run deploy.gs
-  /script new backup-db.gs
-  /script validate test.gs
+  /script run deploy.bs
+  /script new backup-db.bs
+  /script validate test.bs
   /script list ./scripts
 
 🔧 Script Features:
@@ -348,7 +348,7 @@ Inspired by FileCommander Enhanced Script (FCS).
 
 📝 Example Script:
   ┌─────────────────────────────────
-  │ // backup.gs
+  │ // backup.bs
   │ let files = file.list("./src")
   │ for f in files {
   │     print("Backing up: " + f)

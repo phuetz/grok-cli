@@ -9,8 +9,8 @@
  * - /track revert - Revert track/phase/task
  */
 
-import { TrackManager } from './track-manager';
-import { TrackType, TrackStatus, Track, TrackMetadata } from './types';
+import { TrackManager } from './track-manager.js';
+import { TrackType, TrackStatus, Track, TrackMetadata } from './types.js';
 
 export interface TrackCommandResult {
   success: boolean;

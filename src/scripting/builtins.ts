@@ -1,5 +1,5 @@
 /**
- * Grok Script Built-in Functions
+ * Buddy Script Built-in Functions
  *
  * Provides bindings to code-buddy features for scripting
  */
@@ -15,7 +15,7 @@ type PrintFn = (msg: string) => void;
 export type BuiltinFunctions = Record<string, any>;
 
 /**
- * Create all built-in functions for the Grok Script runtime
+ * Create all built-in functions for the Buddy Script runtime
  */
 export function createBuiltins(config: CodeBuddyScriptConfig, print: PrintFn): BuiltinFunctions {
   const builtins: BuiltinFunctions = {};
