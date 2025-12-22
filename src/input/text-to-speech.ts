@@ -477,6 +477,14 @@ Queue: ${this.state.queue.length} message(s)
 
 💡 Commands: /speak <text> | /tts on|off|auto`;
   }
+
+  /**
+   * Dispose and cleanup resources
+   */
+  dispose(): void {
+    this.stop();
+    this.removeAllListeners();
+  }
 }
 
 // Singleton instance
@@ -491,7 +499,7 @@ export function getTTSManager(): TextToSpeechManager {
 
 export function resetTTSManager(): void {
   if (ttsManagerInstance) {
-    ttsManagerInstance.stop();
+    ttsManagerInstance.dispose();
   }
   ttsManagerInstance = null;
 }

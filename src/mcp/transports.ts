@@ -4,6 +4,7 @@ import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 import { ChildProcess } from "child_process";
 import { EventEmitter } from "events";
 import axios, { AxiosInstance } from "axios";
+import { logger } from '../utils/logger.js';
 
 export type TransportType = 'stdio' | 'http' | 'sse' | 'streamable_http';
 
@@ -268,8 +269,8 @@ class StreamableHttpClientTransport extends EventEmitter implements Transport {
   }
 
   async send(_message: JSONRPCMessage, _options?: TransportSendOptions): Promise<void> {
-    console.log('StreamableHttpTransport: SSE endpoints require persistent connections, not suitable for MCP request-response pattern');
-    console.log('StreamableHttpTransport: Message that would be sent:', JSON.stringify(_message));
+    logger.warn('StreamableHttpTransport: SSE endpoints require persistent connections, not suitable for MCP request-response pattern');
+    logger.debug('StreamableHttpTransport: Message that would be sent', { message: _message });
 
     // For now, throw an error to indicate the transport type is not compatible
     // with the MCP protocol's request-response pattern

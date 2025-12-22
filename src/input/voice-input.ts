@@ -357,3 +357,12 @@ export function getVoiceInput(config?: VoiceConfig): VoiceInput {
   }
   return voiceInputInstance;
 }
+
+export function resetVoiceInput(): void {
+  if (voiceInputInstance) {
+    voiceInputInstance.dispose().catch(() => {
+      // Ignore cleanup errors during reset
+    });
+  }
+  voiceInputInstance = null;
+}

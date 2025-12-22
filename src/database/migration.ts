@@ -20,6 +20,7 @@ import { getSessionRepository } from './repositories/session-repository.js';
 import { getCacheRepository } from './repositories/cache-repository.js';
 import { getAnalyticsRepository } from './repositories/analytics-repository.js';
 import type { MemoryType } from './schema.js';
+import { logger } from '../utils/logger.js';
 
 // ============================================================================
 // Types
@@ -518,7 +519,7 @@ export class DatabaseMigration extends EventEmitter {
 
   private log(message: string): void {
     if (this.options.verbose) {
-      console.log(message);
+      logger.info(message);
     }
     this.emit('log', message);
   }

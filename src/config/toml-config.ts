@@ -8,6 +8,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join, dirname } from 'path';
+import { logger } from '../utils/logger.js';
 
 // ============================================================================
 // Configuration Types
@@ -513,7 +514,7 @@ class ConfigManager {
         const userConfig = parseTOML(content) as Partial<CodeBuddyConfig>;
         this.mergeConfig(userConfig);
       } catch (error) {
-        console.warn(`Warning: Failed to parse user config: ${error}`);
+        logger.warn(`Warning: Failed to parse user config: ${error}`, { source: 'ConfigManager' });
       }
     }
 
@@ -524,7 +525,7 @@ class ConfigManager {
         const projectConfig = parseTOML(content) as Partial<CodeBuddyConfig>;
         this.mergeConfig(projectConfig);
       } catch (error) {
-        console.warn(`Warning: Failed to parse project config: ${error}`);
+        logger.warn(`Warning: Failed to parse project config: ${error}`, { source: 'ConfigManager' });
       }
     }
 

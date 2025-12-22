@@ -3,6 +3,7 @@ import path from 'path';
 import os from 'os';
 import { getSettingsManager } from "../utils/settings-manager.js";
 import { MCPServerConfig } from "./client.js";
+import { logger } from '../utils/logger.js';
 
 export interface MCPConfig {
   servers: MCPServerConfig[];
@@ -30,7 +31,7 @@ export function loadMCPConfig(): MCPConfig {
         }
       }
     } catch (error) {
-      console.warn('Failed to load project MCP config:', error);
+      logger.warn('Failed to load project MCP config', { error });
     }
   }
 

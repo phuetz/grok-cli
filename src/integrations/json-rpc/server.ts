@@ -587,6 +587,7 @@ export class JsonRpcServer {
   // ============================================
 
   private send(message: JsonRpcResponse | JsonRpcNotification): void {
+    // console.log is intentional here - JSON-RPC protocol uses stdout
     console.log(JSON.stringify(message));
   }
 

@@ -13,6 +13,7 @@ import { EventEmitter } from 'events';
 import fs from 'fs-extra';
 import * as path from 'path';
 import * as os from 'os';
+import { logger } from '../utils/logger.js';
 
 // ============================================================================
 // Types
@@ -857,7 +858,7 @@ export async function autoConfigureLocalProvider(
       await manager.registerProvider(preferredProvider, {});
       return manager;
     } catch (error) {
-      console.warn(`Preferred provider ${preferredProvider} not available:`, error);
+      logger.warn(`Preferred provider ${preferredProvider} not available:`, { source: 'LocalProviders', error });
     }
   }
 

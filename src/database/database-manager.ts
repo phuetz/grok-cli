@@ -11,6 +11,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { EventEmitter } from 'events';
 import { SCHEMA_VERSION, MIGRATIONS } from './schema.js';
+import { logger } from '../utils/logger.js';
 
 // ============================================================================
 // Types
@@ -76,7 +77,7 @@ export class DatabaseManager extends EventEmitter {
       // Open database
       const dbPath = this.config.inMemory ? ':memory:' : this.config.dbPath!;
       this.db = new Database(dbPath, {
-        verbose: this.config.verbose ? console.log : undefined,
+        verbose: this.config.verbose ? (msg: unknown) => logger.debug(String(msg)) : undefined,
       });
 
       // Enable WAL mode for better concurrency

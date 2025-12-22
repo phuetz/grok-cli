@@ -11,6 +11,7 @@ import {
   getDefaultRenderContext,
   DisplayMode,
 } from './types.js';
+import { logger } from '../utils/logger.js';
 
 // ============================================================================
 // Singleton Instance
@@ -165,7 +166,7 @@ export class RenderManager {
         return renderer.render(data, ctx);
       } catch (error) {
         // Fall back to generic on error
-        console.error(`Renderer ${renderer.id} failed:`, error);
+        logger.error(`Renderer ${renderer.id} failed`, { error });
       }
     }
 

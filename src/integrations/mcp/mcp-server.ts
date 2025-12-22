@@ -8,6 +8,7 @@
  */
 
 import * as readline from 'readline';
+import { logger } from '../../utils/logger.js';
 
 // ============================================
 // MCP Protocol Types
@@ -834,6 +835,7 @@ for f in files {
   // ============================================
 
   private send(message: McpResponse | McpNotification): void {
+    // console.log is intentional here - MCP protocol uses stdout
     console.log(JSON.stringify(message));
   }
 
@@ -847,7 +849,7 @@ for f in files {
 
   private log(message: string): void {
     if (this.options.verbose) {
-      console.error(`[MCP] ${message}`);
+      logger.debug(`[MCP] ${message}`, { source: 'MCPServer' });
     }
   }
 }

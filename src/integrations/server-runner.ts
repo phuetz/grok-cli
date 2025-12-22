@@ -13,6 +13,7 @@
 
 import { createJsonRpcServer, JsonRpcServerOptions } from './json-rpc/index.js';
 import { createMcpServer, McpServerOptions } from './mcp/index.js';
+import { logger } from '../utils/logger.js';
 
 export type ServerMode = 'json-rpc' | 'mcp';
 
@@ -32,7 +33,7 @@ export async function runServer(options: ServerRunnerOptions): Promise<void> {
   // Log to stderr so stdout is clean for protocol messages
   const log = (msg: string) => {
     if (verbose) {
-      console.error(`[code-buddy] ${msg}`);
+      logger.info(`[code-buddy] ${msg}`, { source: 'ServerRunner' });
     }
   };
 
@@ -67,7 +68,7 @@ export async function runServer(options: ServerRunnerOptions): Promise<void> {
         throw new Error(`Unknown server mode: ${mode}`);
     }
   } catch (error) {
-    console.error(`Server error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logger.error(`Server error: ${error instanceof Error ? error.message : 'Unknown error'}`, { source: 'ServerRunner', error });
     process.exit(1);
   }
 }
@@ -126,6 +127,7 @@ export function isServerMode(args: string[]): boolean {
  * Print server mode help
  */
 export function printServerHelp(): void {
+  // console.log is intentional here - printing help to stdout
   console.log(`
 code-buddy Server Mode
 ====================

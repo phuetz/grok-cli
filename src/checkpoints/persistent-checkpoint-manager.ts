@@ -534,6 +534,13 @@ export class PersistentCheckpointManager extends EventEmitter {
   getHistoryDir(): string {
     return this.projectHistoryDir;
   }
+
+  /**
+   * Dispose and cleanup resources
+   */
+  dispose(): void {
+    this.removeAllListeners();
+  }
 }
 
 // Singleton instance
@@ -547,5 +554,8 @@ export function getPersistentCheckpointManager(options?: PersistentCheckpointMan
 }
 
 export function resetPersistentCheckpointManager(): void {
+  if (persistentCheckpointManagerInstance) {
+    persistentCheckpointManagerInstance.dispose();
+  }
   persistentCheckpointManagerInstance = null;
 }

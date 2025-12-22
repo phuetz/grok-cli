@@ -34,6 +34,7 @@ import {
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { CodeBuddyClient, CodeBuddyMessage } from '../codebuddy/client.js';
+import { logger } from '../utils/logger.js';
 
 // Create connection
 const connection = createConnection(ProposedFeatures.all);
@@ -67,7 +68,7 @@ let globalSettings: CodeBuddyLSPSettings = defaultSettings;
 const completionCache = new Map<string, CompletionItem[]>();
 
 connection.onInitialize((_params: InitializeParams): InitializeResult => {
-  connection.console.log('Code Buddy LSP server initializing...');
+  logger.info('Code Buddy LSP server initializing...');
 
   return {
     capabilities: {
@@ -96,15 +97,15 @@ connection.onInitialize((_params: InitializeParams): InitializeResult => {
 });
 
 connection.onInitialized(() => {
-  connection.console.log('Code Buddy LSP server initialized');
+  logger.info('Code Buddy LSP server initialized');
 
   // Initialize Grok client with API key
   const apiKey = process.env.GROK_API_KEY || globalSettings.apiKey;
   if (apiKey) {
     codebuddyClient = new CodeBuddyClient(apiKey, globalSettings.model);
-    connection.console.log('Grok client initialized');
+    logger.info('Grok client initialized');
   } else {
-    connection.console.warn('No API key configured');
+    logger.warn('No API key configured');
   }
 });
 
@@ -190,7 +191,7 @@ Return [] if no issues.`,
 
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
   } catch (error) {
-    connection.console.error(`Validation error: ${error}`);
+    logger.error(`Validation error: ${error}`);
   }
 }
 
@@ -273,7 +274,7 @@ Return JSON: [{"label": "<completion>", "detail": "<description>", "kind": "func
 
       return completions;
     } catch (error) {
-      connection.console.error(`Completion error: ${error}`);
+      logger.error(`Completion error: ${error}`);
       return [];
     }
   }
@@ -418,7 +419,7 @@ ${context}`,
         };
       }
     } catch (error) {
-      connection.console.error(`Hover error: ${error}`);
+      logger.error(`Hover error: ${error}`);
     }
 
     return null;
@@ -504,7 +505,7 @@ ${context}`,
         };
       }
     } catch (error) {
-      connection.console.error(`Signature help error: ${error}`);
+      logger.error(`Signature help error: ${error}`);
     }
 
     return null;
@@ -523,4 +524,4 @@ documents.onDidChangeContent((change) => {
 documents.listen(connection);
 connection.listen();
 
-connection.console.log('Code Buddy LSP server started');
+logger.info('Code Buddy LSP server started');

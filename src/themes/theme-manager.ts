@@ -365,7 +365,7 @@ export class ThemeManager {
         fs.unlinkSync(filePath);
       }
     } catch (_error) {
-      console.warn(`Failed to delete theme file: ${themeId}`);
+      logger.warn(`Failed to delete theme file: ${themeId}`, { source: 'ThemeManager' });
     }
 
     return true;
@@ -411,7 +411,7 @@ export class ThemeManager {
       // Validate theme structure with Zod
       const validationResult = themeSchema.safeParse(parsed);
       if (!validationResult.success) {
-        console.warn('Invalid theme:', validationResult.error.issues.map((e: { message: string; path: PropertyKey[] }) => `${e.path.join('.')}: ${e.message}`).join(', '));
+        logger.warn('Invalid theme:', { source: 'ThemeManager', errors: validationResult.error.issues.map((e: { message: string; path: PropertyKey[] }) => `${e.path.join('.')}: ${e.message}`).join(', ') });
         return null;
       }
 
@@ -427,9 +427,9 @@ export class ThemeManager {
       return theme;
     } catch (error) {
       if (error instanceof SyntaxError) {
-        console.warn('Invalid JSON in imported theme');
+        logger.warn('Invalid JSON in imported theme', { source: 'ThemeManager' });
       } else {
-        console.warn('Failed to import theme:', error);
+        logger.warn('Failed to import theme:', { source: 'ThemeManager', error });
       }
       return null;
     }

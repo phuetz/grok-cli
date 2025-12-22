@@ -15,6 +15,7 @@
 import { EventEmitter } from 'events';
 import * as crypto from 'crypto';
 import { getDatabaseManager } from '../database/database-manager.js';
+import { logger } from '../utils/logger.js';
 
 // ============================================================================
 // Types
@@ -237,7 +238,7 @@ export class ProspectiveMemory extends EventEmitter {
       this.initialized = true;
       this.emit('initialized');
     } catch (error) {
-      console.warn('Failed to initialize prospective memory:', error);
+      logger.warn('Failed to initialize prospective memory', { error });
     }
   }
 

@@ -704,6 +704,14 @@ export class MultimodalInputManager extends EventEmitter {
       });
     });
   }
+
+  /**
+   * Dispose and cleanup resources
+   */
+  dispose(): void {
+    this.clearAll();
+    this.removeAllListeners();
+  }
 }
 
 // ============================================================================
@@ -721,7 +729,7 @@ export function getMultimodalInputManager(config?: Partial<MultimodalConfig>): M
 
 export function resetMultimodalInputManager(): void {
   if (managerInstance) {
-    managerInstance.clearAll();
+    managerInstance.dispose();
   }
   managerInstance = null;
 }
