@@ -22,11 +22,12 @@
 
 <br/>
 
-**🎯 Un outil CLI puissant qui amène l'IA Grok directement dans votre terminal avec une intelligence de niveau Claude Code, une analyse de code avancée et des capacités de développement complètes.**
+**🎯 Un outil CLI puissant qui amène les meilleures IA (Grok, Claude, ChatGPT, Gemini) directement dans votre terminal avec une intelligence de niveau Claude Code, une analyse de code avancée et des capacités de développement complètes.**
 
 <br/>
 
 [🚀 Démarrage Rapide](#-démarrage-rapide) •
+[🤖 Providers IA](#-providers-ia-multi-cloud) •
 [✨ Fonctionnalités](#-fonctionnalités) •
 [🧠 Intelligence du Code](#-intelligence-du-code) •
 [💾 Base de Données](#-système-de-persistance) •
@@ -94,6 +95,81 @@ grok --model llama3.2
 ```
 
 </details>
+
+---
+
+## 🤖 Providers IA Multi-Cloud
+
+> *"Choisissez votre IA préférée : Grok, Claude, ChatGPT ou Gemini"*
+
+<table>
+<tr>
+<td width="50%">
+
+**🎯 Providers disponibles :**
+
+| Provider | Modèle par défaut | Context |
+|:---------|:------------------|:--------|
+| 🚀 **Grok** (xAI) | `grok-code-fast-1` | 128K |
+| 🧠 **Claude** (Anthropic) | `claude-sonnet-4` | 200K |
+| 💬 **ChatGPT** (OpenAI) | `gpt-4o` | 128K |
+| ✨ **Gemini** (Google) | `gemini-2.0-flash` | 2M |
+
+</td>
+<td width="50%">
+
+**⚡ Configuration rapide :**
+
+```bash
+# Configurer les clés API
+export GROK_API_KEY="votre-clé-xai"
+export ANTHROPIC_API_KEY="votre-clé-anthropic"
+export OPENAI_API_KEY="votre-clé-openai"
+export GOOGLE_API_KEY="votre-clé-google"
+
+# Installer les SDKs optionnels
+npm install @anthropic-ai/sdk  # Pour Claude
+```
+
+</td>
+</tr>
+</table>
+
+### 🔄 Changer de Provider
+
+```bash
+# Lister les providers disponibles
+buddy provider list
+
+# Utiliser Claude
+buddy provider set claude
+
+# Utiliser ChatGPT
+buddy provider set openai
+
+# Utiliser Gemini
+buddy provider set gemini
+
+# Voir le provider actif
+buddy provider current
+
+# Lister les modèles disponibles
+buddy provider models claude
+```
+
+### 💡 Utilisation directe
+
+```bash
+# Avec un provider spécifique
+buddy --provider claude "explique ce code"
+buddy --provider openai "refactor cette fonction"
+
+# Avec un modèle spécifique
+buddy --model gpt-4o "analyse la sécurité"
+buddy --model claude-3-5-sonnet-latest "génère des tests"
+```
+
+📖 **[Documentation complète des providers](docs/ai-providers.md)**
 
 ---
 
@@ -1113,6 +1189,7 @@ npm test
 ## 📚 Documentation
 
 - 📖 [Architecture](ARCHITECTURE.md) — Design système détaillé
+- 🤖 [Providers IA](docs/ai-providers.md) — Configuration Claude, ChatGPT, Gemini
 - 🔧 [CLAUDE.md](CLAUDE.md) — Guide pour les IA
 - 🔬 [Research](docs/RESEARCH_IMPROVEMENTS.md) — Améliorations basées recherche
 - 🔒 [Security](SECURITY.md) — Politique de sécurité
@@ -1202,6 +1279,6 @@ MIT License — voir [LICENSE](LICENSE) pour les détails.
 
 <br/>
 
-<sub>🤖 Alimenté par Grok • 🧠 Inspiré par Claude Code • 💕 Créé pour les développeurs</sub>
+<sub>🤖 Multi-IA : Grok • Claude • ChatGPT • Gemini • 🧠 Inspiré par Claude Code • 💕 Créé pour les développeurs</sub>
 
 </div>

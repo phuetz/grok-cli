@@ -11,6 +11,8 @@ export interface UserSettings {
   baseURL?: string; // API base URL
   defaultModel?: string; // User's preferred default model
   models?: string[]; // Available models list
+  provider?: string; // Active AI provider (grok, claude, openai, gemini)
+  model?: string; // Current model override
 }
 
 /**

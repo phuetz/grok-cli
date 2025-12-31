@@ -952,6 +952,21 @@ gitCommand
     }
   });
 
+// Provider command - manage AI providers (Claude, ChatGPT, Grok, Gemini)
+program
+  .command("provider")
+  .description("Manage AI providers (Claude, ChatGPT, Grok, Gemini)")
+  .allowUnknownOption()
+  .action(async (_options, _command) => {
+    // Lazy load the provider command implementation
+    const { createProviderCommand } = await import("./commands/provider.js");
+    const providerCmd = createProviderCommand();
+
+    // Replace stub with real command and re-run
+    const args = process.argv.slice(2);
+    providerCmd.parse(args, { from: 'user' });
+  });
+
 // MCP command - stub for help, lazy load actual implementation
 program
   .command("mcp")
