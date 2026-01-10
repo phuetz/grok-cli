@@ -39,7 +39,9 @@
 | Sprint 1: Core | 4 | 4 | **DONE** |
 | Sprint 2: Features | 3 | 3 | **DONE** |
 | Sprint 3: Testing | 2 | 2 | **DONE** |
-| Sprint 4: Advanced | 3 | 1 | In Progress (Gemini) |
+| Sprint 4: Advanced | 3 | 3 | **DONE** |
+| Sprint 5: Intelligence | 3 | 3 | **DONE** |
+| Sprint 6: Extensibility | 3 | 1 | In Progress (Gemini, Claude) |
 
 ### Current State Assessment
 
@@ -462,6 +464,90 @@ npm run typecheck
 
 ---
 
+### Sprint 5: Intelligence & Optimization (Proposed)
+
+#### Task 5.1: Reasoning Engine Integration
+**Status:** [x] Completed (Gemini)
+**Priority:** HIGH
+**Objective:** Integrate Monte Carlo Tree Search (MCTS) or Tree of Thought (ToT) reasoning for complex problem solving.
+**Files:** `src/agent/reasoning/`
+
+#### Task 5.2: Prompt Caching Optimization
+**Status:** [x] Completed (Gemini)
+**Priority:** MEDIUM
+**Objective:** Implement intelligent prompt caching to reduce latency and costs for repetitive queries.
+**Files:** `src/optimization/prompt-cache.ts`
+
+#### Task 5.3: Model Routing System
+**Status:** [x] Completed (Gemini)
+**Priority:** LOW
+
+---
+
+### Sprint 6: Extensibility & Performance (Proposed)
+
+#### Task 6.1: Dynamic Plugin System Integration
+**Status:** [~] In progress (Gemini)
+**Priority:** HIGH
+**Objective:** Integrate the `PluginMarketplace` into `CodeBuddyAgent` to enable dynamic command and tool loading.
+**Files:** `src/agent/codebuddy-agent.ts`, `src/plugins/`
+
+#### Task 6.2: Browser Control Tool
+**Status:** [x] Completed (Claude)
+**Priority:** MEDIUM
+**Objective:** Implement a `BrowserTool` using Puppeteer/Playwright for web automation and UI testing.
+**Files:** `src/tools/browser-tool.ts`, `tests/unit/browser-tool.test.ts`
+
+**Completed Features:**
+- BrowserTool class with 18 browser automation actions (navigate, click, fill, screenshot, getText, getHtml, evaluate, waitForSelector, getLinks, getForms, submit, select, hover, scroll, goBack, goForward, reload, close)
+- Playwright as optional dependency with graceful fallback and installation instructions
+- Security: Blocks internal/local URLs (localhost, 127.0.0.1, private ranges, file://)
+- Lazy-loaded singleton pattern following existing tool conventions
+- 53 comprehensive unit tests covering all actions, security, and error handling
+- Integrated into agent (codebuddy-agent.ts), tool registry (metadata.ts), and tool definitions (web-tools.ts)
+
+#### Task 6.3: Latency Optimization Integration
+**Status:** [ ] Not started
+**Priority:** LOW
+**Objective:** Integrate `LatencyOptimizer` into critical paths (file ops, LLM calls) to measure and optimize responsiveness.
+**Files:** `src/optimization/latency-optimizer.ts`
+
+#### Task 6.4: VFS Router Deprecation & Cleanup
+**Status:** [~] In progress (Gemini)
+**Priority:** HIGH
+**Objective:** Finalize the migration to `UnifiedVfsRouter` by removing all legacy VFS routing logic and ensuring 100% of the codebase uses the unified registry.
+**Files:** `src/services/vfs-router.ts`, `src/core/virtual-file-system/`
+
+**Progress (2026-01-10):**
+- Created `UnifiedVfsRouter` singleton in `src/services/vfs/unified-vfs-router.ts`.
+- Refactored `TextEditorTool` to use `UnifiedVfsRouter`.
+- Updated tests (`tests/unit/text-editor.test.ts`) to support VFS mocking.
+- Identified ~30 other tools requiring migration.
+
+#### Task 6.5: FCS Scripting Enhancements
+**Status:** [ ] Not started
+**Priority:** MEDIUM
+**Objective:** Expand the automation engine (FCS) with a library of standard scripts for refactoring, testing, and documentation generation.
+**Files:** `src/fcs/`, `scripts/templates/`
+
+---
+
+### Sprint 7: Collaboration & Observability (Proposed)
+
+#### Task 7.1: Real-time Sync via Scripts
+**Status:** [ ] Not started
+**Priority:** HIGH
+**Objective:** Implement a cross-session synchronization engine using the FCS scripting layer to keep workspaces aligned.
+**Files:** `src/sync/`, `src/fcs/`
+
+#### Task 7.2: Advanced Observability Dashboard
+**Status:** [ ] Not started
+**Priority:** MEDIUM
+**Objective:** Create an interactive terminal dashboard (Ink-based) to monitor agent costs, latency, and tool usage in real-time.
+**Files:** `src/ui/dashboard/`, `src/observability/`
+
+---
+
 ## AI Collaboration Rules
 
 ### General Guidelines
@@ -610,7 +696,128 @@ Before completing an iteration:
 
 ## Work Log
 
-## Completed Task 2.3
+## Completed Task 6.2: Browser Control Tool
+
+**Agent:** Claude Opus 4.5
+**Date:** 2026-01-10
+
+### Fichiers créés:
+1. `src/tools/browser-tool.ts` - BrowserTool implementation with Playwright (750+ lines)
+2. `tests/unit/browser-tool.test.ts` - 53 comprehensive unit tests
+
+### Fichiers modifiés:
+1. `src/tools/index.ts` - Added export for browser-tool
+2. `src/tools/metadata.ts` - Added browser tool metadata and keywords
+3. `src/codebuddy/tool-definitions/web-tools.ts` - Added BROWSER_TOOL definition
+4. `src/agent/codebuddy-agent.ts` - Integrated BrowserTool with lazy loading
+
+### Fonctionnalités implémentées:
+- **18 Browser Actions**: navigate, click, fill, screenshot, getText, getHtml, evaluate, waitForSelector, getLinks, getForms, submit, select, hover, scroll, goBack, goForward, reload, close
+- **Optional Playwright**: Graceful fallback with installation instructions when not available
+- **Security**: Blocks internal/local URLs (localhost, 127.0.0.1, private IP ranges, file://)
+- **Dynamic Import**: Uses `new Function('specifier', 'return import(specifier)')` to bypass TypeScript module resolution
+- **Test Injection**: `_injectPlaywright()` method for testing without actual Playwright installed
+
+### Preuve de fonctionnement:
+```bash
+npm run typecheck
+# Exit Code: 0
+
+npm test -- tests/unit/browser-tool.test.ts --no-coverage
+# PASS  tests/unit/browser-tool.test.ts
+# Tests: 53 passed, 53 total
+```
+
+### Prochaines étapes:
+- Add Playwright to optional dependencies in package.json if not already present
+- Document browser tool usage in README or user guide
+
+---
+
+## In Progress Task 6.4 (Part 2: Advanced Editors & Search)
+
+**Agent:** Gemini
+**Date:** 2026-01-10
+
+### Fichiers modifiés:
+1. `src/services/vfs/unified-vfs-router.ts` - Ajout de `rename` et `readDirectory` (abstraction Dirent).
+2. `src/tools/unified-diff-editor.ts` - Migration vers `UnifiedVfsRouter`.
+3. `src/tools/advanced/multi-file-editor.ts` - Migration vers `UnifiedVfsRouter` (validate async).
+4. `src/tools/search.ts` - Migration vers `UnifiedVfsRouter` (readDirectory).
+5. `tests/unit/unified-diff-editor.test.ts` - Adaptation des mocks pour fs-extra.
+6. `tests/unit/multi-file-editor.test.ts` - Adaptation des mocks et tests async.
+
+### Tests exécutés:
+- `tests/unit/unified-diff-editor.test.ts` (10 tests)
+- `tests/unit/multi-file-editor.test.ts` (5 tests)
+- `tests/unit/search-tool.test.ts` (67 tests)
+
+### Preuve de fonctionnement:
+```bash
+npm test -- tests/unit/unified-diff-editor.test.ts tests/unit/multi-file-editor.test.ts tests/unit/search-tool.test.ts
+# 3 suites passed, 82 tests passed
+```
+
+### Prochaines étapes:
+- Continuer la migration des outils restants (outils d'intelligence, générateurs, etc.).
+- Envisager une stratégie pour `BashTool` (peut-être hors scope VFS).
+
+---
+
+## In Progress Task 6.4 (Part 1: Core VFS & Editor)
+
+**Agent:** Gemini
+**Date:** 2026-01-10
+
+### Fichiers modifiés:
+1. `src/services/vfs/unified-vfs-router.ts` - Création du routeur unifié (Singleton).
+2. `src/tools/text-editor.ts` - Migration pour utiliser `UnifiedVfsRouter`.
+3. `tests/unit/text-editor.test.ts` - Mise à jour des mocks pour supporter le nouveau routeur.
+
+### Tests ajoutés/modifiés:
+- Mise à jour de 64 tests existants pour passer via l'abstraction VFS.
+
+### Preuve de fonctionnement:
+```bash
+npm test -- tests/unit/text-editor.test.ts
+# PASS  tests/unit/text-editor.test.ts
+# 64 tests passed
+
+npm run typecheck
+# Exit Code: 0
+```
+
+### Observations:
+- Le "Legacy VfsRouter" mentionné dans le plan n'a pas été trouvé dans le codebase actuel. Une nouvelle implémentation `UnifiedVfsRouter` a été créée à la place.
+- De nombreux autres outils (`BashTool`, `SearchTool`, etc.) utilisent encore `fs-extra` directement et devront être migrés progressivement.
+
+---
+
+## Completed Task 5.3
+
+**Agent:** Gemini
+**Date:** 2026-01-09
+
+### Fichiers modifiés:
+1. `tests/unit/model-routing.test.ts` - Création de tests unitaires pour `ModelRouter`.
+
+### Preuve de fonctionnement:
+```bash
+npm test -- tests/unit/model-routing.test.ts
+# PASS  tests/unit/model-routing.test.ts
+# 12 tests passed
+
+npm run typecheck
+# Exit Code: 0
+```
+
+### Prochaines étapes:
+Le Sprint 5 est maintenant terminé. Toutes les tâches prévues ont été implémentées et vérifiées.
+Proposer un nouveau Sprint ou finaliser le projet.
+
+---
+
+## Completed Task 5.2
 
 **Agent:** Gemini
 **Date:** 2026-01-08
@@ -1512,6 +1719,39 @@ npm run typecheck
 1. Intégrer le contexte mémoire dans le prompt système automatiquement
 2. Ajouter commandes `/memory store`, `/memory recall`, `/memory status`
 3. Configurer rétention et nettoyage automatique des vieilles mémoires
+
+---
+
+### 2026-01-09 - Starting Task 5.1
+
+**Agent:** Gemini
+**Task:** Task 5.1: Reasoning Engine Integration
+
+### Files to modify:
+1. `src/agent/codebuddy-agent.ts`
+2. `src/tools/index.ts`
+3. `src/tools/reasoning-tool.ts` (new)
+
+### Approach:
+I will integrate the existing `TreeOfThoughtReasoner` into the `CodeBuddyAgent` by creating a new `ReasoningTool`. This tool will allow the agent (and the user) to invoke advanced reasoning capabilities (MCTS/ToT) for complex problems. I will then register this tool in the agent.
+
+---
+
+### 2026-01-09 - Starting Task 6.1
+
+**Agent:** Gemini
+**Task:** Task 6.1: Dynamic Plugin System Integration
+
+### Files to modify:
+1. `src/agent/codebuddy-agent.ts`
+2. `src/agent/base-agent.ts`
+3. `src/plugins/marketplace.ts`
+
+### Approach:
+I will integrate the `PluginMarketplace` into the `CodeBuddyAgent` to allow the agent to use tools and commands provided by plugins. This will involve:
+1. Initializing the marketplace in the agent.
+2. Dynamically registering plugin-provided tools in the agent's tool registry.
+3. Adding a slash command `/plugins` to manage plugins.
 
 ---
 

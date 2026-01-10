@@ -19,6 +19,7 @@ import {
   WebSearchTool,
   ImageTool,
   ReasoningTool,
+  BrowserTool,
 } from "../tools/index.js";
 import { ToolResult } from "../types/index.js";
 import { EventEmitter } from "events";
@@ -84,6 +85,7 @@ export class CodeBuddyAgent extends BaseAgent {
   private _webSearch: WebSearchTool | null = null;
   private _imageTool: ImageTool | null = null;
   private _reasoningTool: ReasoningTool | null = null;
+  private _browserTool: BrowserTool | null = null;
   private _repairEngine: RepairEngine | null = null;
   private _memory: EnhancedMemory | null = null;
 
@@ -158,6 +160,13 @@ export class CodeBuddyAgent extends BaseAgent {
       this._reasoningTool = new ReasoningTool();
     }
     return this._reasoningTool;
+  }
+
+  private get browserTool(): BrowserTool {
+    if (!this._browserTool) {
+      this._browserTool = new BrowserTool();
+    }
+    return this._browserTool;
   }
 
   private get repairEngine(): RepairEngine {
@@ -1429,6 +1438,18 @@ export class CodeBuddyAgent extends BaseAgent {
 
         case "web_fetch":
           return await this.webSearch.fetchPage(args.url);
+
+        case "browser":
+          return await this.browserTool.execute({
+            action: args.action,
+            url: args.url,
+            selector: args.selector,
+            value: args.value,
+            script: args.script,
+            timeout: args.timeout,
+            screenshotOptions: args.screenshotOptions,
+            scrollOptions: args.scrollOptions,
+          });
 
         case "reason":
           return await this.reasoningTool.execute({

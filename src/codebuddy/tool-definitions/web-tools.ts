@@ -50,10 +50,78 @@ export const WEB_FETCH_TOOL: CodeBuddyTool = {
   },
 };
 
+// Browser automation tool
+export const BROWSER_TOOL: CodeBuddyTool = {
+  type: "function",
+  function: {
+    name: "browser",
+    description: "Automate web browser for navigation, interaction, screenshots, form filling, and testing. Requires Playwright to be installed (npm install playwright).",
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: [
+            "navigate",
+            "click",
+            "fill",
+            "screenshot",
+            "getText",
+            "getHtml",
+            "evaluate",
+            "waitForSelector",
+            "getLinks",
+            "getForms",
+            "submit",
+            "select",
+            "hover",
+            "scroll",
+            "goBack",
+            "goForward",
+            "reload",
+            "close",
+          ],
+          description: "The browser action to perform",
+        },
+        url: {
+          type: "string",
+          description: "URL to navigate to (for navigate action)",
+        },
+        selector: {
+          type: "string",
+          description: "CSS selector for element operations (click, fill, waitForSelector, etc.)",
+        },
+        value: {
+          type: "string",
+          description: "Value for fill/select operations",
+        },
+        script: {
+          type: "string",
+          description: "JavaScript code for evaluate action",
+        },
+        timeout: {
+          type: "number",
+          description: "Timeout in milliseconds (default: 30000)",
+        },
+        screenshotOptions: {
+          type: "object",
+          description: "Options for screenshot: { fullPage?: boolean, path?: string, type?: 'png' | 'jpeg' }",
+        },
+        scrollOptions: {
+          type: "object",
+          description: "Options for scroll: { x?: number, y?: number, behavior?: 'auto' | 'smooth' }",
+        },
+      },
+      required: ["action"],
+    },
+  },
+};
+
 /**
  * All web tools as an array
  */
 export const WEB_TOOLS: CodeBuddyTool[] = [
   WEB_SEARCH_TOOL,
   WEB_FETCH_TOOL,
+  BROWSER_TOOL,
 ];
