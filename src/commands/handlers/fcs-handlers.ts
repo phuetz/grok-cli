@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ChatEntry } from "../../agent/codebuddy-agent.js";
-import { executeFCS, executeFCSFile, parseFCS } from "../../fcs/index.js";
+import { executeFCS, executeFCSFile, parseFCS, initScriptRegistry } from "../../fcs/index.js";
 import type { FCSConfig as _FCSConfig } from "../../fcs/index.js"; // Type-only import for documentation
 
 export interface CommandHandlerResult {
@@ -49,6 +49,10 @@ export function handleFCS(args: string[]): CommandHandlerResult {
     case 'ls':
       content = handleFCSList(target);
       break;
+
+    case 'templates':
+    case 'template':
+      return handleFCSTemplates(target);
 
     case 'help':
     default:
@@ -295,6 +299,68 @@ FileCommander Script files have .fcs or .fc extension.`;
 }
 
 /**
+ * Handle /fcs templates command
+ */
+function handleFCSTemplates(search?: string): CommandHandlerResult {
+  // Execute async operation and handle result
+  handleFCSTemplatesAsync(search);
+
+  return {
+    handled: true,
+    entry: {
+      type: "assistant",
+      content: "Loading FCS templates...",
+      timestamp: new Date(),
+    },
+  };
+}
+
+/**
+ * Handle /fcs templates command (async)
+ */
+async function handleFCSTemplatesAsync(search?: string): Promise<void> {
+  try {
+    const registry = await initScriptRegistry();
+
+    if (search) {
+      // Search for specific templates
+      const results = registry.searchTemplates(search);
+
+      if (results.length === 0) {
+        console.log(`\nNo templates found matching: ${search}`);
+        console.log('\nUse /fcs templates to see all available templates.');
+        return;
+      }
+
+      const lines = [
+        '',
+        `FCS Templates matching "${search}"`,
+        '='.repeat(50),
+        ''
+      ];
+
+      for (const template of results) {
+        lines.push(`${template.name} (${template.category})`);
+        lines.push(`  ${template.description}`);
+        if (template.usage) {
+          lines.push(`  Usage: ${template.usage}`);
+        }
+        lines.push('');
+      }
+
+      console.log(lines.join('\n'));
+      return;
+    }
+
+    // List all templates
+    const content = registry.formatTemplateList();
+    console.log('\n' + content);
+  } catch (error) {
+    console.log(`\nError loading templates: ${error instanceof Error ? error.message : error}`);
+  }
+}
+
+/**
  * Get FCS help
  */
 function getFCSHelp(): string {
@@ -310,6 +376,7 @@ Commands:
   /fcs validate <file.fcs>  Check script syntax
   /fcs parse <code>         Show AST for code
   /fcs list [dir]           List FCS scripts
+  /fcs templates [search]   List available script templates
   /fcs repl                 Enter REPL mode
 
 Language Features:

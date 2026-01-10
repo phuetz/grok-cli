@@ -1,0 +1,126 @@
+// extract-function.fcs - Extract code block into a new function using AI
+// Usage: /fcs run scripts/templates/refactoring/extract-function.fcs
+//
+// This script uses AI to extract a code block into a separate function.
+
+let targetFile = env("FILE", "")
+let startLine = int(env("START_LINE", "0"))
+let endLine = int(env("END_LINE", "0"))
+let functionName = env("FUNCTION_NAME", "")
+let dryRun = env("DRY_RUN", "true") == "true"
+
+// Validate inputs
+if (targetFile == "" || startLine == 0 || endLine == 0 || functionName == "") {
+  print("Extract Function - AI-Assisted Refactoring")
+  print("=".repeat(50))
+  print("")
+  print("Usage: Set environment variables before running:")
+  print("  FILE=src/file.ts START_LINE=10 END_LINE=20 FUNCTION_NAME=newFunc /fcs run extract-function.fcs")
+  print("")
+  print("Required:")
+  print("  FILE          - Target file path")
+  print("  START_LINE    - First line of code to extract")
+  print("  END_LINE      - Last line of code to extract")
+  print("  FUNCTION_NAME - Name for the new function")
+  print("")
+  print("Optional:")
+  print("  DRY_RUN       - Set to 'false' to apply changes (default: true)")
+  return { success: false, error: "Missing required parameters" }
+}
+
+print("Extract Function")
+print("=".repeat(50))
+print("  File:     " + targetFile)
+print("  Lines:    " + str(startLine) + " - " + str(endLine))
+print("  Name:     " + functionName)
+print("  Dry run:  " + str(dryRun))
+print("")
+
+// Read file content
+if (!fileExists(targetFile)) {
+  print("Error: File not found: " + targetFile)
+  return { success: false, error: "File not found" }
+}
+
+let content = tool.read(targetFile)
+let lines = split(content, "\n")
+
+// Validate line numbers
+if (startLine < 1 || endLine > len(lines) || startLine > endLine) {
+  print("Error: Invalid line range")
+  print("  File has " + str(len(lines)) + " lines")
+  return { success: false, error: "Invalid line range" }
+}
+
+// Extract the code block
+let codeBlock = []
+for i in range(startLine - 1, endLine) {
+  push(codeBlock, lines[i])
+}
+
+let extractedCode = join(codeBlock, "\n")
+
+print("Code to extract:")
+print("-".repeat(40))
+print(extractedCode)
+print("-".repeat(40))
+print("")
+
+// Use AI to analyze and refactor
+print("Analyzing with AI...")
+
+let prompt = "I want to extract the following code into a new function named '" + functionName + "'.
+
+Original file: " + targetFile + "
+Lines: " + str(startLine) + "-" + str(endLine) + "
+
+Code to extract:
+```
+" + extractedCode + "
+```
+
+Please:
+1. Identify variables used from outer scope (parameters needed)
+2. Identify return value(s)
+3. Generate the new function with proper TypeScript types
+4. Generate the call site replacement
+
+Output format:
+NEW_FUNCTION:
+```typescript
+[new function code]
+```
+
+CALL_SITE:
+```typescript
+[code to replace original block]
+```
+
+ANALYSIS:
+- Parameters: [list]
+- Return type: [type]
+- Notes: [any important notes]"
+
+let aiResponse = await grok.ask(prompt)
+
+print("")
+print("AI Recommendation:")
+print("=".repeat(40))
+print(aiResponse)
+print("=".repeat(40))
+
+if (!dryRun) {
+  print("")
+  print("To apply changes, copy the AI-generated code and use:")
+  print("  tool.edit('" + targetFile + "', '<old code>', '<new code>')")
+  print("")
+  print("Or ask AI directly: 'Apply the refactoring suggested above'")
+}
+
+return {
+  success: true,
+  file: targetFile,
+  linesExtracted: endLine - startLine + 1,
+  functionName: functionName,
+  aiAnalysis: aiResponse
+}

@@ -1,0 +1,169 @@
+// generate-tests.fcs - Generate unit tests for a file using AI
+// Usage: /fcs run scripts/templates/testing/generate-tests.fcs
+//
+// This script analyzes a source file and generates comprehensive unit tests.
+
+let targetFile = env("FILE", "")
+let testFramework = env("FRAMEWORK", "jest")  // jest, vitest, mocha
+let outputFile = env("OUTPUT", "")
+let coverage = env("COVERAGE", "comprehensive")  // minimal, standard, comprehensive
+
+// Validate inputs
+if (targetFile == "") {
+  print("Generate Unit Tests - AI-Powered Test Generation")
+  print("=".repeat(50))
+  print("")
+  print("Usage: Set environment variables before running:")
+  print("  FILE=src/utils/helper.ts /fcs run generate-tests.fcs")
+  print("")
+  print("Options:")
+  print("  FILE      - Source file to test (required)")
+  print("  FRAMEWORK - Test framework: jest, vitest, mocha (default: jest)")
+  print("  OUTPUT    - Output test file (default: tests/unit/<name>.test.ts)")
+  print("  COVERAGE  - Coverage level: minimal, standard, comprehensive (default: comprehensive)")
+  return { success: false, error: "Missing FILE parameter" }
+}
+
+print("Generate Unit Tests")
+print("=".repeat(50))
+print("  Source:    " + targetFile)
+print("  Framework: " + testFramework)
+print("  Coverage:  " + coverage)
+print("")
+
+// Read source file
+if (!fileExists(targetFile)) {
+  print("Error: File not found: " + targetFile)
+  return { success: false, error: "File not found" }
+}
+
+let content = tool.read(targetFile)
+let fileName = basename(targetFile)
+let baseName = replace(fileName, ".ts", "")
+
+// Determine output path
+if (outputFile == "") {
+  let srcIndex = indexOf(targetFile, "src/")
+  if (srcIndex > -1) {
+    let relativePath = substr(targetFile, srcIndex + 4)
+    outputFile = "tests/unit/" + replace(relativePath, ".ts", ".test.ts")
+  } else {
+    outputFile = "tests/unit/" + baseName + ".test.ts"
+  }
+}
+
+print("  Output:    " + outputFile)
+print("")
+
+// Analyze the file
+print("Analyzing source file...")
+
+// Count functions/classes/exports
+let lines = split(content, "\n")
+let stats = {
+  functions: 0,
+  classes: 0,
+  exports: 0,
+  lines: len(lines)
+}
+
+for line in lines {
+  let trimmed = trim(line)
+  if (startsWith(trimmed, "export function") || startsWith(trimmed, "function ")) {
+    stats.functions = stats.functions + 1
+  }
+  if (startsWith(trimmed, "export class") || startsWith(trimmed, "class ")) {
+    stats.classes = stats.classes + 1
+  }
+  if (startsWith(trimmed, "export ")) {
+    stats.exports = stats.exports + 1
+  }
+}
+
+print("Source analysis:")
+print("  Lines:     " + str(stats.lines))
+print("  Functions: " + str(stats.functions))
+print("  Classes:   " + str(stats.classes))
+print("  Exports:   " + str(stats.exports))
+print("")
+
+// Generate tests with AI
+print("Generating tests with AI...")
+print("")
+
+let coverageInstructions = ""
+if (coverage == "minimal") {
+  coverageInstructions = "Generate basic tests for the main happy paths only."
+} else if (coverage == "standard") {
+  coverageInstructions = "Generate tests for happy paths and common edge cases."
+} else {
+  coverageInstructions = "Generate comprehensive tests including:
+- Happy path tests for all functions
+- Edge cases (empty inputs, null, undefined)
+- Error handling and exceptions
+- Boundary conditions
+- Type validation where applicable"
+}
+
+let frameworkSetup = ""
+if (testFramework == "jest") {
+  frameworkSetup = "Use Jest with describe/it blocks. Include jest.mock() for dependencies."
+} else if (testFramework == "vitest") {
+  frameworkSetup = "Use Vitest with describe/it blocks. Import from 'vitest'."
+} else {
+  frameworkSetup = "Use Mocha with describe/it blocks. Use chai for assertions."
+}
+
+let prompt = "Generate comprehensive unit tests for this TypeScript file.
+
+Source file: " + targetFile + "
+```typescript
+" + content + "
+```
+
+Requirements:
+1. " + frameworkSetup + "
+2. " + coverageInstructions + "
+3. Use proper TypeScript types
+4. Mock external dependencies
+5. Follow AAA pattern (Arrange, Act, Assert)
+6. Include descriptive test names
+7. Group related tests in describe blocks
+
+Output ONLY the complete test file code, ready to save."
+
+let testCode = await grok.ask(prompt)
+
+print("Generated test code:")
+print("-".repeat(40))
+print(testCode)
+print("-".repeat(40))
+print("")
+
+// Save the test file
+print("Saving to: " + outputFile)
+
+// Create directory if needed
+let testDir = dirname(outputFile)
+if (!fileExists(testDir)) {
+  mkdir(testDir)
+}
+
+tool.write(outputFile, testCode)
+
+print("")
+print("Done! Test file created at: " + outputFile)
+print("")
+print("Next steps:")
+print("  1. Review the generated tests")
+print("  2. Run: npm test -- " + outputFile)
+print("  3. Adjust mocks and assertions as needed")
+
+return {
+  success: true,
+  sourceFile: targetFile,
+  testFile: outputFile,
+  framework: testFramework,
+  coverage: coverage,
+  stats: stats
+}

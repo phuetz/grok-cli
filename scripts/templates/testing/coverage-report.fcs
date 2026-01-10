@@ -1,0 +1,204 @@
+// coverage-report.fcs - Generate and analyze test coverage report
+// Usage: /fcs run scripts/templates/testing/coverage-report.fcs
+//
+// This script runs tests with coverage and provides detailed analysis.
+
+let targetDir = env("TARGET", "src")
+let threshold = int(env("THRESHOLD", "80"))
+let outputFormat = env("FORMAT", "text")  // text, html, json
+
+print("Coverage Report Generator")
+print("=".repeat(50))
+print("  Target:    " + targetDir)
+print("  Threshold: " + str(threshold) + "%")
+print("  Format:    " + outputFormat)
+print("")
+
+// Run tests with coverage
+print("Running tests with coverage...")
+print("-".repeat(50))
+
+let cmd = "npm test -- --coverage --coverageDirectory=coverage --collectCoverageFrom='" + targetDir + "/**/*.ts'"
+
+if (outputFormat == "json") {
+  cmd = cmd + " --coverageReporters=json"
+} else if (outputFormat == "html") {
+  cmd = cmd + " --coverageReporters=html"
+}
+
+let result = await shell(cmd)
+
+print("")
+
+// Parse coverage output
+let output = result.stdout + result.stderr
+let lines = split(output, "\n")
+
+let coverageData = {
+  statements: 0,
+  branches: 0,
+  functions: 0,
+  lines: 0
+}
+
+let uncoveredFiles = []
+let lowCoverageFiles = []
+
+// Parse coverage percentages
+for line in lines {
+  if (contains(line, "Statements")) {
+    let match = line
+    // Extract percentage (format: "Statements   : 85.5%")
+    if (contains(match, "%")) {
+      let parts = split(match, ":")
+      if (len(parts) > 1) {
+        let pct = trim(replace(split(parts[1], "%")[0], " ", ""))
+        coverageData.statements = float(pct)
+      }
+    }
+  }
+  if (contains(line, "Branches")) {
+    let parts = split(line, ":")
+    if (len(parts) > 1) {
+      let pct = trim(replace(split(parts[1], "%")[0], " ", ""))
+      coverageData.branches = float(pct)
+    }
+  }
+  if (contains(line, "Functions")) {
+    let parts = split(line, ":")
+    if (len(parts) > 1) {
+      let pct = trim(replace(split(parts[1], "%")[0], " ", ""))
+      coverageData.functions = float(pct)
+    }
+  }
+  if (contains(line, "Lines")) {
+    let parts = split(line, ":")
+    if (len(parts) > 1) {
+      let pct = trim(replace(split(parts[1], "%")[0], " ", ""))
+      coverageData.lines = float(pct)
+    }
+  }
+
+  // Find files with low coverage
+  if (contains(line, ".ts") && contains(line, "|")) {
+    let parts = split(line, "|")
+    if (len(parts) >= 4) {
+      let fileName = trim(parts[0])
+      let stmtCov = trim(parts[1])
+
+      if (stmtCov != "" && stmtCov != "100") {
+        let covPct = float(replace(stmtCov, " ", ""))
+        if (covPct < threshold) {
+          push(lowCoverageFiles, { file: fileName, coverage: covPct })
+        }
+        if (covPct == 0) {
+          push(uncoveredFiles, fileName)
+        }
+      }
+    }
+  }
+}
+
+// Display summary
+print("Coverage Summary")
+print("=".repeat(50))
+print("")
+
+// Visual bars for each metric
+func coverageBar(name, value, threshold) {
+  let barWidth = 30
+  let filled = round((value / 100) * barWidth)
+  let bar = repeat("#", filled) + repeat("-", barWidth - filled)
+
+  let status = ""
+  if (value >= threshold) {
+    status = " OK"
+  } else {
+    status = " LOW"
+  }
+
+  print(padEnd(name + ":", 12) + " [" + bar + "] " + str(round(value * 10) / 10) + "%" + status)
+}
+
+coverageBar("Statements", coverageData.statements, threshold)
+coverageBar("Branches", coverageData.branches, threshold)
+coverageBar("Functions", coverageData.functions, threshold)
+coverageBar("Lines", coverageData.lines, threshold)
+
+print("")
+
+// Overall status
+let avgCoverage = (coverageData.statements + coverageData.branches +
+                   coverageData.functions + coverageData.lines) / 4
+
+print("Average Coverage: " + str(round(avgCoverage * 10) / 10) + "%")
+
+if (avgCoverage >= threshold) {
+  print("Status: PASSED (meets " + str(threshold) + "% threshold)")
+} else {
+  print("Status: FAILED (below " + str(threshold) + "% threshold)")
+}
+
+// Files needing attention
+if (len(uncoveredFiles) > 0) {
+  print("")
+  print("Uncovered Files (" + str(len(uncoveredFiles)) + "):")
+  print("-".repeat(40))
+  for file in slice(uncoveredFiles, 0, 10) {
+    print("  " + file)
+  }
+  if (len(uncoveredFiles) > 10) {
+    print("  ... and " + str(len(uncoveredFiles) - 10) + " more")
+  }
+}
+
+if (len(lowCoverageFiles) > 0) {
+  print("")
+  print("Low Coverage Files (below " + str(threshold) + "%):")
+  print("-".repeat(40))
+
+  // Sort by coverage (lowest first)
+  let sorted = sort(lowCoverageFiles, (a, b) => a.coverage - b.coverage)
+
+  for item in slice(sorted, 0, 15) {
+    let bar = repeat("#", round(item.coverage / 5)) + repeat("-", 20 - round(item.coverage / 5))
+    print("  " + padEnd(item.file, 40) + " [" + bar + "] " + str(item.coverage) + "%")
+  }
+
+  if (len(sorted) > 15) {
+    print("  ... and " + str(len(sorted) - 15) + " more files")
+  }
+}
+
+// Recommendations
+print("")
+print("Recommendations:")
+print("-".repeat(40))
+
+if (len(uncoveredFiles) > 0) {
+  print("1. Add tests for uncovered files:")
+  print("   FILE=" + uncoveredFiles[0] + " /fcs run scripts/templates/testing/generate-tests.fcs")
+}
+
+if (coverageData.branches < threshold) {
+  print("2. Improve branch coverage by testing edge cases and error paths")
+}
+
+if (coverageData.functions < threshold) {
+  print("3. Add tests for untested functions")
+}
+
+if (outputFormat == "html") {
+  print("")
+  print("HTML report generated at: coverage/lcov-report/index.html")
+  print("Open in browser to see detailed line-by-line coverage")
+}
+
+return {
+  success: avgCoverage >= threshold,
+  coverage: coverageData,
+  average: avgCoverage,
+  threshold: threshold,
+  uncoveredFiles: len(uncoveredFiles),
+  lowCoverageFiles: len(lowCoverageFiles)
+}

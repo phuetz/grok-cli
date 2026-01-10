@@ -1,0 +1,226 @@
+// project-stats.fcs - Analyze project statistics
+// Usage: /fcs run scripts/templates/utilities/project-stats.fcs
+//
+// This script provides comprehensive statistics about the project.
+
+let targetDir = env("TARGET", ".")
+let detailed = env("DETAILED", "false") == "true"
+
+print("Project Statistics")
+print("=".repeat(60))
+print("")
+
+// Get basic file counts
+let allFiles = tool.glob("**/*")
+let tsFiles = tool.glob("**/*.ts")
+let jsFiles = tool.glob("**/*.js")
+let jsonFiles = tool.glob("**/*.json")
+let mdFiles = tool.glob("**/*.md")
+let testFiles = tool.glob("**/*.test.ts")
+let specFiles = tool.glob("**/*.spec.ts")
+
+// Count lines of code
+let totalLines = 0
+let codeLines = 0
+let commentLines = 0
+let blankLines = 0
+
+print("Counting lines of code...")
+
+for file in tsFiles {
+  // Skip node_modules and dist
+  if (contains(file, "node_modules") || contains(file, "/dist/")) {
+    continue
+  }
+
+  let content = tool.read(file)
+  let lines = split(content, "\n")
+
+  for line in lines {
+    totalLines = totalLines + 1
+    let trimmed = trim(line)
+
+    if (trimmed == "") {
+      blankLines = blankLines + 1
+    } else if (startsWith(trimmed, "//") || startsWith(trimmed, "*") ||
+               startsWith(trimmed, "/*") || startsWith(trimmed, "*/")) {
+      commentLines = commentLines + 1
+    } else {
+      codeLines = codeLines + 1
+    }
+  }
+}
+
+print("")
+print("File Counts")
+print("-".repeat(40))
+print("  TypeScript files:  " + str(len(tsFiles)))
+print("  JavaScript files:  " + str(len(jsFiles)))
+print("  JSON files:        " + str(len(jsonFiles)))
+print("  Markdown files:    " + str(len(mdFiles)))
+print("  Test files:        " + str(len(testFiles) + len(specFiles)))
+print("")
+
+print("Lines of Code (TypeScript)")
+print("-".repeat(40))
+print("  Total lines:       " + str(totalLines))
+print("  Code lines:        " + str(codeLines))
+print("  Comment lines:     " + str(commentLines))
+print("  Blank lines:       " + str(blankLines))
+print("")
+
+// Calculate ratios
+if (totalLines > 0) {
+  let commentRatio = round((commentLines / totalLines) * 1000) / 10
+  let codeRatio = round((codeLines / totalLines) * 1000) / 10
+  print("  Comment ratio:     " + str(commentRatio) + "%")
+  print("  Code ratio:        " + str(codeRatio) + "%")
+  print("")
+}
+
+// Count exports, functions, classes
+print("Code Structure")
+print("-".repeat(40))
+
+let exports = 0
+let functions = 0
+let classes = 0
+let interfaces = 0
+let types = 0
+
+for file in tsFiles {
+  if (contains(file, "node_modules") || contains(file, "/dist/")) {
+    continue
+  }
+
+  let content = tool.read(file)
+  let lines = split(content, "\n")
+
+  for line in lines {
+    let trimmed = trim(line)
+
+    if (startsWith(trimmed, "export ")) {
+      exports = exports + 1
+    }
+    if (startsWith(trimmed, "export function") || startsWith(trimmed, "function ")) {
+      functions = functions + 1
+    }
+    if (startsWith(trimmed, "export class") || startsWith(trimmed, "class ")) {
+      classes = classes + 1
+    }
+    if (startsWith(trimmed, "export interface") || startsWith(trimmed, "interface ")) {
+      interfaces = interfaces + 1
+    }
+    if (startsWith(trimmed, "export type") || startsWith(trimmed, "type ")) {
+      types = types + 1
+    }
+  }
+}
+
+print("  Exports:           " + str(exports))
+print("  Functions:         " + str(functions))
+print("  Classes:           " + str(classes))
+print("  Interfaces:        " + str(interfaces))
+print("  Type aliases:      " + str(types))
+print("")
+
+// Package.json info
+if (fileExists("package.json")) {
+  let pkg = jsonDecode(tool.read("package.json"))
+
+  print("Package Info")
+  print("-".repeat(40))
+  print("  Name:              " + (pkg.name || "N/A"))
+  print("  Version:           " + (pkg.version || "N/A"))
+
+  if (pkg.dependencies) {
+    print("  Dependencies:      " + str(len(keys(pkg.dependencies))))
+  }
+  if (pkg.devDependencies) {
+    print("  Dev dependencies:  " + str(len(keys(pkg.devDependencies))))
+  }
+  print("")
+}
+
+// Git info
+print("Git Info")
+print("-".repeat(40))
+print("  Branch:            " + git.branch())
+
+let commitCount = len(split(git.log(1000), "\n"))
+print("  Commits:           " + str(commitCount))
+
+let status = git.status()
+let changes = len(split(trim(status), "\n"))
+if (status == "") {
+  changes = 0
+}
+print("  Uncommitted:       " + str(changes) + " files")
+print("")
+
+// Test coverage if available
+if (fileExists("coverage/coverage-summary.json")) {
+  print("Test Coverage")
+  print("-".repeat(40))
+  let coverage = jsonDecode(tool.read("coverage/coverage-summary.json"))
+  if (coverage.total) {
+    print("  Lines:             " + str(coverage.total.lines.pct) + "%")
+    print("  Statements:        " + str(coverage.total.statements.pct) + "%")
+    print("  Functions:         " + str(coverage.total.functions.pct) + "%")
+    print("  Branches:          " + str(coverage.total.branches.pct) + "%")
+  }
+  print("")
+}
+
+// Directory breakdown
+if (detailed) {
+  print("Directory Breakdown")
+  print("-".repeat(40))
+
+  let dirs = tool.ls("src")
+  for dir in dirs {
+    let files = tool.glob("src/" + dir + "/**/*.ts")
+    if (len(files) > 0) {
+      print("  src/" + dir + "/: " + str(len(files)) + " files")
+    }
+  }
+  print("")
+}
+
+// Summary visualization
+print("Summary")
+print("=".repeat(60))
+
+let bar = repeat("#", min(50, round(codeLines / 500)))
+print("  Code:     [" + bar + "] " + str(codeLines) + " lines")
+
+bar = repeat("#", min(50, round(len(tsFiles) / 2)))
+print("  Files:    [" + bar + "] " + str(len(tsFiles)) + " TypeScript files")
+
+bar = repeat("#", min(50, round(len(testFiles) / 2)))
+print("  Tests:    [" + bar + "] " + str(len(testFiles)) + " test files")
+
+print("")
+
+return {
+  files: {
+    typescript: len(tsFiles),
+    javascript: len(jsFiles),
+    json: len(jsonFiles),
+    markdown: len(mdFiles),
+    tests: len(testFiles) + len(specFiles)
+  },
+  lines: {
+    total: totalLines,
+    code: codeLines,
+    comments: commentLines,
+    blank: blankLines
+  },
+  structure: {
+    exports: exports,
+    functions: functions,
+    classes: classes,
+    interfaces: interfaces,
+    types: types
+  }
+}

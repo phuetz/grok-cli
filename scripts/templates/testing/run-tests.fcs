@@ -1,0 +1,181 @@
+// run-tests.fcs - Run tests with enhanced reporting
+// Usage: /fcs run scripts/templates/testing/run-tests.fcs
+//
+// This script runs tests and provides detailed analysis of results.
+
+let testPattern = env("PATTERN", "")
+let watch = env("WATCH", "false") == "true"
+let coverage = env("COVERAGE", "false") == "true"
+let verbose = env("VERBOSE", "false") == "true"
+let failFast = env("FAIL_FAST", "false") == "true"
+
+print("Test Runner")
+print("=".repeat(50))
+
+// Build the test command
+let cmd = "npm test"
+let args = []
+
+if (testPattern != "") {
+  push(args, "-- " + testPattern)
+  print("  Pattern:   " + testPattern)
+}
+
+if (watch) {
+  push(args, "--watch")
+  print("  Mode:      Watch")
+} else {
+  print("  Mode:      Single run")
+}
+
+if (coverage) {
+  push(args, "--coverage")
+  print("  Coverage:  Enabled")
+}
+
+if (verbose) {
+  push(args, "--verbose")
+  print("  Verbose:   Yes")
+}
+
+if (failFast) {
+  push(args, "--bail")
+  print("  Fail fast: Yes")
+}
+
+print("")
+
+// Add args to command
+if (len(args) > 0) {
+  cmd = cmd + " " + join(args, " ")
+}
+
+print("Running: " + cmd)
+print("-".repeat(50))
+print("")
+
+// Run tests
+let startTime = now()
+let result = await shell(cmd)
+let endTime = now()
+let duration = (endTime - startTime) / 1000
+
+print("")
+print("-".repeat(50))
+
+// Parse results
+let output = result.stdout + result.stderr
+let passed = 0
+let failed = 0
+let skipped = 0
+let total = 0
+
+// Try to extract test counts from output
+let lines = split(output, "\n")
+for line in lines {
+  if (contains(line, "Tests:")) {
+    // Parse Jest output like "Tests: 5 passed, 2 failed, 7 total"
+    if (contains(line, "passed")) {
+      let parts = split(line, " ")
+      for i in range(len(parts)) {
+        if (parts[i] == "passed,") {
+          passed = int(parts[i - 1])
+        }
+        if (parts[i] == "failed,") {
+          failed = int(parts[i - 1])
+        }
+        if (parts[i] == "skipped,") {
+          skipped = int(parts[i - 1])
+        }
+        if (parts[i] == "total") {
+          total = int(parts[i - 1])
+        }
+      }
+    }
+  }
+}
+
+// Results summary
+print("")
+print("Test Results Summary")
+print("=".repeat(50))
+
+if (result.code == 0) {
+  print("  Status:   PASSED")
+} else {
+  print("  Status:   FAILED")
+}
+
+print("  Duration: " + str(round(duration * 10) / 10) + "s")
+print("")
+
+if (total > 0) {
+  print("  Tests:")
+  print("    Passed:  " + str(passed))
+  print("    Failed:  " + str(failed))
+  print("    Skipped: " + str(skipped))
+  print("    Total:   " + str(total))
+  print("")
+
+  // Pass rate
+  let passRate = round((passed / total) * 100)
+  print("  Pass Rate: " + str(passRate) + "%")
+
+  // Visual bar
+  let barWidth = 40
+  let passedWidth = round((passed / total) * barWidth)
+  let failedWidth = round((failed / total) * barWidth)
+  let bar = repeat("#", passedWidth) + repeat("X", failedWidth) + repeat("-", barWidth - passedWidth - failedWidth)
+  print("  [" + bar + "]")
+}
+
+// Extract failed test names if any
+if (failed > 0) {
+  print("")
+  print("Failed Tests:")
+  print("-".repeat(40))
+
+  let inFailure = false
+  for line in lines {
+    if (contains(line, "FAIL ") || contains(line, "FAIL: ")) {
+      print("  " + trim(line))
+      inFailure = true
+    } else if (inFailure && contains(line, "Error:")) {
+      print("    " + trim(line))
+    } else if (startsWith(trim(line), "x ") || startsWith(trim(line), "X ")) {
+      print("  " + trim(line))
+    }
+  }
+
+  print("")
+  print("To debug failed tests:")
+  print("  npm test -- --verbose " + testPattern)
+}
+
+// Coverage summary if enabled
+if (coverage) {
+  print("")
+  print("Coverage Summary:")
+  print("-".repeat(40))
+
+  for line in lines {
+    if (contains(line, "Statements") || contains(line, "Branches") ||
+        contains(line, "Functions") || contains(line, "Lines")) {
+      if (contains(line, "%")) {
+        print("  " + trim(line))
+      }
+    }
+  }
+}
+
+print("")
+
+return {
+  success: result.code == 0,
+  exitCode: result.code,
+  duration: duration,
+  passed: passed,
+  failed: failed,
+  skipped: skipped,
+  total: total
+}

@@ -6,8 +6,8 @@
  */
 
 import * as path from 'path';
-import fs from 'fs-extra';
-import type { ToolResult } from './index.js';
+import type { ToolResult } from '../types/index.js';
+import { UnifiedVfsRouter } from '../services/vfs/unified-vfs-router.js';
 
 // ============================================================================
 // Types
@@ -29,6 +29,7 @@ export class SQLTool {
   name = 'sql';
   description = 'Execute SQL queries on SQLite databases';
   dangerLevel: 'safe' | 'low' | 'medium' | 'high' = 'high';
+  private vfs = UnifiedVfsRouter.Instance;
 
   inputSchema = {
     type: 'object' as const,
@@ -36,7 +37,7 @@ export class SQLTool {
       action: {
         type: 'string',
         enum: ['query', 'schema', 'tables', 'describe', 'execute'],
-        description: 'Action to perform',
+        description: 'SQL action to perform',
       },
       database: {
         type: 'string',
@@ -44,7 +45,7 @@ export class SQLTool {
       },
       query: {
         type: 'string',
-        description: 'SQL query to execute (for query/execute actions)',
+        description: 'SQL query or statement to execute',
       },
       table: {
         type: 'string',
@@ -52,7 +53,7 @@ export class SQLTool {
       },
       params: {
         type: 'array',
-        description: 'Query parameters for parameterized queries',
+        description: 'Query parameters for prepared statements',
       },
     },
     required: ['action', 'database'],
@@ -67,7 +68,7 @@ export class SQLTool {
 
       // Validate database path
       const dbPath = path.resolve(database);
-      if (!await fs.pathExists(dbPath)) {
+      if (!await this.vfs.exists(dbPath)) {
         return { success: false, error: `Database not found: ${dbPath}` };
       }
 

@@ -1,0 +1,100 @@
+// rename-symbol.fcs - Rename a symbol across the codebase
+// Usage: /fcs run scripts/templates/refactoring/rename-symbol.fcs
+//
+// This script renames a variable, function, class, or other symbol
+// across all files in the project.
+
+// Configuration - set these before running
+let oldName = env("OLD_NAME", "")
+let newName = env("NEW_NAME", "")
+let filePattern = env("FILE_PATTERN", "*.ts")
+let dryRun = env("DRY_RUN", "true") == "true"
+
+// Validate inputs
+if (oldName == "" || newName == "") {
+  print("Usage: Set environment variables before running:")
+  print("  OLD_NAME=oldSymbol NEW_NAME=newSymbol /fcs run rename-symbol.fcs")
+  print("")
+  print("Options:")
+  print("  FILE_PATTERN - Glob pattern for files (default: *.ts)")
+  print("  DRY_RUN      - Set to 'false' to apply changes (default: true)")
+  return { success: false, error: "Missing OLD_NAME or NEW_NAME" }
+}
+
+print("Rename Symbol")
+print("=".repeat(50))
+print("  Old name: " + oldName)
+print("  New name: " + newName)
+print("  Pattern:  " + filePattern)
+print("  Dry run:  " + str(dryRun))
+print("")
+
+// Find all matching files
+let files = tool.glob(filePattern)
+print("Found " + str(len(files)) + " files to scan")
+print("")
+
+let totalReplacements = 0
+let filesModified = 0
+
+// Create regex patterns for different contexts
+let patterns = [
+  // Standalone word (not part of larger identifier)
+  "\\b" + oldName + "\\b"
+]
+
+for file in files {
+  let content = tool.read(file)
+  let originalContent = content
+
+  // Count occurrences
+  let matches = tool.grep(oldName, file)
+
+  if (len(matches) > 0) {
+    print("File: " + file)
+
+    // Show each match with context
+    for match in matches {
+      print("  Line " + str(match.line) + ": " + trim(match.content))
+    }
+
+    // Replace if not dry run
+    if (!dryRun) {
+      // Use word boundary replacement
+      let newContent = replace(content, oldName, newName)
+
+      if (newContent != originalContent) {
+        tool.write(file, newContent)
+        filesModified = filesModified + 1
+        totalReplacements = totalReplacements + len(matches)
+        print("  -> Modified")
+      }
+    } else {
+      totalReplacements = totalReplacements + len(matches)
+      print("  -> Would modify (dry run)")
+    }
+
+    print("")
+  }
+}
+
+print("=".repeat(50))
+print("Summary:")
+print("  Files scanned:  " + str(len(files)))
+print("  Replacements:   " + str(totalReplacements))
+
+if (dryRun) {
+  print("")
+  print("This was a dry run. To apply changes, run with:")
+  print("  DRY_RUN=false OLD_NAME=" + oldName + " NEW_NAME=" + newName + " /fcs run rename-symbol.fcs")
+} else {
+  print("  Files modified: " + str(filesModified))
+}
+
+return {
+  success: true,
+  filesScanned: len(files),
+  replacements: totalReplacements,
+  filesModified: filesModified,
+  dryRun: dryRun
+}

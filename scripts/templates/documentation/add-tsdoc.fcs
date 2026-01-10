@@ -1,0 +1,208 @@
+// add-tsdoc.fcs - Add TSDoc comments to functions using AI
+// Usage: /fcs run scripts/templates/documentation/add-tsdoc.fcs
+//
+// This script analyzes functions without documentation and adds TSDoc comments.
+
+let targetFile = env("FILE", "")
+let dryRun = env("DRY_RUN", "true") == "true"
+let style = env("STYLE", "comprehensive")  // minimal, standard, comprehensive
+
+// Validate inputs
+if (targetFile == "") {
+  print("Add TSDoc Comments - AI-Powered Documentation")
+  print("=".repeat(50))
+  print("")
+  print("Usage: Set environment variables before running:")
+  print("  FILE=src/utils/helper.ts /fcs run add-tsdoc.fcs")
+  print("")
+  print("Options:")
+  print("  FILE    - Target file to document (required)")
+  print("  STYLE   - Documentation style: minimal, standard, comprehensive (default: comprehensive)")
+  print("  DRY_RUN - Set to 'false' to apply changes (default: true)")
+  return { success: false, error: "Missing FILE parameter" }
+}
+
+print("Add TSDoc Comments")
+print("=".repeat(50))
+print("  File:    " + targetFile)
+print("  Style:   " + style)
+print("  Dry run: " + str(dryRun))
+print("")
+
+// Read file
+if (!fileExists(targetFile)) {
+  print("Error: File not found: " + targetFile)
+  return { success: false, error: "File not found" }
+}
+
+let content = tool.read(targetFile)
+let lines = split(content, "\n")
+
+// Find functions without documentation
+let undocumented = []
+let previousLineIsDoc = false
+
+for i in range(len(lines)) {
+  let line = lines[i]
+  let trimmed = trim(line)
+
+  // Track if previous line was end of JSDoc
+  if (contains(trimmed, "*/")) {
+    previousLineIsDoc = true
+    continue
+  }
+
+  // Check for function declarations
+  let isFunction = startsWith(trimmed, "export function") ||
+                   startsWith(trimmed, "export async function") ||
+                   startsWith(trimmed, "function ") ||
+                   startsWith(trimmed, "async function ") ||
+                   startsWith(trimmed, "public ") ||
+                   startsWith(trimmed, "private ") ||
+                   startsWith(trimmed, "protected ")
+
+  // Check for method-like declarations
+  let isMethod = !isFunction && contains(trimmed, "(") && contains(trimmed, ")") &&
+                 (contains(trimmed, "{") || endsWith(trimmed, "{"))
+
+  if ((isFunction || isMethod) && !previousLineIsDoc) {
+    // Extract function signature
+    let sig = trimmed
+    if (contains(sig, "{")) {
+      sig = trim(split(sig, "{")[0])
+    }
+
+    push(undocumented, {
+      line: i,
+      signature: sig,
+      content: line
+    })
+  }
+
+  // Reset doc flag unless we just saw a doc comment
+  if (!startsWith(trimmed, "*") && !startsWith(trimmed, "/**")) {
+    previousLineIsDoc = false
+  }
+}
+
+print("Found " + str(len(undocumented)) + " undocumented functions")
+print("")
+
+if (len(undocumented) == 0) {
+  print("All functions appear to be documented!")
+  return { success: true, documented: 0 }
+}
+
+// Show functions to document
+print("Functions needing documentation:")
+print("-".repeat(40))
+
+for item in undocumented {
+  print("  Line " + str(item.line + 1) + ": " + substr(item.signature, 0, 60))
+  if (len(item.signature) > 60) {
+    print("         ...")
+  }
+}
+
+print("")
+
+// Generate documentation with AI
+print("Generating documentation with AI...")
+print("")
+
+let styleGuide = ""
+if (style == "minimal") {
+  styleGuide = "Generate minimal TSDoc with just a brief @description."
+} else if (style == "standard") {
+  styleGuide = "Generate standard TSDoc with @description, @param for each parameter, and @returns."
+} else {
+  styleGuide = "Generate comprehensive TSDoc with:
+- @description - Detailed description of what the function does
+- @param for each parameter with type and description
+- @returns with type and description
+- @throws if the function can throw errors
+- @example with usage example where helpful"
+}
+
+// Process each function
+let documented = 0
+let newContent = content
+
+for item in undocumented {
+  // Get context (surrounding lines)
+  let startCtx = max(0, item.line - 5)
+  let endCtx = min(len(lines), item.line + 15)
+  let context = join(slice(lines, startCtx, endCtx), "\n")
+
+  let prompt = "Generate TSDoc comment for this TypeScript function.
+
+" + styleGuide + "
+
+Function:
+```typescript
+" + item.signature + "
+```
+
+Context:
+```typescript
+" + context + "
+```
+
+Output ONLY the JSDoc comment (starting with /** and ending with */), nothing else."
+
+  let docComment = await grok.ask(prompt)
+
+  // Clean up the response
+  docComment = trim(docComment)
+  if (!startsWith(docComment, "/**")) {
+    // Try to extract JSDoc from response
+    let start = indexOf(docComment, "/**")
+    let end = indexOf(docComment, "*/")
+    if (start > -1 && end > start) {
+      docComment = substr(docComment, start, end - start + 2)
+    }
+  }
+
+  print("Line " + str(item.line + 1) + ":")
+  print(docComment)
+  print("")
+
+  if (!dryRun) {
+    // Insert the comment before the function
+    let indent = ""
+    for ch in item.content {
+      if (ch == " " || ch == "\t") {
+        indent = indent + ch
+      } else {
+        break
+      }
+    }
+
+    // Add proper indentation to doc comment
+    let docLines = split(docComment, "\n")
+    let indentedDoc = []
+    for dl in docLines {
+      push(indentedDoc, indent + dl)
+    }
+
+    // Replace in content
+    newContent = replace(newContent, item.content, join(indentedDoc, "\n") + "\n" + item.content)
+    documented = documented + 1
+  }
+}
+
+if (!dryRun && documented > 0) {
+  tool.write(targetFile, newContent)
+  print("Wrote " + str(documented) + " documentation comments to " + targetFile)
+} else if (dryRun) {
+  print("This was a dry run. To apply changes:")
+  print("  DRY_RUN=false FILE=" + targetFile + " /fcs run add-tsdoc.fcs")
+}
+
+return {
+  success: true,
+  file: targetFile,
+  undocumented: len(undocumented),
+  documented: documented,
+  dryRun: dryRun
+}

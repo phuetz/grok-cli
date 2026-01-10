@@ -5,9 +5,9 @@
  * Supports reading, setting, and managing environment configurations.
  */
 
-import fs from 'fs-extra';
 import * as path from 'path';
-import type { ToolResult } from './index.js';
+import type { ToolResult } from '../types/index.js';
+import { UnifiedVfsRouter } from '../services/vfs/unified-vfs-router.js';
 
 // ============================================================================
 // Types
@@ -29,6 +29,7 @@ export class EnvTool {
   name = 'env';
   description = 'Manage environment variables and .env files';
   dangerLevel: 'safe' | 'low' | 'medium' | 'high' = 'medium';
+  private vfs = UnifiedVfsRouter.Instance;
 
   // Sensitive key patterns to redact in output
   private sensitivePatterns = [
@@ -184,11 +185,11 @@ export class EnvTool {
   private async loadEnvFile(filePath: string): Promise<ToolResult> {
     const resolvedPath = path.resolve(filePath);
 
-    if (!await fs.pathExists(resolvedPath)) {
+    if (!await this.vfs.exists(resolvedPath)) {
       return { success: false, error: `File not found: ${resolvedPath}` };
     }
 
-    const content = await fs.readFile(resolvedPath, 'utf-8');
+    const content = await this.vfs.readFile(resolvedPath, 'utf-8');
     const lines = content.split('\n');
 
     let loaded = 0;
@@ -240,7 +241,7 @@ export class EnvTool {
       }
     }
 
-    await fs.writeFile(resolvedPath, lines.join('\n'));
+    await this.vfs.writeFile(resolvedPath, lines.join('\n'));
 
     return {
       success: true,
@@ -272,11 +273,11 @@ export class EnvTool {
   private async validateEnv(filePath: string): Promise<ToolResult> {
     const resolvedPath = path.resolve(filePath);
 
-    if (!await fs.pathExists(resolvedPath)) {
+    if (!await this.vfs.exists(resolvedPath)) {
       return { success: false, error: `File not found: ${resolvedPath}` };
     }
 
-    const content = await fs.readFile(resolvedPath, 'utf-8');
+    const content = await this.vfs.readFile(resolvedPath, 'utf-8');
     const lines = content.split('\n');
 
     const issues: string[] = [];

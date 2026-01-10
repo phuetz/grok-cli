@@ -1,0 +1,133 @@
+// FCS Script Library - Template Index
+// Usage: /fcs run scripts/templates/index.fcs
+//
+// This script lists all available FCS templates and their usage.
+
+print("FCS Script Library")
+print("=".repeat(60))
+print("")
+print("Available script templates organized by category.")
+print("Run any script with: /fcs run scripts/templates/<path>")
+print("")
+
+// Define all templates
+let templates = {
+  refactoring: [
+    {
+      name: "rename-symbol.fcs",
+      description: "Rename a variable, function, or class across the codebase",
+      usage: "OLD_NAME=foo NEW_NAME=bar /fcs run scripts/templates/refactoring/rename-symbol.fcs",
+      env: ["OLD_NAME", "NEW_NAME", "FILE_PATTERN", "DRY_RUN"]
+    },
+    {
+      name: "cleanup-imports.fcs",
+      description: "Find and report unused imports in TypeScript files",
+      usage: "TARGET_DIR=src /fcs run scripts/templates/refactoring/cleanup-imports.fcs",
+      env: ["TARGET_DIR", "FILE_PATTERN", "DRY_RUN"]
+    },
+    {
+      name: "extract-function.fcs",
+      description: "Extract a code block into a new function using AI",
+      usage: "FILE=src/file.ts START_LINE=10 END_LINE=20 FUNCTION_NAME=helper /fcs run ...",
+      env: ["FILE", "START_LINE", "END_LINE", "FUNCTION_NAME", "DRY_RUN"]
+    }
+  ],
+  testing: [
+    {
+      name: "generate-tests.fcs",
+      description: "Generate unit tests for a file using AI",
+      usage: "FILE=src/utils/helper.ts /fcs run scripts/templates/testing/generate-tests.fcs",
+      env: ["FILE", "FRAMEWORK", "OUTPUT", "COVERAGE"]
+    },
+    {
+      name: "run-tests.fcs",
+      description: "Run tests with enhanced reporting and analysis",
+      usage: "PATTERN=tests/unit /fcs run scripts/templates/testing/run-tests.fcs",
+      env: ["PATTERN", "WATCH", "COVERAGE", "VERBOSE", "FAIL_FAST"]
+    },
+    {
+      name: "coverage-report.fcs",
+      description: "Generate and analyze test coverage report",
+      usage: "TARGET=src THRESHOLD=80 /fcs run scripts/templates/testing/coverage-report.fcs",
+      env: ["TARGET", "THRESHOLD", "FORMAT"]
+    }
+  ],
+  documentation: [
+    {
+      name: "generate-docs.fcs",
+      description: "Generate API documentation from source code",
+      usage: "SOURCE=src OUTPUT=docs/api /fcs run scripts/templates/documentation/generate-docs.fcs",
+      env: ["SOURCE", "OUTPUT", "PATTERN", "INCLUDE_PRIVATE"]
+    },
+    {
+      name: "add-tsdoc.fcs",
+      description: "Add TSDoc comments to functions using AI",
+      usage: "FILE=src/utils/helper.ts /fcs run scripts/templates/documentation/add-tsdoc.fcs",
+      env: ["FILE", "STYLE", "DRY_RUN"]
+    },
+    {
+      name: "changelog.fcs",
+      description: "Generate changelog from git commits",
+      usage: "SINCE=v1.0.0 /fcs run scripts/templates/documentation/changelog.fcs",
+      env: ["SINCE", "OUTPUT", "FORMAT", "INCLUDE_ALL"]
+    }
+  ],
+  utilities: [
+    {
+      name: "project-stats.fcs",
+      description: "Analyze and display project statistics",
+      usage: "/fcs run scripts/templates/utilities/project-stats.fcs",
+      env: ["TARGET", "DETAILED"]
+    }
+  ]
+}
+
+// Display templates by category
+for category in keys(templates) {
+  print("## " + upper(substr(category, 0, 1)) + substr(category, 1))
+  print("-".repeat(50))
+  print("")
+
+  for script in templates[category] {
+    print("### " + script.name)
+    print("    " + script.description)
+    print("")
+    print("    Usage:")
+    print("      " + script.usage)
+    print("")
+    print("    Environment variables:")
+    for envVar in script.env {
+      print("      - " + envVar)
+    }
+    print("")
+  }
+}
+
+// Quick reference
+print("=".repeat(60))
+print("")
+print("Quick Reference:")
+print("")
+print("  List scripts:     /fcs list scripts/templates")
+print("  Run a script:     /fcs run scripts/templates/<category>/<script>.fcs")
+print("  Set variables:    VAR=value /fcs run ...")
+print("  Dry run first:    DRY_RUN=true /fcs run ...")
+print("")
+print("Common options:")
+print("  DRY_RUN=true   - Preview changes without applying")
+print("  VERBOSE=true   - Show detailed output")
+print("")
+
+// Count totals
+let totalScripts = 0
+for category in keys(templates) {
+  totalScripts = totalScripts + len(templates[category])
+}
+
+print("Total: " + str(totalScripts) + " script templates in " + str(len(keys(templates))) + " categories")
+
+return {
+  categories: keys(templates),
+  totalScripts: totalScripts,
+  templates: templates
+}

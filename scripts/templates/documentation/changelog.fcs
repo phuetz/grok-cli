@@ -1,0 +1,255 @@
+// changelog.fcs - Generate changelog from git commits
+// Usage: /fcs run scripts/templates/documentation/changelog.fcs
+//
+// This script analyzes git commits and generates a formatted changelog.
+
+let since = env("SINCE", "")  // Tag, commit, or date
+let outputFile = env("OUTPUT", "CHANGELOG.md")
+let format = env("FORMAT", "conventional")  // conventional, simple, grouped
+let includeAll = env("INCLUDE_ALL", "false") == "true"
+
+print("Changelog Generator")
+print("=".repeat(50))
+
+// Get commits
+let cmd = "git log --oneline"
+if (since != "") {
+  cmd = cmd + " " + since + "..HEAD"
+  print("  Since:  " + since)
+} else {
+  cmd = cmd + " -50"  // Last 50 commits
+  print("  Scope:  Last 50 commits")
+}
+
+print("  Output: " + outputFile)
+print("  Format: " + format)
+print("")
+
+// Get commit log
+let result = git.log(100)
+let commitLines = split(trim(result), "\n")
+
+print("Found " + str(len(commitLines)) + " commits")
+print("")
+
+// Parse commits
+let commits = {
+  features: [],
+  fixes: [],
+  docs: [],
+  refactor: [],
+  test: [],
+  chore: [],
+  breaking: [],
+  other: []
+}
+
+for line in commitLines {
+  if (len(line) < 8) continue
+
+  let hash = substr(line, 0, 7)
+  let message = trim(substr(line, 8))
+
+  // Parse conventional commit format
+  let type = "other"
+  let scope = ""
+  let breaking = false
+
+  if (contains(message, "!:")) {
+    breaking = true
+  }
+
+  if (startsWith(message, "feat")) {
+    type = "features"
+  } else if (startsWith(message, "fix")) {
+    type = "fixes"
+  } else if (startsWith(message, "docs")) {
+    type = "docs"
+  } else if (startsWith(message, "refactor")) {
+    type = "refactor"
+  } else if (startsWith(message, "test")) {
+    type = "test"
+  } else if (startsWith(message, "chore") || startsWith(message, "build") || startsWith(message, "ci")) {
+    type = "chore"
+  }
+
+  // Extract scope if present
+  if (contains(message, "(") && contains(message, ")")) {
+    let start = indexOf(message, "(")
+    let end = indexOf(message, ")")
+    if (end > start) {
+      scope = substr(message, start + 1, end - start - 1)
+    }
+  }
+
+  // Clean up message
+  let cleanMessage = message
+  if (contains(cleanMessage, "):")) {
+    cleanMessage = trim(split(cleanMessage, "):")[1])
+  } else if (contains(cleanMessage, ":")) {
+    cleanMessage = trim(split(cleanMessage, ":")[1])
+  }
+
+  let commit = {
+    hash: hash,
+    type: type,
+    scope: scope,
+    message: cleanMessage,
+    raw: message,
+    breaking: breaking
+  }
+
+  if (breaking) {
+    push(commits.breaking, commit)
+  }
+  push(commits[type], commit)
+}
+
+// Generate changelog content
+let changelog = ""
+let today = date()
+
+if (format == "conventional") {
+  changelog = "# Changelog\n\n"
+  changelog = changelog + "All notable changes to this project will be documented in this file.\n\n"
+  changelog = changelog + "## [Unreleased] - " + today + "\n\n"
+
+  // Breaking changes first
+  if (len(commits.breaking) > 0) {
+    changelog = changelog + "### BREAKING CHANGES\n\n"
+    for c in commits.breaking {
+      changelog = changelog + "- " + c.message
+      if (c.scope != "") {
+        changelog = changelog + " (" + c.scope + ")"
+      }
+      changelog = changelog + " [`" + c.hash + "`]\n"
+    }
+    changelog = changelog + "\n"
+  }
+
+  // Features
+  if (len(commits.features) > 0) {
+    changelog = changelog + "### Features\n\n"
+    for c in commits.features {
+      changelog = changelog + "- " + c.message
+      if (c.scope != "") {
+        changelog = changelog + " (**" + c.scope + "**)"
+      }
+      changelog = changelog + " [`" + c.hash + "`]\n"
+    }
+    changelog = changelog + "\n"
+  }
+
+  // Bug Fixes
+  if (len(commits.fixes) > 0) {
+    changelog = changelog + "### Bug Fixes\n\n"
+    for c in commits.fixes {
+      changelog = changelog + "- " + c.message
+      if (c.scope != "") {
+        changelog = changelog + " (**" + c.scope + "**)"
+      }
+      changelog = changelog + " [`" + c.hash + "`]\n"
+    }
+    changelog = changelog + "\n"
+  }
+
+  // Documentation
+  if (len(commits.docs) > 0 && includeAll) {
+    changelog = changelog + "### Documentation\n\n"
+    for c in commits.docs {
+      changelog = changelog + "- " + c.message + " [`" + c.hash + "`]\n"
+    }
+    changelog = changelog + "\n"
+  }
+
+  // Refactoring
+  if (len(commits.refactor) > 0 && includeAll) {
+    changelog = changelog + "### Code Refactoring\n\n"
+    for c in commits.refactor {
+      changelog = changelog + "- " + c.message + " [`" + c.hash + "`]\n"
+    }
+    changelog = changelog + "\n"
+  }
+
+  // Tests
+  if (len(commits.test) > 0 && includeAll) {
+    changelog = changelog + "### Tests\n\n"
+    for c in commits.test {
+      changelog = changelog + "- " + c.message + " [`" + c.hash + "`]\n"
+    }
+    changelog = changelog + "\n"
+  }
+
+} else if (format == "simple") {
+  changelog = "# Changelog\n\n"
+  changelog = changelog + "## " + today + "\n\n"
+
+  for line in commitLines {
+    if (len(line) > 8) {
+      changelog = changelog + "- " + substr(line, 8) + "\n"
+    }
+  }
+
+} else {
+  // Grouped by scope
+  changelog = "# Changelog\n\n"
+  changelog = changelog + "## " + today + "\n\n"
+
+  let byScope = {}
+  for line in commitLines {
+    if (len(line) < 8) continue
+
+    let message = substr(line, 8)
+    let scope = "General"
+
+    if (contains(message, "(") && contains(message, ")")) {
+      let start = indexOf(message, "(")
+      let end = indexOf(message, ")")
+      scope = substr(message, start + 1, end - start - 1)
+    }
+
+    if (!byScope[scope]) {
+      byScope[scope] = []
+    }
+    push(byScope[scope], message)
+  }
+
+  for scope in keys(byScope) {
+    changelog = changelog + "### " + scope + "\n\n"
+    for msg in byScope[scope] {
+      changelog = changelog + "- " + msg + "\n"
+    }
+    changelog = changelog + "\n"
+  }
+}
+
+// Preview
+print("Generated Changelog:")
+print("-".repeat(40))
+print(substr(changelog, 0, 1500))
+if (len(changelog) > 1500) {
+  print("... (truncated)")
+}
+print("-".repeat(40))
+
+// Save
+tool.write(outputFile, changelog)
+print("")
+print("Changelog saved to: " + outputFile)
+
+// Summary
+print("")
+print("Summary:")
+print("  Features:    " + str(len(commits.features)))
+print("  Bug Fixes:   " + str(len(commits.fixes)))
+print("  Breaking:    " + str(len(commits.breaking)))
+print("  Other:       " + str(len(commits.other)))
+
+return {
+  success: true,
+  outputFile: outputFile,
+  commits: len(commitLines),
+  features: len(commits.features),
+  fixes: len(commits.fixes),
+  breaking: len(commits.breaking)
+}

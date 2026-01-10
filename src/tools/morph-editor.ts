@@ -1,14 +1,15 @@
-import * as fs from "fs-extra";
 import * as path from "path";
 import axios from "axios";
 import { ToolResult, getErrorMessage } from "../types/index.js";
 import { ConfirmationService } from "../utils/confirmation-service.js";
 import { logger } from "../utils/logger.js";
+import { UnifiedVfsRouter } from "../services/vfs/unified-vfs-router.js";
 
 export class MorphEditorTool {
   private confirmationService = ConfirmationService.getInstance();
   private morphApiKey: string;
   private morphBaseUrl: string = "https://api.morphllm.com/v1";
+  private vfs = UnifiedVfsRouter.Instance;
 
   constructor(apiKey?: string) {
     this.morphApiKey = apiKey || process.env.MORPH_API_KEY || "";
@@ -48,7 +49,7 @@ export class MorphEditorTool {
     try {
       const resolvedPath = path.resolve(targetFile);
 
-      if (!(await fs.pathExists(resolvedPath))) {
+      if (!(await this.vfs.exists(resolvedPath))) {
         return {
           success: false,
           error: `File not found: ${targetFile}`,
@@ -63,7 +64,7 @@ export class MorphEditorTool {
       }
 
       // Read the initial code
-      const initialCode = await fs.readFile(resolvedPath, "utf-8");
+      const initialCode = await this.vfs.readFile(resolvedPath, "utf-8");
 
       // Check user confirmation before proceeding
       const sessionFlags = this.confirmationService.getSessionFlags();
@@ -90,7 +91,7 @@ export class MorphEditorTool {
       const mergedCode = await this.callMorphApply(instructions, initialCode, codeEdit);
 
       // Write the merged code back to file
-      await fs.writeFile(resolvedPath, mergedCode, "utf-8");
+      await this.vfs.writeFile(resolvedPath, mergedCode, "utf-8");
 
       // Generate diff for display
       const oldLines = initialCode.split("\n");
@@ -332,18 +333,18 @@ export class MorphEditorTool {
     try {
       const resolvedPath = path.resolve(filePath);
 
-      if (await fs.pathExists(resolvedPath)) {
-        const stats = await fs.stat(resolvedPath);
+      if (await this.vfs.exists(resolvedPath)) {
+        const stats = await this.vfs.stat(resolvedPath);
 
         if (stats.isDirectory()) {
-          const files = await fs.readdir(resolvedPath);
+          const files = await this.vfs.readdir(resolvedPath);
           return {
             success: true,
             output: `Directory contents of ${filePath}:\n${files.join("\n")}`,
           };
         }
 
-        const content = await fs.readFile(resolvedPath, "utf-8");
+        const content = await this.vfs.readFile(resolvedPath, "utf-8");
         const lines = content.split("\n");
 
         if (viewRange) {

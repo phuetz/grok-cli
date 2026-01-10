@@ -1,0 +1,260 @@
+// generate-docs.fcs - Generate API documentation from source code
+// Usage: /fcs run scripts/templates/documentation/generate-docs.fcs
+//
+// This script analyzes source files and generates markdown documentation.
+
+let sourceDir = env("SOURCE", "src")
+let outputDir = env("OUTPUT", "docs/api")
+let filePattern = env("PATTERN", "*.ts")
+let includePrivate = env("INCLUDE_PRIVATE", "false") == "true"
+
+print("API Documentation Generator")
+print("=".repeat(50))
+print("  Source:    " + sourceDir)
+print("  Output:    " + outputDir)
+print("  Pattern:   " + filePattern)
+print("  Private:   " + str(includePrivate))
+print("")
+
+// Create output directory
+if (!fileExists(outputDir)) {
+  mkdir(outputDir)
+}
+
+// Find all source files
+let files = tool.glob(sourceDir + "/**/" + filePattern)
+print("Found " + str(len(files)) + " source files")
+print("")
+
+let allModules = []
+let totalExports = 0
+let totalFunctions = 0
+let totalClasses = 0
+
+// Process each file
+for file in files {
+  let content = tool.read(file)
+  let lines = split(content, "\n")
+  let fileName = basename(file)
+  let moduleName = replace(fileName, ".ts", "")
+
+  // Skip test files and index files
+  if (contains(fileName, ".test.") || contains(fileName, ".spec.") || fileName == "index.ts") {
+    continue
+  }
+
+  let moduleInfo = {
+    name: moduleName,
+    path: file,
+    exports: [],
+    functions: [],
+    classes: [],
+    interfaces: [],
+    types: [],
+    description: ""
+  }
+
+  // Extract module description from top comment
+  let inComment = false
+  let commentLines = []
+
+  for i in range(min(20, len(lines))) {
+    let line = lines[i]
+    if (startsWith(trim(line), "/**")) {
+      inComment = true
+      continue
+    }
+    if (inComment) {
+      if (contains(line, "*/")) {
+        inComment = false
+        break
+      }
+      let cleaned = trim(replace(replace(line, "*", ""), " ", " "))
+      if (cleaned != "") {
+        push(commentLines, cleaned)
+      }
+    }
+  }
+
+  if (len(commentLines) > 0) {
+    moduleInfo.description = join(commentLines, " ")
+  }
+
+  // Parse exports
+  let currentDoc = []
+
+  for i in range(len(lines)) {
+    let line = lines[i]
+    let trimmed = trim(line)
+
+    // Collect JSDoc comments
+    if (startsWith(trimmed, "/**")) {
+      currentDoc = []
+    }
+    if (startsWith(trimmed, "*") && !startsWith(trimmed, "*/")) {
+      push(currentDoc, trim(substr(trimmed, 1)))
+    }
+
+    // Export function
+    if (startsWith(trimmed, "export function") || startsWith(trimmed, "export async function")) {
+      let parts = split(line, "function ")
+      if (len(parts) > 1) {
+        let sig = split(parts[1], "{")[0]
+        let funcName = split(sig, "(")[0]
+
+        push(moduleInfo.functions, {
+          name: trim(funcName),
+          signature: trim(sig),
+          doc: join(currentDoc, " "),
+          line: i + 1
+        })
+        totalFunctions = totalFunctions + 1
+      }
+      currentDoc = []
+    }
+
+    // Export class
+    if (startsWith(trimmed, "export class")) {
+      let parts = split(line, "class ")
+      if (len(parts) > 1) {
+        let className = split(split(parts[1], " ")[0], "{")[0]
+
+        push(moduleInfo.classes, {
+          name: trim(className),
+          doc: join(currentDoc, " "),
+          line: i + 1
+        })
+        totalClasses = totalClasses + 1
+      }
+      currentDoc = []
+    }
+
+    // Export interface
+    if (startsWith(trimmed, "export interface")) {
+      let parts = split(line, "interface ")
+      if (len(parts) > 1) {
+        let name = split(split(parts[1], " ")[0], "{")[0]
+        push(moduleInfo.interfaces, { name: trim(name), line: i + 1 })
+      }
+    }
+
+    // Export type
+    if (startsWith(trimmed, "export type")) {
+      let parts = split(line, "type ")
+      if (len(parts) > 1) {
+        let name = split(parts[1], " ")[0]
+        push(moduleInfo.types, { name: trim(name), line: i + 1 })
+      }
+    }
+  }
+
+  // Only include modules with exports
+  let exportCount = len(moduleInfo.functions) + len(moduleInfo.classes) +
+                    len(moduleInfo.interfaces) + len(moduleInfo.types)
+
+  if (exportCount > 0) {
+    push(allModules, moduleInfo)
+    totalExports = totalExports + exportCount
+  }
+}
+
+print("Analyzed " + str(len(allModules)) + " modules")
+print("  Functions:  " + str(totalFunctions))
+print("  Classes:    " + str(totalClasses))
+print("  Total exports: " + str(totalExports))
+print("")
+
+// Generate documentation
+print("Generating documentation...")
+
+// Generate index
+let indexContent = "# API Reference\n\n"
+indexContent = indexContent + "Auto-generated documentation for " + sourceDir + "\n\n"
+indexContent = indexContent + "## Modules\n\n"
+
+for mod in allModules {
+  indexContent = indexContent + "- [" + mod.name + "](./" + mod.name + ".md)"
+
+  if (mod.description != "") {
+    indexContent = indexContent + " - " + substr(mod.description, 0, 80)
+    if (len(mod.description) > 80) {
+      indexContent = indexContent + "..."
+    }
+  }
+
+  indexContent = indexContent + "\n"
+}
+
+tool.write(outputDir + "/README.md", indexContent)
+
+// Generate per-module docs
+for mod in allModules {
+  let doc = "# " + mod.name + "\n\n"
+
+  if (mod.description != "") {
+    doc = doc + mod.description + "\n\n"
+  }
+
+  doc = doc + "**File:** `" + mod.path + "`\n\n"
+
+  // Classes
+  if (len(mod.classes) > 0) {
+    doc = doc + "## Classes\n\n"
+    for cls in mod.classes {
+      doc = doc + "### " + cls.name + "\n\n"
+      if (cls.doc != "") {
+        doc = doc + cls.doc + "\n\n"
+      }
+      doc = doc + "Defined at line " + str(cls.line) + "\n\n"
+    }
+  }
+
+  // Functions
+  if (len(mod.functions) > 0) {
+    doc = doc + "## Functions\n\n"
+    for func in mod.functions {
+      doc = doc + "### `" + func.signature + "`\n\n"
+      if (func.doc != "") {
+        doc = doc + func.doc + "\n\n"
+      }
+      doc = doc + "Defined at line " + str(func.line) + "\n\n"
+    }
+  }
+
+  // Interfaces
+  if (len(mod.interfaces) > 0) {
+    doc = doc + "## Interfaces\n\n"
+    for iface in mod.interfaces {
+      doc = doc + "- `" + iface.name + "` (line " + str(iface.line) + ")\n"
+    }
+    doc = doc + "\n"
+  }
+
+  // Types
+  if (len(mod.types) > 0) {
+    doc = doc + "## Types\n\n"
+    for typ in mod.types {
+      doc = doc + "- `" + typ.name + "` (line " + str(typ.line) + ")\n"
+    }
+    doc = doc + "\n"
+  }
+
+  tool.write(outputDir + "/" + mod.name + ".md", doc)
+}
+
+print("")
+print("Documentation generated!")
+print("  Index: " + outputDir + "/README.md")
+print("  Modules: " + str(len(allModules)) + " files")
+print("")
+print("View the docs:")
+print("  cat " + outputDir + "/README.md")
+
+return {
+  success: true,
+  modules: len(allModules),
+  functions: totalFunctions,
+  classes: totalClasses,
+  exports: totalExports,
+  outputDir: outputDir
+}

@@ -22,6 +22,15 @@ export { createFCSBuiltins } from './builtins.js';
 // Grok-CLI Bindings
 export { createGrokBindings, setCodeBuddyClient, setMCPManager } from './codebuddy-bindings.js';
 
+// Script Registry
+export {
+  ScriptRegistry,
+  getScriptRegistry,
+  initScriptRegistry,
+  type ScriptTemplate,
+  type ScriptCategory
+} from './script-registry.js';
+
 // Convenience function to run FCS code
 import { tokenize } from './lexer.js';
 import { parse } from './parser.js';

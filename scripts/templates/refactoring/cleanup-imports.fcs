@@ -1,0 +1,144 @@
+// cleanup-imports.fcs - Remove unused imports from TypeScript files
+// Usage: /fcs run scripts/templates/refactoring/cleanup-imports.fcs
+//
+// This script analyzes TypeScript files and removes unused imports.
+
+let targetDir = env("TARGET_DIR", "src")
+let filePattern = env("FILE_PATTERN", "*.ts")
+let dryRun = env("DRY_RUN", "true") == "true"
+
+print("Cleanup Unused Imports")
+print("=".repeat(50))
+print("  Directory: " + targetDir)
+print("  Pattern:   " + filePattern)
+print("  Dry run:   " + str(dryRun))
+print("")
+
+// Find all TypeScript files
+let files = tool.glob(targetDir + "/**/" + filePattern)
+print("Found " + str(len(files)) + " files to analyze")
+print("")
+
+let totalRemoved = 0
+let filesModified = 0
+
+for file in files {
+  let content = tool.read(file)
+  let lines = split(content, "\n")
+  let imports = []
+  let usedSymbols = []
+
+  // Parse import statements
+  for i in range(len(lines)) {
+    let line = lines[i]
+
+    // Match import statements
+    if (startsWith(trim(line), "import ")) {
+      // Extract imported names
+      if (contains(line, "{")) {
+        // Named imports: import { a, b } from '...'
+        let start = indexOf(line, "{")
+        let end = indexOf(line, "}")
+        if (start > -1 && end > start) {
+          let names = substr(line, start + 1, end - start - 1)
+          let parts = split(names, ",")
+          for part in parts {
+            let name = trim(part)
+            // Handle 'as' aliases
+            if (contains(name, " as ")) {
+              name = trim(split(name, " as ")[1])
+            }
+            if (name != "") {
+              push(imports, { name: name, line: i, lineContent: line })
+            }
+          }
+        }
+      } else if (contains(line, "* as ")) {
+        // Namespace import: import * as name from '...'
+        let parts = split(line, "* as ")
+        if (len(parts) > 1) {
+          let name = trim(split(parts[1], " ")[0])
+          push(imports, { name: name, line: i, lineContent: line })
+        }
+      } else if (contains(line, " from ")) {
+        // Default import: import name from '...'
+        let parts = split(line, "import ")
+        if (len(parts) > 1) {
+          let name = trim(split(parts[1], " from")[0])
+          if (name != "" && !startsWith(name, "'") && !startsWith(name, "\"")) {
+            push(imports, { name: name, line: i, lineContent: line })
+          }
+        }
+      }
+    }
+  }
+
+  // Find unused imports by checking if symbol is used elsewhere
+  let unusedImports = []
+
+  for imp in imports {
+    let found = false
+    let searchPattern = "\\b" + imp.name + "\\b"
+
+    // Check if used (excluding the import line itself)
+    for j in range(len(lines)) {
+      if (j != imp.line) {
+        if (contains(lines[j], imp.name)) {
+          // Make sure it's not in a comment or string
+          let line = lines[j]
+          if (!startsWith(trim(line), "//") && !startsWith(trim(line), "*")) {
+            found = true
+            break
+          }
+        }
+      }
+    }
+
+    if (!found) {
+      push(unusedImports, imp)
+    }
+  }
+
+  // Report and optionally remove
+  if (len(unusedImports) > 0) {
+    print("File: " + file)
+
+    for unused in unusedImports {
+      print("  Unused: " + unused.name + " (line " + str(unused.line + 1) + ")")
+    }
+
+    totalRemoved = totalRemoved + len(unusedImports)
+
+    if (!dryRun) {
+      // Remove unused imports
+      // Note: Full implementation would need to handle multi-import lines
+      print("  -> Would need AI assistance for complex removals")
+      // For simple cases where entire import line is unused:
+      // tool.edit(file, unused.lineContent, "")
+    }
+
+    filesModified = filesModified + 1
+    print("")
+  }
+}
+
+print("=".repeat(50))
+print("Summary:")
+print("  Files analyzed:    " + str(len(files)))
+print("  Unused imports:    " + str(totalRemoved))
+print("  Files with issues: " + str(filesModified))
+
+if (dryRun && totalRemoved > 0) {
+  print("")
+  print("This was a dry run. For complex import cleanup, consider:")
+  print("  1. Using ESLint with --fix")
+  print("  2. Using TypeScript's organizeImports")
+  print("  3. Or ask AI: 'Remove unused imports from src/file.ts'")
+}
+
+return {
+  success: true,
+  filesAnalyzed: len(files),
+  unusedImports: totalRemoved,
+  filesWithIssues: filesModified
+}
