@@ -263,11 +263,11 @@ export class TypedEventEmitter<TEvents extends Record<string, BaseEvent> = Recor
       this.stats.totalListeners -= count;
     } else {
       // Remove all listeners
-      let totalRemoved = 0;
+      let _totalRemoved = 0;
       for (const listeners of this.listeners.values()) {
-        totalRemoved += listeners.length;
+        _totalRemoved += listeners.length;
       }
-      totalRemoved += this.wildcardListeners.length;
+      _totalRemoved += this.wildcardListeners.length;
 
       this.listeners.clear();
       this.wildcardListeners = [];

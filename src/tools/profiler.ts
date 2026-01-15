@@ -8,7 +8,7 @@
  * - Performance marks
  */
 
-import { performance, PerformanceObserver } from 'perf_hooks';
+import { performance } from 'perf_hooks';
 import * as v8 from 'v8';
 
 export interface MemorySnapshot {

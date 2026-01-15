@@ -8,7 +8,6 @@
 import { mkdir, readdir, stat, unlink, readFile, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'crypto';
-import { createGzip, createGunzip } from 'zlib';
 import { pipeline } from 'stream/promises';
 import type {
   CloudConfig,

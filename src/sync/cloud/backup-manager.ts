@@ -14,7 +14,6 @@ import type {
   BackupManifest,
   BackupItem,
   BackupListEntry,
-  SyncEvent,
 } from './types.js';
 import { CloudStorage, createCloudStorage } from './storage.js';
 import type { CloudConfig } from './types.js';

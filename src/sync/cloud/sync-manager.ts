@@ -16,7 +16,6 @@ import type {
   SyncState,
   SyncResult,
   SyncConflict,
-  SyncError,
   SyncItem,
   SyncDirection,
   ConflictResolution,
