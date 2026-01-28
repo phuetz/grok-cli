@@ -16,7 +16,7 @@ import { StreamingHandler, RawStreamingChunk } from "../streaming/index.js";
 import { ContextManagerV2 } from "../../context/context-manager-v2.js";
 import { TokenCounter } from "../../utils/token-counter.js";
 import { logger } from "../../utils/logger.js";
-import { getErrorMessage } from "../../types/errors.js";
+import { getErrorMessage } from "../../errors/index.js";
 
 /**
  * Dependencies injected into the AgentExecutor

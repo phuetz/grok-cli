@@ -333,14 +333,24 @@ export type CodeBuddyPrimitive = string | number | boolean | null | undefined;
  * Implementations should validate arguments at runtime.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic scripting runtime
-export type CodeBuddyFunction = (...args: any[]) => any;
+export type CodeBuddyFunction = (...args: CodeBuddyValue[]) => CodeBuddyValue | Promise<CodeBuddyValue> | any;
+
+/**
+ * Object type for scripting runtime values
+ */
+export type CodeBuddyObject = { [key: string]: CodeBuddyValue };
+
+/**
+ * Array type for scripting runtime values
+ */
+export type CodeBuddyArray = CodeBuddyValue[];
 
 /**
  * Dynamic value type for the scripting runtime.
  * Uses a union of known types for better type safety.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic scripting where types are determined at runtime
-export type CodeBuddyValue = CodeBuddyPrimitive | CodeBuddyFunction | Record<string, any> | any[];
+export type CodeBuddyValue = CodeBuddyPrimitive | CodeBuddyFunction | CodeBuddyObject | CodeBuddyArray | any;
 
 /**
  * Promise wrapping a scripting value

@@ -192,23 +192,27 @@ export class OllamaEmbeddingProvider extends EventEmitter {
     // Stream the response to track progress
     const reader = response.body?.getReader();
     if (reader) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        const text = new TextDecoder().decode(value);
-        const lines = text.split("\n").filter(Boolean);
+          const text = new TextDecoder().decode(value);
+          const lines = text.split("\n").filter(Boolean);
 
-        for (const line of lines) {
-          try {
-            const data = JSON.parse(line);
-            if (data.status) {
-              this.emit("pull:progress", data);
+          for (const line of lines) {
+            try {
+              const data = JSON.parse(line);
+              if (data.status) {
+                this.emit("pull:progress", data);
+              }
+            } catch {
+              // Ignore parse errors
             }
-          } catch {
-            // Ignore parse errors
           }
         }
+      } finally {
+        reader.releaseLock();
       }
     }
 

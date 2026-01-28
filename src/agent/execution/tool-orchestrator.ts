@@ -13,7 +13,7 @@
 import { EventEmitter } from "events";
 import { CodeBuddyToolCall } from "../../codebuddy/client.js";
 import { ToolResult } from "../../types/index.js";
-import { getErrorMessage } from "../../types/errors.js";
+import { getErrorMessage } from "../../errors/index.js";
 import { logger } from "../../utils/logger.js";
 
 /**

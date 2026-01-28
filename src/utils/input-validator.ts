@@ -1153,3 +1153,450 @@ export function isUrlSafe(url: string): boolean {
     return false;
   }
 }
+
+// ============================================================================
+// Unified Validators Object
+// ============================================================================
+
+/**
+ * Unified validation result type
+ * Provides a consistent interface for all validation functions
+ */
+export interface UnifiedValidationResult<T = unknown> {
+  valid: boolean;
+  value?: T;
+  error?: string;
+}
+
+/**
+ * Options for path validation in unified validators
+ */
+export interface PathValidationOptions {
+  /** Allow absolute paths (default: true) */
+  allowAbsolute?: boolean;
+  /** Allow relative paths (default: true) */
+  allowRelative?: boolean;
+  /** Base directory to resolve relative paths against */
+  basePath?: string;
+  /** Check for dangerous patterns like sensitive files (default: true) */
+  checkDangerous?: boolean;
+  /** Field name for error messages */
+  fieldName?: string;
+}
+
+/**
+ * Options for URL validation in unified validators
+ */
+export interface UrlValidationOptions {
+  /** Allowed protocols (default: ['http:', 'https:']) */
+  protocols?: string[];
+  /** Block internal/localhost URLs (default: true) */
+  blockInternal?: boolean;
+  /** Field name for error messages */
+  fieldName?: string;
+}
+
+/**
+ * Options for JSON parsing in unified validators
+ */
+export interface JsonParseOptions {
+  /** Maximum JSON string length */
+  maxLength?: number;
+  /** Custom error message prefix */
+  errorPrefix?: string;
+}
+
+/**
+ * Options for string sanitization
+ */
+export interface SanitizeOptions {
+  /** Remove control characters (default: true) */
+  removeControlChars?: boolean;
+  /** Escape HTML entities (default: false) */
+  escapeHtml?: boolean;
+  /** Maximum length (truncate if exceeded) */
+  maxLength?: number;
+  /** Trim whitespace (default: true) */
+  trim?: boolean;
+}
+
+/**
+ * Unified validators object providing a consistent API for all validation needs.
+ *
+ * All validators return a UnifiedValidationResult with:
+ * - valid: boolean indicating success
+ * - value: the validated/sanitized value (if valid)
+ * - error: descriptive error message (if invalid)
+ *
+ * @example
+ * ```typescript
+ * const pathResult = validators.path('/some/file.ts');
+ * if (pathResult.valid) {
+ *   console.log('Safe path:', pathResult.value);
+ * }
+ *
+ * const urlResult = validators.url('https://example.com');
+ * if (!urlResult.valid) {
+ *   console.error('Invalid URL:', urlResult.error);
+ * }
+ * ```
+ */
+export const validators = {
+  /**
+   * Validate a file path for security and correctness.
+   *
+   * Checks for:
+   * - Path traversal attacks (../)
+   * - Null byte injection
+   * - Dangerous paths (sensitive system files)
+   * - Absolute/relative path restrictions
+   *
+   * @param input - The path to validate
+   * @param options - Validation options
+   * @returns ValidationResult with sanitized path or error
+   */
+  path: (
+    input: string,
+    options: PathValidationOptions = {}
+  ): UnifiedValidationResult<string> => {
+    const {
+      allowAbsolute = true,
+      allowRelative = true,
+      basePath,
+      checkDangerous = true,
+      fieldName = 'path',
+    } = options;
+
+    // Basic type and empty check
+    if (!input || typeof input !== 'string') {
+      return { valid: false, error: `${fieldName} must be a non-empty string` };
+    }
+
+    const trimmed = input.trim();
+    if (trimmed.length === 0) {
+      return { valid: false, error: `${fieldName} cannot be empty` };
+    }
+
+    // Length check
+    if (trimmed.length > VALIDATION_LIMITS.MAX_PATH_LENGTH) {
+      return {
+        valid: false,
+        error: `${fieldName} exceeds maximum length of ${VALIDATION_LIMITS.MAX_PATH_LENGTH}`,
+      };
+    }
+
+    // Null byte check
+    if (trimmed.includes('\0')) {
+      return { valid: false, error: `${fieldName} contains null bytes` };
+    }
+
+    // Path traversal check
+    const traversalPatterns = [
+      /\.\.[/\\]/, // ../  or ..\
+      /[/\\]\.\./, // /../ or \..
+      /^\.\.$/,    // just ".."
+    ];
+    for (const pattern of traversalPatterns) {
+      if (pattern.test(trimmed)) {
+        return { valid: false, error: `${fieldName} contains path traversal pattern` };
+      }
+    }
+
+    // Absolute/relative checks
+    const isAbsolute = path.isAbsolute(trimmed);
+    if (isAbsolute && !allowAbsolute) {
+      return { valid: false, error: `${fieldName} must be a relative path` };
+    }
+    if (!isAbsolute && !allowRelative) {
+      return { valid: false, error: `${fieldName} must be an absolute path` };
+    }
+
+    // Resolve path
+    let resolvedPath = trimmed;
+    if (basePath && !isAbsolute) {
+      resolvedPath = path.resolve(basePath, trimmed);
+
+      // Ensure resolved path stays within base
+      const normalizedBase = path.normalize(basePath);
+      const normalizedResolved = path.normalize(resolvedPath);
+      if (!normalizedResolved.startsWith(normalizedBase + path.sep) &&
+          normalizedResolved !== normalizedBase) {
+        return { valid: false, error: `${fieldName} resolves outside allowed directory` };
+      }
+    } else {
+      resolvedPath = path.normalize(trimmed);
+    }
+
+    // Dangerous path check
+    if (checkDangerous) {
+      for (const pattern of DANGEROUS_PATH_PATTERNS) {
+        if (pattern.test(resolvedPath)) {
+          return { valid: false, error: `${fieldName} points to a sensitive location` };
+        }
+      }
+    }
+
+    return { valid: true, value: resolvedPath };
+  },
+
+  /**
+   * Validate a URL for security and correctness.
+   *
+   * Checks for:
+   * - Valid URL format
+   * - Allowed protocols (http/https by default)
+   * - Internal/localhost blocking
+   * - JavaScript protocol (XSS prevention)
+   *
+   * @param input - The URL to validate
+   * @param options - Validation options
+   * @returns ValidationResult with URL string or error
+   */
+  url: (
+    input: string,
+    options: UrlValidationOptions = {}
+  ): UnifiedValidationResult<string> => {
+    const {
+      protocols = ['http:', 'https:'],
+      blockInternal = true,
+      fieldName = 'URL',
+    } = options;
+
+    // Basic type and empty check
+    if (!input || typeof input !== 'string') {
+      return { valid: false, error: `${fieldName} must be a non-empty string` };
+    }
+
+    const trimmed = input.trim();
+    if (trimmed.length === 0) {
+      return { valid: false, error: `${fieldName} cannot be empty` };
+    }
+
+    // Length check
+    if (trimmed.length > VALIDATION_LIMITS.MAX_URL_LENGTH) {
+      return {
+        valid: false,
+        error: `${fieldName} exceeds maximum length of ${VALIDATION_LIMITS.MAX_URL_LENGTH}`,
+      };
+    }
+
+    // Parse URL
+    let parsed: URL;
+    try {
+      parsed = new URL(trimmed);
+    } catch {
+      return { valid: false, error: `${fieldName} is not a valid URL` };
+    }
+
+    // Protocol check
+    if (!protocols.includes(parsed.protocol)) {
+      return {
+        valid: false,
+        error: `${fieldName} must use one of these protocols: ${protocols.join(', ')}`,
+      };
+    }
+
+    // JavaScript protocol check (XSS prevention)
+    if (trimmed.toLowerCase().startsWith('javascript:')) {
+      return { valid: false, error: `${fieldName} cannot use JavaScript protocol` };
+    }
+
+    // Internal URL blocking
+    if (blockInternal) {
+      for (const pattern of BLOCKED_URL_PATTERNS) {
+        if (pattern.test(trimmed)) {
+          return { valid: false, error: `${fieldName} cannot access internal/localhost URLs` };
+        }
+      }
+    }
+
+    return { valid: true, value: trimmed };
+  },
+
+  /**
+   * Parse and validate a JSON string.
+   *
+   * Features:
+   * - Safe JSON parsing with error handling
+   * - Size limits to prevent DoS
+   * - Clear error messages for parse failures
+   *
+   * @param input - The JSON string to parse
+   * @param options - Parse options
+   * @returns Parsed value or null on failure
+   */
+  json: <T = unknown>(
+    input: string,
+    options: JsonParseOptions = {}
+  ): T | null => {
+    const {
+      maxLength = 10_000_000, // 10MB default
+      errorPrefix = 'JSON parse error',
+    } = options;
+
+    if (!input || typeof input !== 'string') {
+      return null;
+    }
+
+    if (input.length > maxLength) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(input) as T;
+    } catch {
+      // Return null on parse failure - caller can use jsonWithError for details
+      return null;
+    }
+  },
+
+  /**
+   * Parse JSON with detailed error information.
+   * Use this when you need to know why parsing failed.
+   *
+   * @param input - The JSON string to parse
+   * @param options - Parse options
+   * @returns ValidationResult with parsed value or error
+   */
+  jsonWithError: <T = unknown>(
+    input: string,
+    options: JsonParseOptions = {}
+  ): UnifiedValidationResult<T> => {
+    const {
+      maxLength = 10_000_000,
+      errorPrefix = 'JSON',
+    } = options;
+
+    if (!input || typeof input !== 'string') {
+      return { valid: false, error: `${errorPrefix} must be a string` };
+    }
+
+    if (input.trim().length === 0) {
+      return { valid: false, error: `${errorPrefix} cannot be empty` };
+    }
+
+    if (input.length > maxLength) {
+      return { valid: false, error: `${errorPrefix} exceeds maximum size` };
+    }
+
+    try {
+      const value = JSON.parse(input) as T;
+      return { valid: true, value };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Parse error';
+      return { valid: false, error: `Invalid ${errorPrefix}: ${message}` };
+    }
+  },
+
+  /**
+   * Sanitize a string by removing dangerous content.
+   *
+   * Features:
+   * - Removes control characters
+   * - Optionally escapes HTML entities
+   * - Enforces length limits
+   * - Trims whitespace
+   *
+   * @param input - The string to sanitize
+   * @param options - Sanitization options
+   * @returns Sanitized string
+   */
+  sanitize: (input: string, options: SanitizeOptions = {}): string => {
+    const {
+      removeControlChars = true,
+      escapeHtml = false,
+      maxLength,
+      trim = true,
+    } = options;
+
+    if (!input || typeof input !== 'string') {
+      return '';
+    }
+
+    let result = input;
+
+    // Remove control characters (except \n, \r, \t)
+    if (removeControlChars) {
+      // eslint-disable-next-line no-control-regex
+      result = result.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    }
+
+    // Escape HTML entities
+    if (escapeHtml) {
+      result = result
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    }
+
+    // Trim
+    if (trim) {
+      result = result.trim();
+    }
+
+    // Enforce max length
+    if (maxLength && result.length > maxLength) {
+      result = result.substring(0, maxLength);
+    }
+
+    return result;
+  },
+
+  /**
+   * Escape a string for safe use in shell commands.
+   * Wraps the string in single quotes and escapes internal quotes.
+   *
+   * @param input - The string to escape
+   * @returns Shell-safe escaped string
+   */
+  shellEscape: (input: string): string => {
+    return sanitizeForShell(input);
+  },
+
+  /**
+   * Validate a command for dangerous patterns.
+   *
+   * Checks for:
+   * - Dangerous commands (rm -rf, fork bombs, etc.)
+   * - Command injection patterns
+   * - Remote code execution attempts
+   *
+   * @param input - The command to validate
+   * @returns ValidationResult with command or error
+   */
+  command: (input: string): UnifiedValidationResult<string> => {
+    return validateCommand(input);
+  },
+
+  /**
+   * Check if a file path is safe (simple boolean check).
+   * Use validators.path() for detailed validation with options.
+   */
+  isPathSafe: (input: string): boolean => {
+    const result = validators.path(input);
+    return result.valid;
+  },
+
+  /**
+   * Check if a URL is safe (simple boolean check).
+   * Use validators.url() for detailed validation with options.
+   */
+  isUrlSafe: (input: string): boolean => {
+    const result = validators.url(input);
+    return result.valid;
+  },
+
+  /**
+   * Check if a string is valid JSON (simple boolean check).
+   */
+  isValidJson: (input: string): boolean => {
+    try {
+      JSON.parse(input);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+};

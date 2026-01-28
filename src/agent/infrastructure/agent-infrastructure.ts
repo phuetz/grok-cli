@@ -26,7 +26,7 @@ import type { RepairCoordinator } from '../execution/repair-coordinator.js';
 import type { EnhancedMemory, MemoryEntry, MemoryType } from '../../memory/index.js';
 import { getEnhancedMemory } from '../../memory/index.js';
 import { logger } from '../../utils/logger.js';
-import { getErrorMessage } from '../../types/errors.js';
+import { getErrorMessage } from '../../errors/index.js';
 
 // ============================================================================
 // Types

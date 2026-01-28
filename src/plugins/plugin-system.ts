@@ -11,6 +11,7 @@
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 export type PluginType = 'tool' | 'middleware' | 'theme' | 'integration';
 
@@ -104,7 +105,7 @@ export class PluginManager extends EventEmitter {
    * Get default plugin directories
    */
   private getDefaultPluginDirs(): string[] {
-    const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+    const homeDir = process.env.HOME || process.env.USERPROFILE || os.homedir();
     return [
       path.join(homeDir, '.codebuddy', 'plugins'),
       path.join(process.cwd(), '.codebuddy', 'plugins'),

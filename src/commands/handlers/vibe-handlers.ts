@@ -152,7 +152,7 @@ export async function handleTools(args: string[]): Promise<CommandHandlerResult>
   const lines: string[] = [];
 
   try {
-    const { CODEBUDDY_TOOLS } = await import('../../codebuddy/tools.js');
+    const { getAllCodeBuddyTools } = await import('../../codebuddy/tools.js');
     const {
       getToolFilter,
       setToolFilter,
@@ -161,10 +161,13 @@ export async function handleTools(args: string[]): Promise<CommandHandlerResult>
       parsePatterns,
     } = await import('../../utils/tool-filter.js');
 
+    // Use getAllCodeBuddyTools() instead of deprecated CODEBUDDY_TOOLS array
+    const allTools = await getAllCodeBuddyTools();
+
     switch (action) {
       case 'list': {
         const currentFilter = getToolFilter();
-        const result = filterTools(CODEBUDDY_TOOLS, currentFilter);
+        const result = filterTools(allTools, currentFilter);
 
         lines.push('Available Tools');
         lines.push('='.repeat(50));
@@ -236,7 +239,7 @@ export async function handleTools(args: string[]): Promise<CommandHandlerResult>
           disabledPatterns: [],
         });
 
-        const result = filterTools(CODEBUDDY_TOOLS, getToolFilter());
+        const result = filterTools(allTools, getToolFilter());
         lines.push(`Tool filter applied: ${result.filteredCount}/${result.originalCount} tools enabled`);
         lines.push('');
         lines.push('Enabled tools:');
@@ -247,7 +250,7 @@ export async function handleTools(args: string[]): Promise<CommandHandlerResult>
       case 'reset': {
         resetToolFilter();
         lines.push('Tool filter reset. All tools are now enabled.');
-        lines.push(`Total: ${CODEBUDDY_TOOLS.length} tools available`);
+        lines.push(`Total: ${allTools.length} tools available`);
         break;
       }
 

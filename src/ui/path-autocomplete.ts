@@ -10,6 +10,7 @@
 
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { homedir } from 'os';
 
 export interface PathSuggestion {
   path: string;
@@ -198,7 +199,8 @@ function parseInputPath(input: string, cwd: string): { directory: string; prefix
   // Handle home directory
   let normalizedInput = input;
   if (input.startsWith('~')) {
-    normalizedInput = path.join(process.env.HOME || '', input.slice(1));
+    const home = process.env.HOME || homedir();
+    normalizedInput = path.join(home, input.slice(1));
   }
 
   // Resolve relative paths
@@ -427,7 +429,7 @@ function formatSize(bytes: number): string {
  */
 export function completePath(input: string, suggestion: PathSuggestion): string {
   if (input.startsWith('~')) {
-    const home = process.env.HOME || '';
+    const home = process.env.HOME || homedir();
     const relativePath = suggestion.path.replace(home, '~');
     return relativePath;
   }

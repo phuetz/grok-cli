@@ -1,5 +1,6 @@
 import * as fs from "fs-extra";
 import * as path from "path";
+import os from "os";
 
 /**
  * Represents a user-defined custom command loaded from a file.
@@ -29,7 +30,7 @@ export class CustomCommandLoader {
   constructor() {
     this.projectCommandsDir = path.join(process.cwd(), ".codebuddy", "commands");
     this.globalCommandsDir = path.join(
-      process.env.HOME || process.env.USERPROFILE || "",
+      process.env.HOME || process.env.USERPROFILE || os.homedir(),
       ".codebuddy",
       "commands"
     );

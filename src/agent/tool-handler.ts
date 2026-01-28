@@ -40,7 +40,7 @@ import { CheckpointManager } from "../checkpoints/checkpoint-manager.js";
 import { HooksManager } from "../hooks/lifecycle-hooks.js";
 import { PluginMarketplace } from "../plugins/marketplace.js";
 import { getMCPManager } from "../codebuddy/tools.js";
-import { getErrorMessage } from "../types/errors.js";
+import { getErrorMessage } from "../errors/index.js";
 import { logger } from "../utils/logger.js";
 import { RepairCoordinator } from "./execution/repair-coordinator.js";
 

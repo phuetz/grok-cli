@@ -12,7 +12,7 @@ import type { TokenCounter } from '../../utils/token-counter.js';
 import type { ContextManagerV2 } from '../../context/context-manager-v2.js';
 import type { CodeBuddyMessage } from '../../codebuddy/client.js';
 import { getEnhancedMemory, EnhancedMemory, type MemoryEntry, type MemoryType } from '../../memory/index.js';
-import { getErrorMessage } from '../../types/errors.js';
+import { getErrorMessage } from '../../errors/index.js';
 import { logger } from '../../utils/logger.js';
 
 /**

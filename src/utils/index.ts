@@ -7,6 +7,7 @@
 
 // Core utilities - errors provides base error classes
 export {
+  // Base error classes
   CodeBuddyError,
   APIKeyError,
   APIError,
@@ -25,12 +26,20 @@ export {
   PathTraversalError,
   JSONParseError,
   LoopTimeoutError,
+  // User-friendly error classes for better UX
+  UserFriendlyError,
+  ModelNotFoundError,
+  ToolArgumentParseError,
+  ProviderNotAvailableError,
+  // Utility functions
   isCodeBuddyError,
   getErrorMessage,
   withTimeout,
   withRetry,
   createLoopGuard,
+  // Types
   type LoopGuardOptions,
+  type UserFriendlyErrorOptions,
 } from "./errors.js";
 
 // Logger
@@ -68,27 +77,57 @@ export {
   isPathSafe,
 } from "./path-validator.js";
 export {
+  // Core validation result type
   ValidationResult,
   ValidationOptions,
+  // String validators
   validateString,
   validateStringLength,
   validatePattern,
+  // Number validators
   validateNumber,
   validateNumberRange,
   validatePositiveInteger,
+  // Collection validators
   validateArray,
   validateObject,
   validateChoice,
   validateBoolean,
+  // Special validators
   validateUrl,
   validateEmail,
   validateFilePath,
+  // Composite validators
   validateOptional,
   validateWithDefault,
   validateSchema,
+  // Assertion helpers
   assertValid,
   assertString,
   assertNumber,
+  // Command validation
+  validateCommand,
+  sanitizeForShell,
+  // Path sanitization
+  sanitizeFilePath as sanitizeFilePathInput,
+  isPathSafeForWrite,
+  // URL sanitization
+  sanitizeUrl as sanitizeUrlInput,
+  isUrlSafe as isUrlSafeInput,
+  // Unified validators object (recommended API)
+  validators,
+  // Unified validation types
+  type UnifiedValidationResult,
+  type PathValidationOptions,
+  type UrlValidationOptions,
+  type JsonParseOptions,
+  type SanitizeOptions,
+  // Tool validation
+  VALIDATION_LIMITS,
+  TOOL_SCHEMAS,
+  validateToolArgs,
+  safeValidateToolArgs,
+  ToolValidationError,
 } from "./input-validator.js";
 
 // Settings and configuration

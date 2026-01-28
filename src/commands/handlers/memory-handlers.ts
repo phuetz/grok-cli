@@ -1,7 +1,7 @@
 import { ChatEntry } from "../../agent/codebuddy-agent.js";
 import { getEnhancedMemory } from "../../memory/index.js";
 import { getCommentWatcher } from "../../tools/comment-watcher.js";
-import { getErrorMessage } from "../../types/errors.js";
+import { getErrorMessage } from "../../errors/index.js";
 
 export interface CommandHandlerResult {
   handled: boolean;

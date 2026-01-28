@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import * as fs from "fs-extra";
 import * as path from "path";
+import os from "os";
 import { spawn, ChildProcess } from "child_process";
 import axios from "axios";
 import { getErrorMessage } from "../types/index.js";
@@ -28,7 +29,7 @@ export class VoiceInput extends EventEmitter {
     super();
     this.config = config;
     this.tempDir = path.join(
-      process.env.HOME || process.env.USERPROFILE || "/tmp",
+      process.env.HOME || process.env.USERPROFILE || os.homedir(),
       ".codebuddy",
       "voice"
     );

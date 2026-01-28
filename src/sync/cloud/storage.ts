@@ -8,6 +8,7 @@
 import { mkdir, readdir, stat, unlink, readFile, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'crypto';
+import { homedir } from 'os';
 // Note: pipeline reserved for streaming operations (future use)
 import type {
   CloudConfig,
@@ -127,7 +128,7 @@ export class LocalStorage extends CloudStorage {
 
   constructor(config: CloudConfig) {
     super(config);
-    this.basePath = config.endpoint || join(process.env.HOME || '', '.codebuddy', 'cloud');
+    this.basePath = config.endpoint || join(process.env.HOME || homedir(), '.codebuddy', 'cloud');
   }
 
   private getLocalPath(key: string): string {

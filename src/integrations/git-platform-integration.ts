@@ -12,6 +12,156 @@ import { EventEmitter } from 'events';
 import { execSync } from 'child_process';
 import { logger } from '../utils/logger';
 
+// ============================================
+// API Response Types for GitHub/GitLab
+// ============================================
+
+/** GitHub repository response */
+interface GitHubRepoResponse {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string | null;
+  html_url: string;
+  default_branch: string;
+  private: boolean;
+  language: string | null;
+  stargazers_count: number;
+  forks_count: number;
+}
+
+/** GitLab project response */
+interface GitLabRepoResponse {
+  id: number;
+  name: string;
+  path_with_namespace: string;
+  description: string | null;
+  web_url: string;
+  default_branch: string;
+  visibility: string;
+  repository_language: string | null;
+  star_count: number;
+  forks_count: number;
+}
+
+/** GitHub PR response */
+interface GitHubPRResponse {
+  id: number;
+  number: number;
+  title: string;
+  body: string | null;
+  state: string;
+  merged: boolean;
+  draft: boolean;
+  html_url: string;
+  created_at: string;
+  updated_at: string;
+  user: { login: string };
+  head: { ref: string };
+  base: { ref: string };
+  labels: Array<{ name: string }>;
+  requested_reviewers: Array<{ login: string }>;
+}
+
+/** GitLab MR response */
+interface GitLabMRResponse {
+  id: number;
+  iid: number;
+  title: string;
+  description: string | null;
+  state: string;
+  draft: boolean;
+  web_url: string;
+  created_at: string;
+  updated_at: string;
+  author: { username: string };
+  source_branch: string;
+  target_branch: string;
+  labels: string[];
+  reviewers: Array<{ username: string }>;
+}
+
+/** GitHub issue response */
+interface GitHubIssueResponse {
+  id: number;
+  number: number;
+  title: string;
+  body: string | null;
+  state: string;
+  html_url: string;
+  created_at: string;
+  updated_at: string;
+  user: { login: string };
+  labels: Array<{ name: string }>;
+  assignees: Array<{ login: string }>;
+  milestone: { title: string } | null;
+  pull_request?: unknown;
+}
+
+/** GitLab issue response */
+interface GitLabIssueResponse {
+  id: number;
+  iid: number;
+  title: string;
+  description: string | null;
+  state: string;
+  web_url: string;
+  created_at: string;
+  updated_at: string;
+  author: { username: string };
+  labels: string[];
+  assignees: Array<{ username: string }>;
+  milestone: { title: string } | null;
+}
+
+/** GitHub status response */
+interface GitHubStatusResponse {
+  statuses: Array<{
+    state: string;
+    context: string;
+    description: string | null;
+    target_url: string | null;
+    created_at: string;
+  }>;
+}
+
+/** GitLab pipeline response */
+interface GitLabPipelineResponse {
+  id: number;
+  status: string;
+  ref: string | null;
+  web_url: string | null;
+  created_at: string;
+}
+
+/** GitHub commit response */
+interface GitHubCommitResponse {
+  sha: string;
+  html_url: string;
+  commit: {
+    message: string;
+    author: {
+      name: string;
+      date: string;
+    };
+  };
+}
+
+/** GitLab commit response */
+interface GitLabCommitResponse {
+  id: string;
+  message: string;
+  author_name: string;
+  web_url: string;
+  created_at: string;
+}
+
+/** Union types for API responses */
+type RepoApiResponse = GitHubRepoResponse | GitLabRepoResponse;
+type PRApiResponse = GitHubPRResponse | GitLabMRResponse;
+type IssueApiResponse = GitHubIssueResponse | GitLabIssueResponse;
+type CommitApiResponse = GitHubCommitResponse | GitLabCommitResponse;
+
 export interface GitPlatformConfig {
   /** Platform type */
   platform: 'github' | 'gitlab' | 'auto';
@@ -187,34 +337,35 @@ export class GitPlatformIntegration extends EventEmitter {
       : `/projects/${encodeURIComponent(`${this.repoInfo.owner}/${this.repoInfo.repo}`)}`;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await this.apiRequest<any>('GET', endpoint);
+      const data = await this.apiRequest<RepoApiResponse>('GET', endpoint);
 
       if (this.detectedPlatform === 'github') {
+        const ghData = data as GitHubRepoResponse;
         return {
-          id: data.id,
-          name: data.name,
-          fullName: data.full_name,
-          description: data.description || '',
-          url: data.html_url,
-          defaultBranch: data.default_branch,
-          private: data.private,
-          language: data.language,
-          stars: data.stargazers_count,
-          forks: data.forks_count,
+          id: ghData.id,
+          name: ghData.name,
+          fullName: ghData.full_name,
+          description: ghData.description || '',
+          url: ghData.html_url,
+          defaultBranch: ghData.default_branch,
+          private: ghData.private,
+          language: ghData.language ?? undefined,
+          stars: ghData.stargazers_count,
+          forks: ghData.forks_count,
         };
       } else {
+        const glData = data as GitLabRepoResponse;
         return {
-          id: data.id,
-          name: data.name,
-          fullName: data.path_with_namespace,
-          description: data.description || '',
-          url: data.web_url,
-          defaultBranch: data.default_branch,
-          private: data.visibility === 'private',
-          language: data.repository_language,
-          stars: data.star_count,
-          forks: data.forks_count,
+          id: glData.id,
+          name: glData.name,
+          fullName: glData.path_with_namespace,
+          description: glData.description || '',
+          url: glData.web_url,
+          defaultBranch: glData.default_branch,
+          private: glData.visibility === 'private',
+          language: glData.repository_language ?? undefined,
+          stars: glData.star_count,
+          forks: glData.forks_count,
         };
       }
     } catch (error) {
@@ -234,10 +385,9 @@ export class GitPlatformIntegration extends EventEmitter {
       : `/projects/${encodeURIComponent(`${this.repoInfo.owner}/${this.repoInfo.repo}`)}/merge_requests?state=${state === 'all' ? 'all' : state === 'closed' ? 'merged' : 'opened'}`;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await this.apiRequest<any[]>('GET', endpoint);
+      const data = await this.apiRequest<PRApiResponse[]>('GET', endpoint);
 
-      return data.map((pr: Record<string, unknown>) => this.parsePullRequest(pr));
+      return data.map((pr) => this.parsePullRequest(pr as unknown as Record<string, unknown>));
     } catch (error) {
       logger.error('Failed to list pull requests', { error });
       return [];
@@ -255,9 +405,8 @@ export class GitPlatformIntegration extends EventEmitter {
       : `/projects/${encodeURIComponent(`${this.repoInfo.owner}/${this.repoInfo.repo}`)}/merge_requests/${number}`;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await this.apiRequest<any>('GET', endpoint);
-      return this.parsePullRequest(data);
+      const data = await this.apiRequest<PRApiResponse>('GET', endpoint);
+      return this.parsePullRequest(data as unknown as Record<string, unknown>);
     } catch (error) {
       logger.error('Failed to get pull request', { error });
       return null;
@@ -296,9 +445,8 @@ export class GitPlatformIntegration extends EventEmitter {
         };
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await this.apiRequest<any>('POST', endpoint, body);
-      return this.parsePullRequest(data);
+      const data = await this.apiRequest<PRApiResponse>('POST', endpoint, body);
+      return this.parsePullRequest(data as unknown as Record<string, unknown>);
     } catch (error) {
       logger.error('Failed to create pull request', { error });
       return null;
@@ -316,12 +464,15 @@ export class GitPlatformIntegration extends EventEmitter {
       : `/projects/${encodeURIComponent(`${this.repoInfo.owner}/${this.repoInfo.repo}`)}/issues?state=${state === 'all' ? '' : state === 'closed' ? 'closed' : 'opened'}`;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await this.apiRequest<any[]>('GET', endpoint);
+      const data = await this.apiRequest<IssueApiResponse[]>('GET', endpoint);
 
       return data
-        .filter((issue: Record<string, unknown>) => !issue.pull_request) // GitHub includes PRs in issues
-        .map((issue: Record<string, unknown>) => this.parseIssue(issue));
+        .filter((issue) => {
+          // GitHub includes PRs in issues
+          const ghIssue = issue as GitHubIssueResponse;
+          return !ghIssue.pull_request;
+        })
+        .map((issue) => this.parseIssue(issue as unknown as Record<string, unknown>));
     } catch (error) {
       logger.error('Failed to list issues', { error });
       return [];
@@ -358,9 +509,8 @@ export class GitPlatformIntegration extends EventEmitter {
         };
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await this.apiRequest<any>('POST', endpoint, body);
-      return this.parseIssue(data);
+      const data = await this.apiRequest<IssueApiResponse>('POST', endpoint, body);
+      return this.parseIssue(data as unknown as Record<string, unknown>);
     } catch (error) {
       logger.error('Failed to create issue', { error });
       return null;
@@ -378,24 +528,23 @@ export class GitPlatformIntegration extends EventEmitter {
       : `/projects/${encodeURIComponent(`${this.repoInfo.owner}/${this.repoInfo.repo}`)}/pipelines?sha=${sha}`;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await this.apiRequest<any>('GET', endpoint);
-
       if (this.detectedPlatform === 'github') {
-        return (data.statuses || []).map((status: Record<string, unknown>) => ({
-          state: this.mapState(status.state as string),
-          context: status.context as string,
-          description: status.description as string || '',
-          url: status.target_url as string,
-          createdAt: new Date(status.created_at as string),
+        const data = await this.apiRequest<GitHubStatusResponse>('GET', endpoint);
+        return (data.statuses || []).map((status) => ({
+          state: this.mapState(status.state),
+          context: status.context,
+          description: status.description || '',
+          url: status.target_url ?? undefined,
+          createdAt: new Date(status.created_at),
         }));
       } else {
-        return data.map((pipeline: Record<string, unknown>) => ({
-          state: this.mapState(pipeline.status as string),
+        const data = await this.apiRequest<GitLabPipelineResponse[]>('GET', endpoint);
+        return data.map((pipeline) => ({
+          state: this.mapState(pipeline.status),
           context: `Pipeline #${pipeline.id}`,
-          description: pipeline.ref as string || '',
-          url: pipeline.web_url as string,
-          createdAt: new Date(pipeline.created_at as string),
+          description: pipeline.ref || '',
+          url: pipeline.web_url ?? undefined,
+          createdAt: new Date(pipeline.created_at),
         }));
       }
     } catch (error) {
@@ -416,27 +565,26 @@ export class GitPlatformIntegration extends EventEmitter {
       : `/projects/${encodeURIComponent(`${this.repoInfo.owner}/${this.repoInfo.repo}`)}/repository/commits?ref_name=${branch || ''}&per_page=${limit}`;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await this.apiRequest<any[]>('GET', endpoint);
+      const data = await this.apiRequest<CommitApiResponse[]>('GET', endpoint);
 
-      return data.map((commit: Record<string, unknown>) => {
+      return data.map((commit) => {
         if (this.detectedPlatform === 'github') {
-          const c = commit.commit as Record<string, unknown>;
-          const author = c.author as Record<string, unknown>;
+          const ghCommit = commit as GitHubCommitResponse;
           return {
-            sha: commit.sha as string,
-            message: c.message as string,
-            author: author.name as string,
-            date: new Date(author.date as string),
-            url: commit.html_url as string,
+            sha: ghCommit.sha,
+            message: ghCommit.commit.message,
+            author: ghCommit.commit.author.name,
+            date: new Date(ghCommit.commit.author.date),
+            url: ghCommit.html_url,
           };
         } else {
+          const glCommit = commit as GitLabCommitResponse;
           return {
-            sha: commit.id as string,
-            message: commit.message as string,
-            author: commit.author_name as string,
-            date: new Date(commit.created_at as string),
-            url: commit.web_url as string,
+            sha: glCommit.id,
+            message: glCommit.message,
+            author: glCommit.author_name,
+            date: new Date(glCommit.created_at),
+            url: glCommit.web_url,
           };
         }
       });

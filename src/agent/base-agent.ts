@@ -16,7 +16,7 @@ import type { HooksManager } from "../hooks/lifecycle-hooks.js";
 import { ModelRouter, RoutingDecision } from "../optimization/model-routing.js";
 import type { PluginMarketplace } from "../plugins/marketplace.js";
 import { getEnhancedMemory, EnhancedMemory, type MemoryEntry, type MemoryType } from "../memory/index.js";
-import { getErrorMessage } from "../types/errors.js";
+import { getErrorMessage } from "../errors/index.js";
 import type { RepairCoordinator } from "./execution/repair-coordinator.js";
 import { logger } from "../utils/logger.js";
 

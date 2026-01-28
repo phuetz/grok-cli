@@ -362,14 +362,24 @@ export type FCSPrimitive = string | number | boolean | null | undefined;
  * Implementations should validate arguments at runtime.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic scripting runtime
-export type FCSFunction = (...args: any[]) => any;
+export type FCSFunction = (...args: FCSValue[]) => FCSValue | Promise<FCSValue> | any;
+
+/**
+ * Object type for FCS runtime values
+ */
+export type FCSObject = { [key: string]: FCSValue };
+
+/**
+ * Array type for FCS runtime values
+ */
+export type FCSArray = FCSValue[];
 
 /**
  * Dynamic value type for the FCS runtime.
  * Uses a union of known types for better type safety.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic scripting where types are determined at runtime
-export type FCSValue = FCSPrimitive | FCSFunction | Record<string, any> | any[];
+export type FCSValue = FCSPrimitive | FCSFunction | FCSObject | FCSArray | any;
 
 export interface FCSContext {
   variables: Map<string, FCSValue>;

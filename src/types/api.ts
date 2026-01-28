@@ -202,6 +202,44 @@ export function isToolCall(value: unknown): value is ToolCall {
 }
 
 /**
+ * Error thrown when tool argument parsing fails
+ */
+export class ToolArgumentParseError extends Error {
+  public readonly toolName: string;
+  public readonly rawArguments: string;
+  public readonly parseError: string;
+
+  constructor(options: {
+    toolName: string;
+    rawArguments: string;
+    parseError: string;
+  }) {
+    const truncatedArgs = options.rawArguments.length > 200
+      ? options.rawArguments.substring(0, 200) + '...'
+      : options.rawArguments;
+
+    super(
+      `Failed to parse arguments for tool "${options.toolName}"\n` +
+      `Parse error: ${options.parseError}\n` +
+      `Raw arguments: ${truncatedArgs}\n\n` +
+      `Suggestion: The AI model may have provided malformed JSON. Try rephrasing your request.`
+    );
+
+    this.name = 'ToolArgumentParseError';
+    this.toolName = options.toolName;
+    this.rawArguments = options.rawArguments;
+    this.parseError = options.parseError;
+  }
+
+  /**
+   * Format the error for display to the user
+   */
+  format(): string {
+    return this.message;
+  }
+}
+
+/**
  * Parse tool call arguments safely
  */
 export function parseToolArguments<T = Record<string, unknown>>(
@@ -215,7 +253,11 @@ export function parseToolArguments<T = Record<string, unknown>>(
       arguments: args,
     };
   } catch (error) {
-    throw new Error(`Failed to parse tool arguments: ${error}`);
+    throw new ToolArgumentParseError({
+      toolName: toolCall.function.name,
+      rawArguments: toolCall.function.arguments,
+      parseError: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 

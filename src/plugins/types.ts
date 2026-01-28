@@ -1,6 +1,64 @@
 import { ToolRegistration } from '../tools/tool-manager.js';
 import { SlashCommand } from '../commands/slash-commands.js';
 import { Logger } from '../utils/logger.js';
+import type { LLMMessage } from '../providers/types.js';
+
+/**
+ * Plugin Provider Type
+ * Defines the category of capability a provider offers
+ */
+export type PluginProviderType = 'llm' | 'embedding' | 'search';
+
+/**
+ * Plugin Provider Interface
+ * Allows plugins to provide additional capabilities (e.g., LLM providers, embedding services)
+ */
+export interface PluginProvider {
+  /** Unique identifier for this provider */
+  id: string;
+  /** Human-readable name */
+  name: string;
+  /** Type of provider capability */
+  type: PluginProviderType;
+  /** Priority for provider selection (higher = preferred, default: 0) */
+  priority?: number;
+  /** Provider-specific configuration */
+  config?: Record<string, unknown>;
+
+  /** Initialize the provider (called once during registration) */
+  initialize(): Promise<void>;
+
+  /** Shutdown the provider (called during cleanup) */
+  shutdown?(): Promise<void>;
+
+  // LLM provider methods (required when type === 'llm')
+  /** Chat completion with message history */
+  chat?(messages: LLMMessage[]): Promise<string>;
+  /** Simple text completion */
+  complete?(prompt: string): Promise<string>;
+
+  // Embedding provider methods (required when type === 'embedding')
+  /** Generate embeddings for text */
+  embed?(text: string | string[]): Promise<number[] | number[][]>;
+
+  // Search provider methods (required when type === 'search')
+  /** Search for documents matching a query */
+  search?(query: string, options?: { limit?: number; filters?: Record<string, unknown> }): Promise<SearchResult[]>;
+}
+
+/**
+ * Search result from a search provider
+ */
+export interface SearchResult {
+  /** Unique identifier for the result */
+  id: string;
+  /** Content or snippet of the result */
+  content: string;
+  /** Relevance score (0-1) */
+  score: number;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
 
 /**
  * Plugin Configuration Schema
@@ -76,8 +134,8 @@ export interface PluginContext {
   /** Register a slash command */
   registerCommand(command: SlashCommand): void;
   
-  /** Register a provider (e.g., for LLMs) */
-  registerProvider(provider: unknown): void; // TODO: Define Provider interface
+  /** Register a provider (e.g., for LLMs, embeddings, search) */
+  registerProvider(provider: PluginProvider): void;
   
   /** Path to plugin's data directory */
   dataDir: string;

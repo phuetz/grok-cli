@@ -42,21 +42,48 @@ import {
   CatchClause,
 } from './types.js';
 import { tokenize as lexerTokenize } from './lexer.js';
-import { createLoopGuard } from '../utils/errors.js';
+import { createLoopGuard, LoopTimeoutError } from '../utils/errors.js';
+
+/** Maximum recursion depth for recursive descent parsing */
+const MAX_RECURSION_DEPTH = 500;
 
 export class FCSParser {
   private tokens: Token[];
   private current = 0;
+  private recursionDepth = 0;
 
   constructor(tokens: Token[]) {
     // Filter out comments
     this.tokens = tokens.filter(t => t.type !== TokenType.Comment);
   }
 
+  /**
+   * Track recursion depth to prevent stack overflow on deeply nested input
+   */
+  private enterRecursion(context: string): void {
+    this.recursionDepth++;
+    if (this.recursionDepth > MAX_RECURSION_DEPTH) {
+      throw new LoopTimeoutError(
+        `Maximum recursion depth exceeded in ${context}. Input may be too deeply nested or malformed.`,
+        MAX_RECURSION_DEPTH,
+        context
+      );
+    }
+  }
+
+  private exitRecursion(): void {
+    this.recursionDepth--;
+  }
+
   parse(): Program {
     const statements: AstNode[] = [];
+    const guard = createLoopGuard({
+      maxIterations: 100000,
+      context: 'FCS program parsing',
+    });
 
     while (!this.isAtEnd()) {
+      guard();
       this.skipNewlines();
       if (this.isAtEnd()) break;
 
@@ -76,10 +103,16 @@ export class FCSParser {
   // ============================================
 
   private parseDeclaration(): AstNode | null {
+    this.enterRecursion('parseDeclaration');
     try {
       // Check for decorators
       const decorators: string[] = [];
+      const decoratorGuard = createLoopGuard({
+        maxIterations: 1000,
+        context: 'FCS decorator parsing',
+      });
       while (this.match(TokenType.Decorator)) {
+        decoratorGuard();
         decorators.push(this.previous().value);
       }
 
@@ -104,9 +137,15 @@ export class FCSParser {
       }
 
       return this.parseStatement();
-    } catch (_error) {
+    } catch (error) {
+      // Re-throw recursion/loop errors without synchronizing
+      if (error instanceof LoopTimeoutError) {
+        throw error;
+      }
       this.synchronize();
       return null;
+    } finally {
+      this.exitRecursion();
     }
   }
 
@@ -219,7 +258,12 @@ export class FCSParser {
     this.consume(TokenType.LeftBrace, "Expected '{' before class body");
 
     const members: AstNode[] = [];
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'FCS class body parsing',
+    });
     while (!this.check(TokenType.RightBrace) && !this.isAtEnd()) {
+      guard();
       this.skipNewlines();
       if (this.check(TokenType.RightBrace)) break;
 
@@ -310,8 +354,13 @@ export class FCSParser {
 
   private parseBlockStatement(): BlockStmt {
     const statements: AstNode[] = [];
+    const guard = createLoopGuard({
+      maxIterations: 100000,
+      context: 'FCS block statement parsing',
+    });
 
     while (!this.check(TokenType.RightBrace) && !this.isAtEnd()) {
+      guard();
       this.skipNewlines();
       if (this.check(TokenType.RightBrace)) break;
 
@@ -358,7 +407,12 @@ export class FCSParser {
     const tryBlock = this.parseBlockStatement();
 
     const catchClauses: CatchClause[] = [];
+    const catchGuard = createLoopGuard({
+      maxIterations: 1000,
+      context: 'FCS catch clause parsing',
+    });
     while (this.matchKeyword('catch')) {
+      catchGuard();
       let variable: string | undefined;
       let type: string | undefined;
 
@@ -539,7 +593,12 @@ export class FCSParser {
   private parsePipeline(): AstNode {
     let expr = this.parseLogicalOr();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'FCS pipeline expression parsing',
+    });
     while (this.match(TokenType.Pipeline)) {
+      guard();
       const right = this.parseLogicalOr();
 
       // Transform pipeline: expr |> func => func(expr)
@@ -564,7 +623,12 @@ export class FCSParser {
   private parseLogicalOr(): AstNode {
     let expr = this.parseLogicalAnd();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'FCS logical OR expression parsing',
+    });
     while (this.match(TokenType.Or)) {
+      guard();
       const operator = this.previous().type;
       const right = this.parseLogicalAnd();
       expr = { type: 'Binary', left: expr, operator, right } as BinaryExpr;
@@ -576,7 +640,12 @@ export class FCSParser {
   private parseLogicalAnd(): AstNode {
     let expr = this.parseEquality();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'FCS logical AND expression parsing',
+    });
     while (this.match(TokenType.And)) {
+      guard();
       const operator = this.previous().type;
       const right = this.parseEquality();
       expr = { type: 'Binary', left: expr, operator, right } as BinaryExpr;
@@ -588,7 +657,12 @@ export class FCSParser {
   private parseEquality(): AstNode {
     let expr = this.parseComparison();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'FCS equality expression parsing',
+    });
     while (this.match(TokenType.Equal, TokenType.NotEqual)) {
+      guard();
       const operator = this.previous().type;
       const right = this.parseComparison();
       expr = { type: 'Binary', left: expr, operator, right } as BinaryExpr;
@@ -600,7 +674,12 @@ export class FCSParser {
   private parseComparison(): AstNode {
     let expr = this.parseAddition();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'FCS comparison expression parsing',
+    });
     while (this.match(TokenType.Less, TokenType.Greater, TokenType.LessEqual, TokenType.GreaterEqual)) {
+      guard();
       const operator = this.previous().type;
       const right = this.parseAddition();
       expr = { type: 'Binary', left: expr, operator, right } as BinaryExpr;
@@ -612,7 +691,12 @@ export class FCSParser {
   private parseAddition(): AstNode {
     let expr = this.parseMultiplication();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'FCS addition expression parsing',
+    });
     while (this.match(TokenType.Plus, TokenType.Minus)) {
+      guard();
       const operator = this.previous().type;
       const right = this.parseMultiplication();
       expr = { type: 'Binary', left: expr, operator, right } as BinaryExpr;
@@ -624,7 +708,12 @@ export class FCSParser {
   private parseMultiplication(): AstNode {
     let expr = this.parsePower();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'FCS multiplication expression parsing',
+    });
     while (this.match(TokenType.Multiply, TokenType.Divide, TokenType.Modulo)) {
+      guard();
       const operator = this.previous().type;
       const right = this.parsePower();
       expr = { type: 'Binary', left: expr, operator, right } as BinaryExpr;
@@ -792,8 +881,13 @@ export class FCSParser {
   private parseStringInterpolation(value: string): InterpolationExpr {
     const parts: AstNode[] = [];
     let current = 0;
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'FCS string interpolation parsing',
+    });
 
     while (current < value.length) {
+      guard();
       const start = value.indexOf('${', current);
       if (start === -1) {
         if (current < value.length) {
@@ -949,7 +1043,12 @@ export class FCSParser {
   }
 
   private skipNewlines(): void {
+    const guard = createLoopGuard({
+      maxIterations: 100000,
+      context: 'FCS newline skipping',
+    });
     while (this.match(TokenType.Newline)) {
+      guard();
       // Skip
     }
   }
@@ -957,7 +1056,12 @@ export class FCSParser {
   private synchronize(): void {
     this.advance();
 
+    const guard = createLoopGuard({
+      maxIterations: 100000,
+      context: 'FCS error synchronization',
+    });
     while (!this.isAtEnd()) {
+      guard();
       if (this.previous().type === TokenType.Semicolon) return;
       if (this.previous().type === TokenType.Newline) return;
 

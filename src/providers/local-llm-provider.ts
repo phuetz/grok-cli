@@ -16,6 +16,7 @@ import * as os from 'os';
 import { logger } from '../utils/logger.js';
 import { retry, RetryStrategies, RetryPredicates } from '../utils/retry.js';
 import { safeStreamRead, handleStreamError } from '../utils/stream-helpers.js';
+import { UserFriendlyError, ModelNotFoundError, ProviderNotAvailableError } from '../utils/errors.js';
 
 // ============================================================================
 // Types
@@ -154,11 +155,15 @@ export class NodeLlamaCppProvider extends EventEmitter implements LocalLLMProvid
     const modelPath = config.modelPath || path.join(this.modelsDir, 'llama-3.1-8b-q4_k_m.gguf');
 
     if (!await fs.pathExists(modelPath)) {
-      throw new Error(
-        `Model not found at ${modelPath}.\n` +
-        `Download a GGUF model from https://huggingface.co/models?search=gguf\n` +
-        `Example: wget -P ~/.codebuddy/models/ https://huggingface.co/lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf`
-      );
+      // Get available models for helpful error message
+      const availableModels = await this.getModels();
+
+      throw new ModelNotFoundError({
+        model: path.basename(modelPath),
+        provider: 'local-llama',
+        availableModels: availableModels.length > 0 ? availableModels : undefined,
+        downloadCommand: `wget -P ~/.codebuddy/models/ https://huggingface.co/lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf`,
+      });
     }
 
     try {
@@ -167,11 +172,11 @@ export class NodeLlamaCppProvider extends EventEmitter implements LocalLLMProvid
       const nodeLlamaCpp = await import('node-llama-cpp').catch(() => null);
 
       if (!nodeLlamaCpp) {
-        throw new Error(
-          'node-llama-cpp is not installed.\n' +
-          'Install with: npm install node-llama-cpp\n' +
-          'Note: Requires CMake and a C++ compiler for native bindings.'
-        );
+        throw new ProviderNotAvailableError({
+          provider: 'node-llama-cpp',
+          reason: 'Package not installed',
+          installCommand: 'npm install node-llama-cpp',
+        });
       }
 
       const { LlamaModel, LlamaContext } = nodeLlamaCpp;
@@ -359,11 +364,11 @@ export class WebLLMProvider extends EventEmitter implements LocalLLMProvider {
       const webllm = await import('@mlc-ai/web-llm').catch(() => null);
 
       if (!webllm) {
-        throw new Error(
-          'WebLLM is not installed.\n' +
-          'Install with: npm install @mlc-ai/web-llm\n' +
-          'Note: WebLLM requires WebGPU support (browser or Electron).'
-        );
+        throw new ProviderNotAvailableError({
+          provider: 'WebLLM',
+          reason: 'Package not installed. Note: WebLLM requires WebGPU support (browser or Electron)',
+          installCommand: 'npm install @mlc-ai/web-llm',
+        });
       }
 
       const model = config.model || 'Llama-3.1-8B-Instruct-q4f16_1-MLC';
@@ -511,11 +516,12 @@ export class OllamaProvider extends EventEmitter implements LocalLLMProvider {
     // Check if Ollama is running
     const available = await this.isAvailable();
     if (!available) {
-      throw new Error(
-        'Ollama is not running.\n' +
-        'Start Ollama with: ollama serve\n' +
-        'Or install from: https://ollama.com'
-      );
+      throw new ProviderNotAvailableError({
+        provider: 'Ollama',
+        reason: 'Server not running or not reachable',
+        startCommand: 'ollama serve',
+        installCommand: 'Install from https://ollama.com',
+      });
     }
 
     // Check if model is available
@@ -720,7 +726,12 @@ export class OllamaProvider extends EventEmitter implements LocalLLMProvider {
 
     const reader = response.body?.getReader();
     if (!reader) {
-      throw new Error('Ollama returned an empty response body. Check if the Ollama server is running correctly.');
+      throw new UserFriendlyError({
+        message: 'Ollama returned an empty response body',
+        suggestion: 'Check if the Ollama server is running correctly with: ollama list',
+        docs: 'https://docs.codebuddy.dev/providers/ollama#troubleshooting',
+        context: { endpoint: this.endpoint, model },
+      });
     }
 
     const decoder = new TextDecoder();

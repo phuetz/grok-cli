@@ -556,6 +556,8 @@ export class ModelHub extends EventEmitter {
       fileStream.end();
       fs.unlinkSync(filePath); // Clean up partial download
       throw error;
+    } finally {
+      reader.releaseLock();
     }
   }
 

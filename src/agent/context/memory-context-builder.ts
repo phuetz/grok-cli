@@ -13,7 +13,7 @@
 
 import { EventEmitter } from "events";
 import { logger } from "../../utils/logger.js";
-import { getErrorMessage } from "../../types/errors.js";
+import { getErrorMessage } from "../../errors/index.js";
 import {
   EnhancedMemory,
   getEnhancedMemory,

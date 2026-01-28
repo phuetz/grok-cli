@@ -36,6 +36,7 @@ export {
 // Convenience Functions
 // ============================================================================
 
+import { homedir } from 'os';
 import type { CloudConfig, SyncConfig, BackupConfig } from './types.js';
 import { createSyncManager } from './sync-manager.js';
 import { createBackupManager } from './backup-manager.js';
@@ -119,7 +120,7 @@ export function createLocalConfig(basePath?: string): CloudConfig {
   return {
     provider: 'local',
     bucket: 'local',
-    endpoint: basePath || process.env.HOME + '/.codebuddy/cloud',
+    endpoint: basePath || (process.env.HOME || homedir()) + '/.codebuddy/cloud',
   };
 }
 

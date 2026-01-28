@@ -8,12 +8,13 @@ import { Queue, QueueOptions } from './queue';
 import { PriorityQueue, PriorityQueueOptions } from './priority-queue';
 import { PersistentQueue, PersistentQueueOptions } from './persistent-queue';
 
-// Singleton instances - use 'unknown' as base type for storage
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Singleton instances - stored with 'any' type for generic singleton pattern
+// Type assertions are used when returning typed versions to callers
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for generic singleton pattern
 let queueInstance: Queue<any> | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for generic singleton pattern
 let priorityQueueInstance: PriorityQueue<any> | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for generic singleton pattern
 let persistentQueueInstance: PersistentQueue<any> | null = null;
 
 /**

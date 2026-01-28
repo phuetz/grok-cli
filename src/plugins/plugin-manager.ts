@@ -9,6 +9,8 @@ import {
   PluginStatus,
   PluginMetadata,
   PluginIsolationConfig,
+  PluginProvider,
+  PluginProviderType,
   validateManifest,
   validatePluginConfig,
 } from './types.js';
@@ -17,26 +19,8 @@ import { getSlashCommandManager, SlashCommand } from '../commands/slash-commands
 import { createLogger, Logger } from '../utils/logger.js';
 import { IsolatedPluginRunner, createIsolatedPluginRunner } from './isolated-plugin-runner.js';
 
-/**
- * Plugin Provider interface
- * Allows plugins to provide additional capabilities (e.g., LLM providers, storage backends)
- */
-export interface PluginProvider {
-  /** Unique identifier for this provider */
-  id: string;
-  /** Type of provider (e.g., 'llm', 'storage', 'auth') */
-  type: string;
-  /** Human-readable name */
-  name: string;
-  /** Priority for provider selection (higher = preferred) */
-  priority?: number;
-  /** Provider-specific configuration */
-  config?: Record<string, unknown>;
-  /** Initialize the provider */
-  initialize?(): Promise<void>;
-  /** Shutdown the provider */
-  shutdown?(): Promise<void>;
-}
+// Re-export PluginProvider for backward compatibility
+export type { PluginProvider } from './types.js';
 
 export interface PluginManagerConfig {
   pluginDir: string;
@@ -72,10 +56,12 @@ export class PluginManager extends EventEmitter {
    */
   async discover(): Promise<void> {
     this.logger.debug(`Discovering plugins in ${this.config.pluginDir}`);
-    
+    this.emit('plugins:discovering', { pluginDir: this.config.pluginDir });
+
     if (!await fs.pathExists(this.config.pluginDir)) {
       this.logger.debug('Plugin directory does not exist, creating...');
       await fs.ensureDir(this.config.pluginDir);
+      this.emit('plugins:discovered', { total: 0, loaded: 0, failed: 0 });
       return;
     }
 
@@ -83,11 +69,27 @@ export class PluginManager extends EventEmitter {
 
     // Load all plugins in parallel for faster startup
     const directories = entries.filter(entry => entry.isDirectory());
-    await Promise.allSettled(
-      directories.map(entry =>
-        this.loadPlugin(path.join(this.config.pluginDir, entry.name))
-      )
+    const total = directories.length;
+
+    this.emit('plugins:loading', { total, phase: 'starting' });
+
+    const results = await Promise.allSettled(
+      directories.map(async (entry, index) => {
+        const pluginPath = path.join(this.config.pluginDir, entry.name);
+        this.emit('plugins:progress', {
+          current: index + 1,
+          total,
+          pluginName: entry.name,
+          phase: 'loading',
+        });
+        return this.loadPlugin(pluginPath);
+      })
     );
+
+    const loaded = results.filter(r => r.status === 'fulfilled' && r.value === true).length;
+    const failed = total - loaded;
+
+    this.emit('plugins:discovered', { total, loaded, failed });
   }
 
   /**
@@ -285,11 +287,13 @@ export class PluginManager extends EventEmitter {
   async activatePlugin(id: string): Promise<boolean> {
     const metadata = this.plugins.get(id);
     if (!metadata) {
+      this.logger.warn(`Cannot activate plugin "${id}": not found`);
       return false;
     }
 
     // For non-isolated plugins, we need an instance
     if (!metadata.isolated && !metadata.instance) {
+      this.logger.warn(`Cannot activate plugin "${id}": no instance (non-isolated mode)`);
       return false;
     }
 
@@ -297,15 +301,37 @@ export class PluginManager extends EventEmitter {
       return true;
     }
 
+    this.emit('plugin:activating', {
+      id,
+      name: metadata.manifest.name,
+      isolated: metadata.isolated,
+    });
+
     try {
       if (metadata.isolated) {
         // Activate in isolated Worker Thread
+        this.emit('plugin:progress', {
+          id,
+          phase: 'initializing-worker',
+          message: `Starting isolated worker for ${metadata.manifest.name}...`,
+        });
         await this.activateIsolatedPlugin(metadata);
       } else {
         // Legacy: activate in main thread
         // Load plugin-specific configuration
+        this.emit('plugin:progress', {
+          id,
+          phase: 'loading-config',
+          message: `Loading configuration for ${metadata.manifest.name}...`,
+        });
         const pluginConfig = await this.loadPluginConfig(metadata.manifest);
         const context = this.createPluginContext(metadata, pluginConfig);
+
+        this.emit('plugin:progress', {
+          id,
+          phase: 'activating',
+          message: `Activating ${metadata.manifest.name}...`,
+        });
         await metadata.instance!.activate(context);
       }
 
@@ -318,6 +344,11 @@ export class PluginManager extends EventEmitter {
       metadata.status = PluginStatus.ERROR;
       metadata.error = error as Error;
       this.plugins.set(id, metadata);
+      this.emit('plugin:activation-failed', {
+        id,
+        name: metadata.manifest.name,
+        error: error instanceof Error ? error.message : String(error),
+      });
       this.logger.error(`Failed to activate plugin ${id}`, error as Error);
       return false;
     }
@@ -346,6 +377,15 @@ export class PluginManager extends EventEmitter {
       this.logger.debug(`Isolated plugin ${metadata.manifest.id} registering command: ${command.name}`);
       const manager = getSlashCommandManager();
       manager['commands'].set(command.name, command);
+    });
+
+    runner.on('register-provider', async (provider: PluginProvider) => {
+      this.logger.debug(`Isolated plugin ${metadata.manifest.id} registering provider: ${provider.name}`);
+      try {
+        await this.registerProvider(provider, metadata.manifest.id);
+      } catch (error) {
+        this.logger.error(`Failed to register provider from isolated plugin ${metadata.manifest.id}:`, error as Error);
+      }
     });
 
     runner.on('error', (error: Error) => {
@@ -449,11 +489,182 @@ export class PluginManager extends EventEmitter {
         manager['commands'].set(command.name, command); 
       },
       
-      registerProvider: (_provider) => {
-        // TODO: Implement provider registration
-        this.logger.warn(`Plugin ${metadata.manifest.id} tried to register provider (not implemented)`);
+      registerProvider: (provider) => {
+        this.registerProvider(provider, metadata.manifest.id);
       }
     };
+  }
+
+  /**
+   * Validate that a provider has the required methods based on its type
+   */
+  private validateProvider(provider: PluginProvider): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    // Check required base fields
+    if (!provider.id || typeof provider.id !== 'string') {
+      errors.push('Provider must have a valid id (string)');
+    }
+    if (!provider.name || typeof provider.name !== 'string') {
+      errors.push('Provider must have a valid name (string)');
+    }
+    if (!provider.type || !['llm', 'embedding', 'search'].includes(provider.type)) {
+      errors.push('Provider must have a valid type (llm, embedding, or search)');
+    }
+    if (typeof provider.initialize !== 'function') {
+      errors.push('Provider must have an initialize() method');
+    }
+
+    // Validate type-specific methods
+    switch (provider.type) {
+      case 'llm':
+        if (typeof provider.chat !== 'function' && typeof provider.complete !== 'function') {
+          errors.push('LLM provider must have at least chat() or complete() method');
+        }
+        break;
+      case 'embedding':
+        if (typeof provider.embed !== 'function') {
+          errors.push('Embedding provider must have an embed() method');
+        }
+        break;
+      case 'search':
+        if (typeof provider.search !== 'function') {
+          errors.push('Search provider must have a search() method');
+        }
+        break;
+    }
+
+    return { valid: errors.length === 0, errors };
+  }
+
+  /**
+   * Register a provider from a plugin
+   *
+   * @param provider - The provider to register
+   * @param pluginId - Optional: the ID of the plugin registering this provider
+   * @throws Error if provider validation fails
+   */
+  async registerProvider(provider: PluginProvider, pluginId?: string): Promise<void> {
+    const source = pluginId ? `plugin ${pluginId}` : 'unknown source';
+
+    // Validate the provider
+    const validation = this.validateProvider(provider);
+    if (!validation.valid) {
+      const errorMsg = `Invalid provider from ${source}: ${validation.errors.join(', ')}`;
+      this.logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    // Check for duplicate provider ID
+    if (this.providers.has(provider.id)) {
+      const errorMsg = `Provider with id '${provider.id}' is already registered`;
+      this.logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    this.logger.debug(`Registering provider '${provider.name}' (${provider.id}) of type '${provider.type}' from ${source}`);
+
+    try {
+      // Initialize the provider
+      await provider.initialize();
+
+      // Store the provider
+      this.providers.set(provider.id, provider);
+
+      // Index by type for easy lookup
+      const typeProviders = this.providersByType.get(provider.type) ?? [];
+      typeProviders.push(provider);
+      // Sort by priority (higher priority first)
+      typeProviders.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+      this.providersByType.set(provider.type, typeProviders);
+
+      this.logger.info(`Registered provider: ${provider.name} (${provider.id}) [type: ${provider.type}]`);
+
+      // Emit event for external listeners
+      this.emit('plugin:provider-registered', {
+        id: provider.id,
+        name: provider.name,
+        type: provider.type,
+        priority: provider.priority ?? 0,
+        pluginId
+      });
+    } catch (error) {
+      const errorMsg = `Failed to initialize provider '${provider.id}' from ${source}: ${error instanceof Error ? error.message : String(error)}`;
+      this.logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+  }
+
+  /**
+   * Unregister a provider
+   *
+   * @param providerId - The ID of the provider to unregister
+   */
+  async unregisterProvider(providerId: string): Promise<boolean> {
+    const provider = this.providers.get(providerId);
+    if (!provider) {
+      this.logger.warn(`Cannot unregister provider '${providerId}': not found`);
+      return false;
+    }
+
+    try {
+      // Call shutdown if available
+      if (provider.shutdown) {
+        await provider.shutdown();
+      }
+
+      // Remove from main map
+      this.providers.delete(providerId);
+
+      // Remove from type index
+      const typeProviders = this.providersByType.get(provider.type);
+      if (typeProviders) {
+        const index = typeProviders.findIndex(p => p.id === providerId);
+        if (index !== -1) {
+          typeProviders.splice(index, 1);
+        }
+        if (typeProviders.length === 0) {
+          this.providersByType.delete(provider.type);
+        }
+      }
+
+      this.logger.info(`Unregistered provider: ${provider.name} (${providerId})`);
+      this.emit('plugin:provider-unregistered', { id: providerId, type: provider.type });
+      return true;
+    } catch (error) {
+      this.logger.error(`Error unregistering provider '${providerId}': ${error instanceof Error ? error.message : String(error)}`);
+      return false;
+    }
+  }
+
+  /**
+   * Get a provider by ID
+   */
+  getProvider(id: string): PluginProvider | undefined {
+    return this.providers.get(id);
+  }
+
+  /**
+   * Get all providers of a specific type
+   * Returns providers sorted by priority (highest first)
+   */
+  getProvidersByType(type: PluginProviderType): PluginProvider[] {
+    return this.providersByType.get(type) ?? [];
+  }
+
+  /**
+   * Get all registered providers
+   */
+  getAllProviders(): PluginProvider[] {
+    return Array.from(this.providers.values());
+  }
+
+  /**
+   * Get the highest priority provider of a specific type
+   */
+  getPrimaryProvider(type: PluginProviderType): PluginProvider | undefined {
+    const providers = this.getProvidersByType(type);
+    return providers[0]; // Already sorted by priority
   }
 
   /**

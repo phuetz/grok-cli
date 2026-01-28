@@ -1,5 +1,6 @@
 import * as fs from "fs-extra";
 import * as path from "path";
+import os from "os";
 import { spawn } from "child_process";
 import { getErrorMessage } from "../types/index.js";
 import { logger } from "../utils/logger.js";
@@ -63,7 +64,7 @@ export class HookManager {
   constructor() {
     this.configPath = path.join(process.cwd(), ".codebuddy", "hooks.json");
     this.globalConfigPath = path.join(
-      process.env.HOME || process.env.USERPROFILE || "",
+      process.env.HOME || process.env.USERPROFILE || os.homedir(),
       ".codebuddy",
       "hooks.json"
     );

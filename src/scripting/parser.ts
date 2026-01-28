@@ -31,20 +31,47 @@ import type {
   ArrowFunction,
 } from './types.js';
 import { TokenType } from './types.js';
-import { createLoopGuard } from '../utils/errors.js';
+import { createLoopGuard, LoopTimeoutError } from '../utils/errors.js';
+
+/** Maximum recursion depth for recursive descent parsing */
+const MAX_RECURSION_DEPTH = 500;
 
 export class Parser {
   private tokens: Token[];
   private current = 0;
+  private recursionDepth = 0;
 
   constructor(tokens: Token[]) {
     this.tokens = tokens;
   }
 
+  /**
+   * Track recursion depth to prevent stack overflow on deeply nested input
+   */
+  private enterRecursion(context: string): void {
+    this.recursionDepth++;
+    if (this.recursionDepth > MAX_RECURSION_DEPTH) {
+      throw new LoopTimeoutError(
+        `Maximum recursion depth exceeded in ${context}. Input may be too deeply nested or malformed.`,
+        MAX_RECURSION_DEPTH,
+        context
+      );
+    }
+  }
+
+  private exitRecursion(): void {
+    this.recursionDepth--;
+  }
+
   parse(): ProgramNode {
     const body: StatementNode[] = [];
+    const guard = createLoopGuard({
+      maxIterations: 100000,
+      context: 'BuddyScript program parsing',
+    });
 
     while (!this.isAtEnd()) {
+      guard();
       const stmt = this.declaration();
       if (stmt) {
         body.push(stmt);
@@ -55,6 +82,7 @@ export class Parser {
   }
 
   private declaration(): StatementNode | null {
+    this.enterRecursion('declaration');
     try {
       if (this.match(TokenType.LET, TokenType.CONST)) {
         return this.variableDeclaration();
@@ -70,9 +98,15 @@ export class Parser {
         return this.importStatement();
       }
       return this.statement();
-    } catch (_error) {
+    } catch (error) {
+      // Re-throw recursion/loop errors without synchronizing
+      if (error instanceof LoopTimeoutError) {
+        throw error;
+      }
       this.synchronize();
       return null;
+    } finally {
+      this.exitRecursion();
     }
   }
 
@@ -337,8 +371,13 @@ export class Parser {
 
   private block(): BlockStatement {
     const statements: StatementNode[] = [];
+    const guard = createLoopGuard({
+      maxIterations: 100000,
+      context: 'BuddyScript block parsing',
+    });
 
     while (!this.check(TokenType.RBRACE) && !this.isAtEnd()) {
+      guard();
       const decl = this.declaration();
       if (decl) statements.push(decl);
     }
@@ -413,7 +452,12 @@ export class Parser {
   private or(): ExpressionNode {
     let expr = this.and();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'BuddyScript OR expression parsing',
+    });
     while (this.match(TokenType.OR)) {
+      guard();
       const right = this.and();
       expr = {
         type: 'LogicalExpression',
@@ -429,7 +473,12 @@ export class Parser {
   private and(): ExpressionNode {
     let expr = this.equality();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'BuddyScript AND expression parsing',
+    });
     while (this.match(TokenType.AND)) {
+      guard();
       const right = this.equality();
       expr = {
         type: 'LogicalExpression',
@@ -445,7 +494,12 @@ export class Parser {
   private equality(): ExpressionNode {
     let expr = this.comparison();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'BuddyScript equality expression parsing',
+    });
     while (this.match(TokenType.EQUALS, TokenType.NOT_EQUALS)) {
+      guard();
       const operator = this.previous().value as string;
       const right = this.comparison();
       expr = {
@@ -462,7 +516,12 @@ export class Parser {
   private comparison(): ExpressionNode {
     let expr = this.term();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'BuddyScript comparison expression parsing',
+    });
     while (this.match(TokenType.LESS_THAN, TokenType.LESS_EQUAL, TokenType.GREATER_THAN, TokenType.GREATER_EQUAL)) {
+      guard();
       const operator = this.previous().value as string;
       const right = this.term();
       expr = {
@@ -479,7 +538,12 @@ export class Parser {
   private term(): ExpressionNode {
     let expr = this.factor();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'BuddyScript term expression parsing',
+    });
     while (this.match(TokenType.PLUS, TokenType.MINUS)) {
+      guard();
       const operator = this.previous().value as string;
       const right = this.factor();
       expr = {
@@ -496,7 +560,12 @@ export class Parser {
   private factor(): ExpressionNode {
     let expr = this.power();
 
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'BuddyScript factor expression parsing',
+    });
     while (this.match(TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.MODULO)) {
+      guard();
       const operator = this.previous().value as string;
       const right = this.power();
       expr = {
@@ -552,7 +621,14 @@ export class Parser {
   private call(): ExpressionNode {
     let expr = this.primary();
 
+    // Guard against infinite loops in call/member parsing (deeply nested chains)
+    const guard = createLoopGuard({
+      maxIterations: 10000,
+      context: 'BuddyScript call expression parsing',
+    });
+
     while (true) {
+      guard();
       if (this.match(TokenType.LPAREN)) {
         expr = this.finishCall(expr);
       } else if (this.match(TokenType.DOT)) {
@@ -777,7 +853,12 @@ export class Parser {
   private synchronize(): void {
     this.advance();
 
+    const guard = createLoopGuard({
+      maxIterations: 100000,
+      context: 'BuddyScript error synchronization',
+    });
     while (!this.isAtEnd()) {
+      guard();
       if (this.previous().type === TokenType.SEMICOLON) return;
 
       switch (this.peek().type) {

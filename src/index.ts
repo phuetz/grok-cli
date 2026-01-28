@@ -844,7 +844,7 @@ program
       // Handle tool filtering (like mistral-vibe --enabled-tools)
       if (options.enabledTools || options.disabledTools) {
         const { setToolFilter, createToolFilter, formatFilterResult, filterTools } = await import("./utils/tool-filter.js");
-        const { CODEBUDDY_TOOLS } = await import("./codebuddy/tools.js");
+        const { getAllCodeBuddyTools } = await import("./codebuddy/tools.js");
 
         const filter = createToolFilter({
           enabledTools: options.enabledTools,
@@ -852,7 +852,9 @@ program
         });
         setToolFilter(filter);
 
-        const result = filterTools(CODEBUDDY_TOOLS, filter);
+        // Use getAllCodeBuddyTools() instead of deprecated CODEBUDDY_TOOLS array
+        const allTools = await getAllCodeBuddyTools();
+        const result = filterTools(allTools, filter);
         console.log(formatFilterResult(result));
       }
 

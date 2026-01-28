@@ -13,6 +13,7 @@
  */
 
 import * as fs from 'fs';
+import os from 'os';
 import * as path from 'path';
 import { EventEmitter } from 'events';
 
@@ -231,7 +232,7 @@ export class FeatureFlagsManager extends EventEmitter {
     super();
     this.configPath = path.join(configDir || process.cwd(), '.codebuddy', 'feature-flags.json');
     this.userConfigPath = path.join(
-      process.env.HOME || process.env.USERPROFILE || '~',
+      process.env.HOME || process.env.USERPROFILE || os.homedir(),
       '.codebuddy',
       'feature-flags.json'
     );

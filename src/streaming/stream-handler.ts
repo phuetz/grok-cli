@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { Readable, Transform } from 'stream';
-import { StreamEvent, StreamStats } from './types.js';
+import { StreamEvent, StreamStats, StreamChunk } from './types.js';
 import { ChunkProcessor, OptimizedChunkProcessorOptions, FlowHint, StreamingMetrics } from './chunk-processor.js';
 import { CodeBuddyToolCall } from '../codebuddy/client.js';
 import { ToolResult } from '../types/index.js';
@@ -97,7 +97,7 @@ export class StreamHandler extends EventEmitter {
    * Handle an async stream of chunks
    */
   async *handleStream(
-    stream: AsyncIterable<any>,
+    stream: AsyncIterable<StreamChunk>,
     abortSignal?: AbortSignal
   ): AsyncGenerator<StreamEvent, void, unknown> {
     this.stats = this.createInitialStats();

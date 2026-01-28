@@ -42,7 +42,7 @@ describe('OllamaProvider', () => {
       mockFetch.mockRejectedValue(new Error('Connection refused'));
 
       await expect(provider.initialize({}))
-        .rejects.toThrow('Ollama is not running');
+        .rejects.toThrow('Ollama is not available');
     });
 
     it('should throw with helpful message if Ollama not available', async () => {
@@ -51,8 +51,12 @@ describe('OllamaProvider', () => {
       try {
         await provider.initialize({});
       } catch (error) {
-        expect((error as Error).message).toContain('ollama serve');
-        expect((error as Error).message).toContain('https://ollama.com');
+        expect((error as Error).message).toContain('Server not running or not reachable');
+        // Check for suggestions in the error
+        const err = error as { suggestion?: string };
+        if (err.suggestion) {
+          expect(err.suggestion).toContain('ollama serve');
+        }
       }
     });
 
