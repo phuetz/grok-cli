@@ -28,6 +28,19 @@ import { getEnhancedMemory } from '../../memory/index.js';
 import { logger } from '../../utils/logger.js';
 import { getErrorMessage } from '../../errors/index.js';
 
+// Runtime imports for createAgentInfrastructureSync
+import { getServiceContainer } from '../../infrastructure/service-container.js';
+import { createTokenCounter } from '../../utils/token-counter.js';
+import { createContextManager } from '../../context/context-manager-v2.js';
+import { getAgentModeManager } from '../agent-mode.js';
+import { getSandboxManager } from '../../security/sandbox.js';
+import { getMCPClient } from '../../mcp/mcp-client.js';
+import { getPromptCacheManager } from '../../optimization/prompt-cache.js';
+import { getHooksManager } from '../../hooks/lifecycle-hooks.js';
+import { getModelRouter } from '../../optimization/model-routing.js';
+import { getPluginMarketplace } from '../../plugins/marketplace.js';
+import { getRepairCoordinator } from '../execution/repair-coordinator.js';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -562,30 +575,7 @@ export function createAgentInfrastructureSync(
   },
   config: AgentInfrastructureConfig = {}
 ): AgentInfrastructure {
-  // Import singletons synchronously (they use require internally)
-   
-  const { getServiceContainer } = require('../../infrastructure/service-container.js');
-   
-  const { createTokenCounter } = require('../../utils/token-counter.js');
-   
-  const { createContextManager } = require('../../context/context-manager-v2.js');
-   
-  const { getAgentModeManager } = require('../agent-mode.js');
-   
-  const { getSandboxManager } = require('../../security/sandbox.js');
-   
-  const { getMCPClient } = require('../../mcp/mcp-client.js');
-   
-  const { getPromptCacheManager } = require('../../optimization/prompt-cache.js');
-   
-  const { getHooksManager } = require('../../hooks/lifecycle-hooks.js');
-   
-  const { getModelRouter } = require('../../optimization/model-routing.js');
-   
-  const { getPluginMarketplace } = require('../../plugins/marketplace.js');
-   
-  const { getRepairCoordinator } = require('../execution/repair-coordinator.js');
-
+  // Use top-level imports (ESM compatible)
   const container = getServiceContainer();
 
   const deps: AgentInfrastructureDeps = {
