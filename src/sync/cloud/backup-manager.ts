@@ -84,14 +84,14 @@ export class BackupManager extends EventEmitter {
   /**
    * Create a new backup
    */
-  async createBackup(description?: string): Promise<BackupManifest> {
+  async createBackup(_description?: string): Promise<BackupManifest> {
     if (this.isBackingUp) {
       throw new Error('A backup is already in progress. Please wait for it to complete before starting a new backup.');
     }
 
     this.isBackingUp = true;
     const backupId = this.generateBackupId();
-    const startTime = Date.now();
+    const _startTime = Date.now();
 
     try {
       this.emit('backup_started', { backupId });
@@ -345,7 +345,7 @@ export class BackupManager extends EventEmitter {
       const manifestKey = `${this.config.backupPath}/${backupId}/manifest.json`;
       const manifestData = await this.storage.download(manifestKey);
       return JSON.parse(manifestData.toString());
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -510,7 +510,7 @@ export class BackupManager extends EventEmitter {
       this.emit('backup_deleted', { backupId });
 
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

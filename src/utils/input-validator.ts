@@ -1431,7 +1431,7 @@ export const validators = {
   ): T | null => {
     const {
       maxLength = 10_000_000, // 10MB default
-      errorPrefix = 'JSON parse error',
+      errorPrefix: _errorPrefix = 'JSON parse error',
     } = options;
 
     if (!input || typeof input !== 'string') {

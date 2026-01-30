@@ -8,7 +8,7 @@
  * - Clipboard history
  */
 
-import { exec, execSync } from 'child_process';
+import { exec, execSync as _execSync } from 'child_process';
 import * as os from 'os';
 import * as fs from 'fs-extra';
 import * as path from 'path';
@@ -77,7 +77,7 @@ export class ClipboardManager {
       }
 
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

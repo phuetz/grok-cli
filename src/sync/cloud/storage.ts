@@ -12,8 +12,8 @@ import { homedir } from 'os';
 // Note: pipeline reserved for streaming operations (future use)
 import type {
   CloudConfig,
-  CloudProvider,
-  VersionInfo,
+  CloudProvider as _CloudProvider,
+  VersionInfo as _VersionInfo,
 } from './types.js';
 import { logger } from '../../utils/logger.js';
 
@@ -267,7 +267,7 @@ export class S3Storage extends CloudStorage {
   // Note: In production, this would use @aws-sdk/client-s3
   // For now, we provide a mock implementation
 
-  async upload(key: string, data: Buffer, metadata?: Record<string, string>): Promise<void> {
+  async upload(key: string, data: Buffer, _metadata?: Record<string, string>): Promise<void> {
     const fullKey = this.getFullKey(key);
     let processedData = data;
 

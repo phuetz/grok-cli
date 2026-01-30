@@ -45,7 +45,7 @@ function formatMs(ms: number): string {
  */
 export function LatencyView({ data }: LatencyViewProps) {
   const { colors } = useTheme();
-  const { state, latency, providers, responseTimeHistory } = data;
+  const { state: _state, latency, providers, responseTimeHistory } = data;
 
   // Get latency trend data
   const latencyTrend = responseTimeHistory.slice(-30).map((p) => p.value);

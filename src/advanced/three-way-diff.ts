@@ -41,8 +41,8 @@ export class ThreeWayDiff extends EventEmitter {
     const theirLines = theirs.split('\n');
 
     const hunks: DiffHunk[] = [];
-    let i = 0, j = 0, k = 0;
-    let hunkStart = 0;
+    let _i = 0, _j = 0, _k = 0;
+    let _hunkStart = 0;
     let inHunk = false;
     let currentHunk: DiffHunk | null = null;
 
@@ -59,7 +59,7 @@ export class ThreeWayDiff extends EventEmitter {
       if (oursChanged || theirsChanged) {
         if (!inHunk) {
           inHunk = true;
-          hunkStart = line;
+          _hunkStart = line;
           currentHunk = {
             startLine: line,
             endLine: line,

@@ -15,7 +15,7 @@
  */
 
 import { EventEmitter } from 'events';
-import * as fs from 'fs';
+import * as _fs from 'fs';
 import * as fsPromises from 'fs/promises';
 import * as path from 'path';
 import fg from 'fast-glob';

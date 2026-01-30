@@ -54,7 +54,7 @@ export function OverviewView({ data }: OverviewViewProps) {
   const { state, tokenHistory, responseTimeHistory, errors } = data;
 
   // Determine status colors
-  const getErrorStatus = (rate: number) => {
+  const _getErrorStatus = (rate: number) => {
     if (rate === 0) return 'success';
     if (rate < 5) return 'warning';
     return 'error';

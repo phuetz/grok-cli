@@ -12,7 +12,7 @@
 import {
   getDebugLogger,
   DebugLogger,
-  DebugConfig,
+  DebugConfig as _DebugConfig,
   APICallLog,
   ToolCallLog,
 } from '../../utils/debug-logger.js';
@@ -177,7 +177,7 @@ All debug history has been reset:
 /**
  * Format debug enabled message
  */
-function formatDebugEnabled(debugLogger: DebugLogger): string {
+function formatDebugEnabled(_debugLogger: DebugLogger): string {
   return `${chalk.yellow('=')}${chalk.yellow('='.repeat(50))}${chalk.yellow('=')}
 ${chalk.yellow('DEBUG MODE: ENABLED')}
 ${chalk.yellow('=')}${chalk.yellow('='.repeat(50))}${chalk.yellow('=')}

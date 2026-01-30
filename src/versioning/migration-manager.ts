@@ -11,7 +11,7 @@
  * - Comprehensive audit trail
  */
 
-import { logger } from "../utils/logger.js";
+import { logger as _logger } from "../utils/logger.js";
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as os from 'os';

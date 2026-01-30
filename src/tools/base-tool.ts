@@ -347,7 +347,7 @@ export function RequiresConfirmation() {
   return function <T extends BaseTool>(
     target: new (...args: unknown[]) => T
   ) {
-    const original = target.prototype.requiresConfirmation;
+    const _original = target.prototype.requiresConfirmation;
     Object.defineProperty(target.prototype, 'requiresConfirmation', {
       get() {
         return true;

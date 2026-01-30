@@ -27,7 +27,7 @@
 import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
-import { logger, LogContext, LogEntry } from './logger.js';
+import { logger as _logger, LogContext, LogEntry as _LogEntry } from './logger.js';
 
 export type DebugLevel = 'verbose' | 'normal' | 'minimal';
 export type DebugOutput = 'console' | 'file' | 'both';

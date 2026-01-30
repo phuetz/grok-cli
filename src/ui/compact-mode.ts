@@ -8,7 +8,7 @@
  * - Responsive layout
  */
 
-import * as os from 'os';
+import * as _os from 'os';
 
 export interface TerminalSize {
   columns: number;

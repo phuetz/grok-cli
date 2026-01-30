@@ -11,10 +11,10 @@ import { getConfigManager, ToolConfig, ToolPermission } from '../config/toml-con
 import {
   TypedEventEmitterAdapter,
   ToolEvents,
-  ToolRegisteredEvent,
-  ToolInstantiatedEvent,
+  ToolRegisteredEvent as _ToolRegisteredEvent,
+  ToolInstantiatedEvent as _ToolInstantiatedEvent,
   ToolEvent,
-  BaseEvent,
+  BaseEvent as _BaseEvent,
 } from '../events/index.js';
 
 // ============================================================================

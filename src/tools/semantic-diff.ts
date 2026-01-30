@@ -384,8 +384,8 @@ function isRename(oldBlock: CodeBlock, newBlock: CodeBlock): boolean {
  */
 function detectMovedBlocks(
   changes: SemanticChange[],
-  oldBlocks: CodeBlock[],
-  newBlocks: CodeBlock[]
+  _oldBlocks: CodeBlock[],
+  _newBlocks: CodeBlock[]
 ): void {
   // Find blocks that appear in both but at different positions
   const addedChanges = changes.filter(c => c.type === 'added');

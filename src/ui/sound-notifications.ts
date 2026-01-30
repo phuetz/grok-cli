@@ -334,8 +334,7 @@ export class SoundNotificationManager {
    */
   private async playMacSound(frequencies: number[]): Promise<void> {
     // Use osascript to generate beeps
-    const beeps = frequencies.map(f => {
-      const duration = 0.1;
+    const beeps = frequencies.map(_f => {
       return `beep`;
     }).join('; delay 0.1; ');
 

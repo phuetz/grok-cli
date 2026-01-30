@@ -1,6 +1,6 @@
 import http from 'http';
 import { CodeBuddyAgent, ChatEntry } from '../../agent/codebuddy-agent.js';
-import { withStreamTimeout, withMaxIterations, handleStreamError } from '../../utils/stream-helpers.js';
+import { withStreamTimeout as _withStreamTimeout, withMaxIterations as _withMaxIterations, handleStreamError as _handleStreamError } from '../../utils/stream-helpers.js';
 
 /**
  * HTTP Server for Web Interface

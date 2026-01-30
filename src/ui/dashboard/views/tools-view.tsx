@@ -12,7 +12,7 @@ import React, { useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useTheme } from '../../context/theme-context.js';
 import { MetricCard, MetricRow } from '../components/metric-card.js';
-import { BarChart, ProgressRing } from '../components/mini-chart.js';
+import { BarChart, ProgressRing as _ProgressRing } from '../components/mini-chart.js';
 import type { DashboardData } from '../hooks/use-dashboard-data.js';
 import type { ToolMetrics } from '../../../observability/dashboard.js';
 
@@ -50,7 +50,7 @@ function formatTimeAgo(timestamp: number | undefined): string {
  */
 export function ToolsView({ data }: ToolsViewProps) {
   const { colors } = useTheme();
-  const { state, tools } = data;
+  const { state: _state, tools } = data;
 
   const [sortBy, setSortBy] = useState<SortField>('calls');
   const [selectedIndex, setSelectedIndex] = useState(0);

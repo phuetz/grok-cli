@@ -15,7 +15,7 @@
  * - Documentation generation from schemas
  */
 
-import { z, ZodError, ZodSchema, ZodObject, ZodDefault, ZodOptional, ZodType } from 'zod';
+import { z, ZodError, ZodSchema, ZodObject as _ZodObject, ZodDefault as _ZodDefault, ZodOptional as _ZodOptional, ZodType } from 'zod';
 import { logger } from "./logger.js";
 import fs from 'fs-extra';
 import * as path from 'path';

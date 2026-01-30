@@ -312,7 +312,7 @@ messageHandlers.set('execute_tool', async (ws, state, payload) => {
 /**
  * Handle ping
  */
-messageHandlers.set('ping', async (ws, state, payload) => {
+messageHandlers.set('ping', async (ws, _state, _payload) => {
   send(ws, {
     type: 'pong',
     timestamp: new Date().toISOString(),
@@ -322,7 +322,7 @@ messageHandlers.set('ping', async (ws, state, payload) => {
 /**
  * Handle get status
  */
-messageHandlers.set('status', async (ws, state, payload) => {
+messageHandlers.set('status', async (ws, state, _payload) => {
   send(ws, {
     type: 'status',
     payload: {
@@ -388,7 +388,7 @@ export async function setupWebSocket(
     path: '/ws',
   });
 
-  wss.on('connection', (ws: WebSocket, req) => {
+  wss.on('connection', (ws: WebSocket, _req) => {
     const state: ConnectionState = {
       id: generateConnectionId(),
       authenticated: !config.authEnabled, // Auto-auth if auth disabled

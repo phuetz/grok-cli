@@ -303,7 +303,7 @@ export class ConfigMigrator extends EventEmitter {
 
         const beforeConfig = JSON.stringify(config);
         config = transform.transform({ ...config });
-        const afterConfig = JSON.stringify(config);
+        const _afterConfig = JSON.stringify(config);
 
         // Track changes
         const changes = this.detectChanges(

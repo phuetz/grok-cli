@@ -9,7 +9,7 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import type { ServerConfig, RouteRateLimitConfig } from '../types.js';
+import type { ServerConfig, RouteRateLimitConfig as _RouteRateLimitConfig } from '../types.js';
 import { API_ERRORS } from '../types.js';
 
 interface RateLimitEntry {

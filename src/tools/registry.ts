@@ -1,5 +1,5 @@
 import { CodeBuddyTool } from "../codebuddy/client.js";
-import { ToolMetadata, RegisteredTool, ToolCategory } from "./types.js";
+import { ToolMetadata, RegisteredTool, ToolCategory as _ToolCategory } from "./types.js";
 import { logger } from "../utils/logger.js";
 
 /**

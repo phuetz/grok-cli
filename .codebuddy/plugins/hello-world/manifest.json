@@ -1,0 +1,9 @@
+{
+  "id": "hello-world",
+  "name": "Hello World Plugin",
+  "version": "1.0.0",
+  "description": "A simple plugin that adds a hello world command and tool",
+  "permissions": {
+    "shell": false
+  }
+}

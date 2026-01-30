@@ -4,8 +4,8 @@ import * as os from "os";
 import { logger } from "./logger.js";
 import {
   getZodConfigValidator,
-  UserSettingsSchema,
-  SettingsSchema,
+  UserSettingsSchema as _UserSettingsSchema,
+  SettingsSchema as _SettingsSchema,
   AI_PROVIDERS,
   type UserSettings as ZodUserSettings,
   type Settings as ZodSettings,

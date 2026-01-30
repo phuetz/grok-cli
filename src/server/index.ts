@@ -25,7 +25,7 @@ import {
 import { chatRoutes, toolsRoutes, sessionsRoutes, memoryRoutes, healthRoutes, metricsRoutes } from './routes/index.js';
 import { setupWebSocket, closeAllConnections, getConnectionStats } from './websocket/index.js';
 import { logger } from '../utils/logger.js';
-import { initMetrics, getMetrics } from '../metrics/index.js';
+import { initMetrics, getMetrics as _getMetrics } from '../metrics/index.js';
 
 /**
  * Generate a secure random secret for development use only

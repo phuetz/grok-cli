@@ -14,7 +14,7 @@ export interface TransformPipeline<T, R> {
   transform: TransformFunction<T, R>;
 }
 
-export class StreamTransformer<T = unknown> {
+export class StreamTransformer<_T = unknown> {
   /**
    * Map each chunk through a transform function
    */

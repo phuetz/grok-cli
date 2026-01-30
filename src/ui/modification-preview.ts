@@ -267,7 +267,7 @@ function computeLineDiff(original: string, updated: string): DiffLine[] {
   const result: DiffLine[] = [];
 
   // Simple line-by-line comparison with context
-  const maxLen = Math.max(oldLines.length, newLines.length);
+  const _maxLen = Math.max(oldLines.length, newLines.length);
   let oldIdx = 0;
   let newIdx = 0;
 

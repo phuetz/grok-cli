@@ -467,7 +467,7 @@ Use /help to see all available commands.
 // /init - Initialize .grok Directory
 // ============================================================================
 
-export async function handleInitGrok(args: string[]): Promise<CommandHandlerResult> {
+export async function handleInitGrok(_args: string[]): Promise<CommandHandlerResult> {
   const cwd = process.cwd();
   const grokDir = path.join(cwd, '.grok');
   const codebuddyDir = path.join(cwd, '.codebuddy');
@@ -596,7 +596,7 @@ Then use \`/deploy\` to run it.
 // /checkpoints - List All Checkpoints
 // ============================================================================
 
-export async function handleListCheckpoints(args: string[]): Promise<CommandHandlerResult> {
+export async function handleListCheckpoints(_args: string[]): Promise<CommandHandlerResult> {
   const { createCheckpointManager } = await import('../../undo/checkpoint-manager.js');
 
   const checkpointManager = createCheckpointManager(process.cwd());
