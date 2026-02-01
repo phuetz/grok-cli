@@ -5,7 +5,7 @@
  * Saves complete interaction history including messages, tool calls, metadata.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { randomUUID } from 'crypto';
@@ -516,7 +516,6 @@ export class InteractionLogger {
     const files = InteractionLogger.findSessionFiles(sessionId);
     if (files.length === 0) return false;
 
-    const { unlinkSync } = require('fs');
     for (const file of files) {
       try {
         unlinkSync(file);

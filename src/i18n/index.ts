@@ -1,339 +1,462 @@
 /**
- * Internationalization (i18n) support for Code Buddy
+ * Internationalization (i18n) Module
  *
- * Provides:
- * - Translation loading from JSON files
- * - Locale detection from system
- * - Fallback to English
- * - Interpolation support
- * - Pluralization
+ * Lightweight i18n system for Code Buddy.
+ * Supports multiple languages with fallback to English.
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { EventEmitter } from 'events';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// ============================================================================
+// Types
+// ============================================================================
 
-export type LocaleCode = 'en' | 'fr' | 'es' | 'de' | 'zh' | 'ja' | 'pt' | 'ru';
+/**
+ * Supported locales
+ */
+export type Locale = 'en' | 'fr' | 'de' | 'es' | 'ja' | 'zh';
 
-export interface TranslationDictionary {
-  [key: string]: string | TranslationDictionary;
+/**
+ * Translation key categories
+ */
+export interface TranslationKeys {
+  // Common
+  common: {
+    yes: string;
+    no: string;
+    cancel: string;
+    confirm: string;
+    error: string;
+    warning: string;
+    success: string;
+    info: string;
+    loading: string;
+    processing: string;
+    done: string;
+    help: string;
+    exit: string;
+    back: string;
+    next: string;
+    save: string;
+    delete: string;
+    edit: string;
+    create: string;
+    search: string;
+    filter: string;
+    sort: string;
+    refresh: string;
+    settings: string;
+    options: string;
+  };
+
+  // CLI Messages
+  cli: {
+    welcome: string;
+    goodbye: string;
+    inputPrompt: string;
+    thinking: string;
+    executing: string;
+    toolUse: string;
+    toolResult: string;
+    noApiKey: string;
+    invalidApiKey: string;
+    rateLimited: string;
+    networkError: string;
+    timeout: string;
+    sessionSaved: string;
+    sessionLoaded: string;
+    historyCleared: string;
+    modelChanged: string;
+    costWarning: string;
+    costLimit: string;
+  };
+
+  // Tools
+  tools: {
+    readingFile: string;
+    writingFile: string;
+    creatingFile: string;
+    deletingFile: string;
+    executingCommand: string;
+    searchingFiles: string;
+    webSearching: string;
+    fetchingUrl: string;
+    analyzing: string;
+    generating: string;
+    fileNotFound: string;
+    permissionDenied: string;
+    commandFailed: string;
+    confirmDelete: string;
+    confirmOverwrite: string;
+    confirmExecute: string;
+  };
+
+  // Errors
+  errors: {
+    unknown: string;
+    notFound: string;
+    invalidInput: string;
+    unauthorized: string;
+    forbidden: string;
+    serverError: string;
+    connectionFailed: string;
+    parseError: string;
+    validationFailed: string;
+    operationCancelled: string;
+    featureNotAvailable: string;
+  };
+
+  // Help
+  help: {
+    title: string;
+    description: string;
+    commands: string;
+    examples: string;
+    tips: string;
+    moreInfo: string;
+    version: string;
+    usage: string;
+  };
 }
 
-export interface I18nOptions {
-  defaultLocale?: LocaleCode;
-  fallbackLocale?: LocaleCode;
-  localesDir?: string;
-  detectLocale?: boolean;
-}
+/**
+ * Full translations object
+ */
+export type Translations = TranslationKeys;
 
-const DEFAULT_OPTIONS: Required<I18nOptions> = {
-  defaultLocale: 'en',
-  fallbackLocale: 'en',
-  localesDir: path.join(__dirname, 'locales'),
-  detectLocale: true,
+// ============================================================================
+// Default Translations (English)
+// ============================================================================
+
+const en: Translations = {
+  common: {
+    yes: 'Yes',
+    no: 'No',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    error: 'Error',
+    warning: 'Warning',
+    success: 'Success',
+    info: 'Info',
+    loading: 'Loading...',
+    processing: 'Processing...',
+    done: 'Done',
+    help: 'Help',
+    exit: 'Exit',
+    back: 'Back',
+    next: 'Next',
+    save: 'Save',
+    delete: 'Delete',
+    edit: 'Edit',
+    create: 'Create',
+    search: 'Search',
+    filter: 'Filter',
+    sort: 'Sort',
+    refresh: 'Refresh',
+    settings: 'Settings',
+    options: 'Options',
+  },
+  cli: {
+    welcome: 'Welcome to Code Buddy! Type your request or /help for commands.',
+    goodbye: 'Goodbye! Session saved.',
+    inputPrompt: 'Ask me anything...',
+    thinking: 'Thinking...',
+    executing: 'Executing...',
+    toolUse: 'Using tool: {tool}',
+    toolResult: 'Tool result: {result}',
+    noApiKey: 'No API key found. Set GROK_API_KEY environment variable.',
+    invalidApiKey: 'Invalid API key. Please check your credentials.',
+    rateLimited: 'Rate limit exceeded. Please wait before retrying.',
+    networkError: 'Network error. Check your connection.',
+    timeout: 'Request timed out. Please try again.',
+    sessionSaved: 'Session saved successfully.',
+    sessionLoaded: 'Session loaded: {name}',
+    historyCleared: 'History cleared.',
+    modelChanged: 'Model changed to: {model}',
+    costWarning: 'Warning: Session cost \${cost} approaching limit.',
+    costLimit: 'Cost limit reached (\${cost}). Session paused.',
+  },
+  tools: {
+    readingFile: 'Reading file: {path}',
+    writingFile: 'Writing to file: {path}',
+    creatingFile: 'Creating file: {path}',
+    deletingFile: 'Deleting file: {path}',
+    executingCommand: 'Executing: {command}',
+    searchingFiles: 'Searching files: {pattern}',
+    webSearching: 'Searching web: {query}',
+    fetchingUrl: 'Fetching URL: {url}',
+    analyzing: 'Analyzing...',
+    generating: 'Generating...',
+    fileNotFound: 'File not found: {path}',
+    permissionDenied: 'Permission denied: {path}',
+    commandFailed: 'Command failed: {error}',
+    confirmDelete: 'Delete {path}? This cannot be undone.',
+    confirmOverwrite: 'File exists. Overwrite {path}?',
+    confirmExecute: 'Execute command: {command}?',
+  },
+  errors: {
+    unknown: 'An unknown error occurred.',
+    notFound: 'Resource not found.',
+    invalidInput: 'Invalid input provided.',
+    unauthorized: 'Authentication required.',
+    forbidden: 'Access denied.',
+    serverError: 'Server error. Please try again.',
+    connectionFailed: 'Connection failed.',
+    parseError: 'Failed to parse response.',
+    validationFailed: 'Validation failed: {details}',
+    operationCancelled: 'Operation cancelled.',
+    featureNotAvailable: 'Feature not available in this version.',
+  },
+  help: {
+    title: 'Code Buddy Help',
+    description: 'AI-powered terminal assistant for coding tasks.',
+    commands: 'Available commands:',
+    examples: 'Examples:',
+    tips: 'Tips:',
+    moreInfo: 'For more information, visit: {url}',
+    version: 'Version: {version}',
+    usage: 'Usage: {usage}',
+  },
 };
 
+// ============================================================================
+// French Translations
+// ============================================================================
+
+const fr: Translations = {
+  common: {
+    yes: 'Oui',
+    no: 'Non',
+    cancel: 'Annuler',
+    confirm: 'Confirmer',
+    error: 'Erreur',
+    warning: 'Attention',
+    success: 'Succès',
+    info: 'Info',
+    loading: 'Chargement...',
+    processing: 'Traitement...',
+    done: 'Terminé',
+    help: 'Aide',
+    exit: 'Quitter',
+    back: 'Retour',
+    next: 'Suivant',
+    save: 'Enregistrer',
+    delete: 'Supprimer',
+    edit: 'Modifier',
+    create: 'Créer',
+    search: 'Rechercher',
+    filter: 'Filtrer',
+    sort: 'Trier',
+    refresh: 'Actualiser',
+    settings: 'Paramètres',
+    options: 'Options',
+  },
+  cli: {
+    welcome: 'Bienvenue sur Code Buddy ! Tapez votre requête ou /help pour les commandes.',
+    goodbye: 'Au revoir ! Session sauvegardée.',
+    inputPrompt: 'Posez-moi une question...',
+    thinking: 'Réflexion...',
+    executing: 'Exécution...',
+    toolUse: "Utilisation de l'outil : {tool}",
+    toolResult: "Résultat de l'outil : {result}",
+    noApiKey: 'Clé API non trouvée. Définissez la variable GROK_API_KEY.',
+    invalidApiKey: 'Clé API invalide. Vérifiez vos identifiants.',
+    rateLimited: 'Limite de débit dépassée. Veuillez patienter.',
+    networkError: 'Erreur réseau. Vérifiez votre connexion.',
+    timeout: "Délai d'attente dépassé. Veuillez réessayer.",
+    sessionSaved: 'Session enregistrée avec succès.',
+    sessionLoaded: 'Session chargée : {name}',
+    historyCleared: 'Historique effacé.',
+    modelChanged: 'Modèle changé pour : {model}',
+    costWarning: 'Attention : Coût de session {cost}\$ proche de la limite.',
+    costLimit: 'Limite de coût atteinte ({cost}\$). Session en pause.',
+  },
+  tools: {
+    readingFile: 'Lecture du fichier : {path}',
+    writingFile: 'Écriture dans le fichier : {path}',
+    creatingFile: 'Création du fichier : {path}',
+    deletingFile: 'Suppression du fichier : {path}',
+    executingCommand: 'Exécution : {command}',
+    searchingFiles: 'Recherche de fichiers : {pattern}',
+    webSearching: 'Recherche web : {query}',
+    fetchingUrl: "Récupération de l'URL : {url}",
+    analyzing: 'Analyse en cours...',
+    generating: 'Génération en cours...',
+    fileNotFound: 'Fichier non trouvé : {path}',
+    permissionDenied: 'Permission refusée : {path}',
+    commandFailed: 'Commande échouée : {error}',
+    confirmDelete: 'Supprimer {path} ? Cette action est irréversible.',
+    confirmOverwrite: 'Le fichier existe. Écraser {path} ?',
+    confirmExecute: 'Exécuter la commande : {command} ?',
+  },
+  errors: {
+    unknown: "Une erreur inconnue s'est produite.",
+    notFound: 'Ressource non trouvée.',
+    invalidInput: 'Entrée invalide.',
+    unauthorized: 'Authentification requise.',
+    forbidden: 'Accès refusé.',
+    serverError: 'Erreur serveur. Veuillez réessayer.',
+    connectionFailed: 'Échec de la connexion.',
+    parseError: "Échec de l'analyse de la réponse.",
+    validationFailed: 'Validation échouée : {details}',
+    operationCancelled: 'Opération annulée.',
+    featureNotAvailable: 'Fonctionnalité non disponible dans cette version.',
+  },
+  help: {
+    title: 'Aide Code Buddy',
+    description: 'Assistant terminal alimenté par IA pour les tâches de codage.',
+    commands: 'Commandes disponibles :',
+    examples: 'Exemples :',
+    tips: 'Conseils :',
+    moreInfo: "Pour plus d'informations, visitez : {url}",
+    version: 'Version : {version}',
+    usage: 'Utilisation : {usage}',
+  },
+};
+
+// ============================================================================
+// Translation Registry
+// ============================================================================
+
+const translations: Record<Locale, Translations> = {
+  en,
+  fr,
+  de: en, // Fallback to English (TODO: add German)
+  es: en, // Fallback to English (TODO: add Spanish)
+  ja: en, // Fallback to English (TODO: add Japanese)
+  zh: en, // Fallback to English (TODO: add Chinese)
+};
+
+// ============================================================================
+// I18n Manager
+// ============================================================================
+
 /**
- * Detect system locale
+ * Internationalization manager
  */
-function detectSystemLocale(): LocaleCode {
-  // Check environment variables
-  const envLocale =
-    process.env.LANG ||
-    process.env.LC_ALL ||
-    process.env.LC_MESSAGES ||
-    process.env.LANGUAGE;
+class I18nManager extends EventEmitter {
+  private currentLocale: Locale = 'en';
+  private fallbackLocale: Locale = 'en';
 
-  if (envLocale) {
-    // Extract language code (e.g., "en_US.UTF-8" -> "en")
-    const langCode = envLocale.split('_')[0]?.toLowerCase();
-    if (isValidLocale(langCode)) {
-      return langCode as LocaleCode;
-    }
-  }
-
-  return 'en';
-}
-
-/**
- * Check if locale code is valid
- */
-function isValidLocale(code: string | undefined): code is LocaleCode {
-  const validLocales: LocaleCode[] = ['en', 'fr', 'es', 'de', 'zh', 'ja', 'pt', 'ru'];
-  return typeof code === 'string' && validLocales.includes(code as LocaleCode);
-}
-
-/**
- * I18n class for managing translations
- */
-export class I18n {
-  private translations: Map<LocaleCode, TranslationDictionary> = new Map();
-  private currentLocale: LocaleCode;
-  private fallbackLocale: LocaleCode;
-  private localesDir: string;
-
-  constructor(options: I18nOptions = {}) {
-    const opts = { ...DEFAULT_OPTIONS, ...options };
-    this.fallbackLocale = opts.fallbackLocale;
-    this.localesDir = opts.localesDir;
-
-    // Detect or use default locale
-    this.currentLocale = opts.detectLocale
-      ? detectSystemLocale()
-      : opts.defaultLocale;
-
-    // Load translations
-    this.loadTranslations();
+  constructor() {
+    super();
+    this.detectLocale();
   }
 
   /**
-   * Load all translation files
+   * Detect locale from environment
    */
-  private loadTranslations(): void {
-    // Always load fallback locale
-    this.loadLocale(this.fallbackLocale);
+  private detectLocale(): void {
+    const envLocale = process.env.LANG || process.env.LC_ALL || process.env.LANGUAGE || '';
+    const localeCode = envLocale.split('.')[0].split('_')[0].toLowerCase() as Locale;
 
-    // Load current locale if different
-    if (this.currentLocale !== this.fallbackLocale) {
-      this.loadLocale(this.currentLocale);
-    }
-  }
-
-  /**
-   * Load a specific locale file
-   */
-  private loadLocale(locale: LocaleCode): void {
-    const filePath = path.join(this.localesDir, `${locale}.json`);
-
-    try {
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        const translations = JSON.parse(content) as TranslationDictionary;
-        this.translations.set(locale, translations);
-      }
-    } catch (error) {
-      // Silently ignore loading errors
-      console.warn(`Failed to load locale ${locale}:`, error);
+    if (localeCode && translations[localeCode]) {
+      this.currentLocale = localeCode;
     }
   }
 
   /**
    * Get current locale
    */
-  getLocale(): LocaleCode {
+  getLocale(): Locale {
     return this.currentLocale;
   }
 
   /**
-   * Set current locale
+   * Set locale
    */
-  setLocale(locale: LocaleCode): void {
-    if (!isValidLocale(locale)) {
-      throw new Error(`Invalid locale: ${locale}`);
-    }
-
-    this.currentLocale = locale;
-
-    // Load if not already loaded
-    if (!this.translations.has(locale)) {
-      this.loadLocale(locale);
+  setLocale(locale: Locale): void {
+    if (translations[locale]) {
+      this.currentLocale = locale;
+      this.emit('localeChanged', locale);
     }
   }
 
   /**
-   * Translate a key with optional interpolation
-   *
-   * @param key - Dot-notation key (e.g., "errors.fileNotFound")
-   * @param params - Interpolation parameters
-   * @returns Translated string
-   *
-   * @example
-   * ```typescript
-   * i18n.t('greeting', { name: 'John' }); // "Hello, John!"
-   * i18n.t('errors.fileNotFound', { path: '/foo' }); // "File not found: /foo"
-   * ```
+   * Get available locales
    */
-  t(key: string, params?: Record<string, string | number>): string {
-    // Try current locale first
-    let value = this.getNestedValue(this.translations.get(this.currentLocale), key);
+  getAvailableLocales(): Locale[] {
+    return Object.keys(translations) as Locale[];
+  }
 
-    // Fallback to default locale
-    if (value === undefined && this.currentLocale !== this.fallbackLocale) {
-      value = this.getNestedValue(this.translations.get(this.fallbackLocale), key);
+  /**
+   * Get translation for a key path
+   * @param keyPath - Dot-separated key path (e.g., 'cli.welcome')
+   * @param params - Optional parameters for interpolation
+   */
+  t(keyPath: string, params?: Record<string, string | number>): string {
+    const keys = keyPath.split('.');
+    let value: unknown = translations[this.currentLocale];
+
+    for (const key of keys) {
+      if (value && typeof value === 'object' && key in value) {
+        value = (value as Record<string, unknown>)[key];
+      } else {
+        // Try fallback locale
+        value = translations[this.fallbackLocale];
+        for (const k of keys) {
+          if (value && typeof value === 'object' && k in value) {
+            value = (value as Record<string, unknown>)[k];
+          } else {
+            return keyPath; // Return key if not found
+          }
+        }
+        break;
+      }
     }
 
-    // Return key if not found
-    if (value === undefined || typeof value !== 'string') {
-      return key;
+    if (typeof value !== 'string') {
+      return keyPath;
     }
 
     // Interpolate parameters
     if (params) {
-      return this.interpolate(value, params);
+      return value.replace(/\{(\w+)\}/g, (_, key) => {
+        return params[key]?.toString() ?? '{' + key + '}';
+      });
     }
 
     return value;
   }
 
   /**
-   * Translate with pluralization
-   *
-   * @param key - Base key (expects key.zero, key.one, key.other)
-   * @param count - Number for pluralization
-   * @param params - Additional interpolation parameters
+   * Get all translations for a category
    */
-  tp(key: string, count: number, params?: Record<string, string | number>): string {
-    let pluralKey: string;
-
-    if (count === 0) {
-      pluralKey = `${key}.zero`;
-    } else if (count === 1) {
-      pluralKey = `${key}.one`;
-    } else {
-      pluralKey = `${key}.other`;
-    }
-
-    // Try specific plural form, fallback to base key
-    const result = this.t(pluralKey, { count, ...params });
-    if (result === pluralKey) {
-      return this.t(key, { count, ...params });
-    }
-
-    return result;
-  }
-
-  /**
-   * Check if a key exists
-   */
-  has(key: string): boolean {
-    const value = this.getNestedValue(this.translations.get(this.currentLocale), key);
-    if (value !== undefined) return true;
-
-    if (this.currentLocale !== this.fallbackLocale) {
-      return (
-        this.getNestedValue(this.translations.get(this.fallbackLocale), key) !== undefined
-      );
-    }
-
-    return false;
-  }
-
-  /**
-   * Get nested value from object using dot notation
-   */
-  private getNestedValue(
-    obj: TranslationDictionary | undefined,
-    key: string
-  ): string | TranslationDictionary | undefined {
-    if (!obj) return undefined;
-
-    const keys = key.split('.');
-    let current: string | TranslationDictionary | undefined = obj;
-
-    for (const k of keys) {
-      if (current === undefined || typeof current === 'string') {
-        return undefined;
-      }
-      current = current[k];
-    }
-
-    return current;
-  }
-
-  /**
-   * Interpolate parameters into string
-   */
-  private interpolate(str: string, params: Record<string, string | number>): string {
-    return str.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-      const value = params[key];
-      return value !== undefined ? String(value) : match;
-    });
-  }
-
-  /**
-   * Get all available locales
-   */
-  getAvailableLocales(): LocaleCode[] {
-    try {
-      const files = fs.readdirSync(this.localesDir);
-      return files
-        .filter((f) => f.endsWith('.json'))
-        .map((f) => f.replace('.json', ''))
-        .filter(isValidLocale) as LocaleCode[];
-    } catch {
-      return [this.fallbackLocale];
-    }
-  }
-
-  /**
-   * Add or update translations programmatically
-   */
-  addTranslations(locale: LocaleCode, translations: TranslationDictionary): void {
-    const existing = this.translations.get(locale) || {};
-    this.translations.set(locale, this.deepMerge(existing, translations));
-  }
-
-  /**
-   * Deep merge two objects
-   */
-  private deepMerge(
-    target: TranslationDictionary,
-    source: TranslationDictionary
-  ): TranslationDictionary {
-    const result = { ...target };
-
-    for (const [key, value] of Object.entries(source)) {
-      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        result[key] = this.deepMerge(
-          (result[key] as TranslationDictionary) || {},
-          value as TranslationDictionary
-        );
-      } else {
-        result[key] = value;
-      }
-    }
-
-    return result;
+  getCategory<K extends keyof Translations>(category: K): Translations[K] {
+    return translations[this.currentLocale][category];
   }
 }
 
-// Singleton instance
-let i18nInstance: I18n | null = null;
+// ============================================================================
+// Singleton
+// ============================================================================
+
+let i18nInstance: I18nManager | null = null;
 
 /**
- * Get or create the i18n instance
+ * Get or create I18n manager singleton
  */
-export function getI18n(options?: I18nOptions): I18n {
+export function getI18n(): I18nManager {
   if (!i18nInstance) {
-    i18nInstance = new I18n(options);
+    i18nInstance = new I18nManager();
   }
   return i18nInstance;
 }
 
 /**
- * Shorthand translation function
+ * Shorthand for translation
  */
-export function t(key: string, params?: Record<string, string | number>): string {
-  return getI18n().t(key, params);
+export function t(keyPath: string, params?: Record<string, string | number>): string {
+  return getI18n().t(keyPath, params);
 }
 
 /**
- * Shorthand plural translation function
- */
-export function tp(
-  key: string,
-  count: number,
-  params?: Record<string, string | number>
-): string {
-  return getI18n().tp(key, count, params);
-}
-
-/**
- * Reset the i18n instance (for testing)
+ * Reset I18n manager (for testing)
  */
 export function resetI18n(): void {
   i18nInstance = null;
 }
+
+// Export translations for extension
+export { en, fr, translations };
+export default I18nManager;

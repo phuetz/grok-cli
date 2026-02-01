@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+import { exec } from "child_process";
 import { ToolResult, getErrorMessage } from "../types/index.js";
 
 // Note: node-pty is an optional dependency for PTY support
@@ -201,47 +202,33 @@ export class InteractiveBashTool extends EventEmitter {
   private async fallbackExecute(
     command: string
   ): Promise<{ sessionId: string; output: string }> {
-    const { spawn } = require("child_process");
-
     const sessionId = `exec-${++this.sessionCounter}`;
 
     return new Promise((resolve) => {
-      // Use spawn with shell and array args for safer execution
-      const child = spawn("bash", ["-c", command], {
+      // Use exec for simpler command execution with maxBuffer support
+      exec(command, {
         timeout: 60000,
         maxBuffer: 10 * 1024 * 1024,
         cwd: process.cwd(),
+        shell: '/bin/bash',
         env: {
           ...process.env,
           // Disable shell history for security
           HISTFILE: "/dev/null",
           HISTSIZE: "0",
         },
-      });
-
-      let stdout = "";
-      let stderr = "";
-
-      child.stdout?.on("data", (data: Buffer) => {
-        stdout += data.toString();
-      });
-
-      child.stderr?.on("data", (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      child.on("close", (_code: number | null) => {
-        resolve({
-          sessionId,
-          output: stdout + (stderr ? `\nStderr:\n${stderr}` : ""),
-        });
-      });
-
-      child.on("error", (error: Error) => {
-        resolve({
-          sessionId,
-          output: `Error: ${getErrorMessage(error)}`,
-        });
+      }, (error, stdout, stderr) => {
+        if (error) {
+          resolve({
+            sessionId,
+            output: `Error: ${getErrorMessage(error)}\n${stderr || ''}`,
+          });
+        } else {
+          resolve({
+            sessionId,
+            output: stdout + (stderr ? `\nStderr:\n${stderr}` : ""),
+          });
+        }
       });
     });
   }

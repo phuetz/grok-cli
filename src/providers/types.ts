@@ -140,6 +140,10 @@ export interface CompletionOptions {
   stream?: boolean;
   /** System prompt to prepend or insert into messages. */
   systemPrompt?: string;
+  /** Force the model to use tools (mode ANY vs AUTO). */
+  forceToolUse?: boolean;
+  /** Current iteration in the tool calling loop (used to detect first call). */
+  toolCallIteration?: number;
 }
 
 /** Internal interface for Anthropic API response */

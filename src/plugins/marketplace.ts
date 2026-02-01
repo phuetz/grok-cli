@@ -552,8 +552,8 @@ export class PluginMarketplace extends EventEmitter {
         };
       } else {
         // Non-sandboxed mode (for trusted plugins only)
-         
-        const pluginModule = require(modulePath);
+        // Use dynamic import() for ESM compatibility
+        const pluginModule = await import(modulePath);
 
         instance = {
           plugin,

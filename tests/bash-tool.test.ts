@@ -83,12 +83,13 @@ describe('BashTool', () => {
       expect(result.error).toContain('blocked');
     });
 
-    // Skip: Test times out in CI/certain environments due to async confirmation handling
-    it.skip('should block access to ~/.ssh', async () => {
+    // SSH key access should be blocked for security
+    it('should block access to ~/.ssh', async () => {
       const result = await bashTool.execute('cat ~/.ssh/id_rsa');
-      // Should fail - either blocked or file not found
+      // Should fail - either blocked by security rules or file not found
+      // Both outcomes are acceptable for this security test
       expect(result.success).toBe(false);
-    }, 30000);
+    }, 10000);
 
     it('should block access to /etc/shadow', async () => {
       const result = await bashTool.execute('cat /etc/shadow');
@@ -114,11 +115,11 @@ describe('BashTool', () => {
       expect(result.success).toBe(true);
     });
 
-    // Skip: This test times out in certain environments due to async confirmation handling
-    it.skip('should allow cat on safe files', async () => {
+    // Safe file operations should be allowed
+    it('should allow cat on safe files', async () => {
       const result = await bashTool.execute('cat package.json');
       expect(result.success).toBe(true);
-    }, 15000);
+    }, 10000);
 
     it('should allow grep command', async () => {
       // Using ripgrep via BashTool.grep() for fast searching

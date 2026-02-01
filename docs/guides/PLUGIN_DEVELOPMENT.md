@@ -198,3 +198,163 @@ export default class HelloWorldPlugin {
 2.  **Erreurs** : Gérez vos erreurs dans `activate` et `execute` pour ne pas faire planter l'application principale.
 3.  **Performance** : Évitez les opérations bloquantes lourdes au démarrage (`activate`).
 4.  **Nommage** : Préfixez vos outils et commandes pour éviter les conflits (ex: `git_status` vs `svn_status`).
+
+## 🔌 Providers (Avancé)
+
+Les plugins peuvent aussi enregistrer des providers personnalisés pour étendre les capacités de Code Buddy.
+
+### Types de Providers
+
+| Type | Description | Méthodes à implémenter |
+|------|-------------|------------------------|
+| `llm` | Fournisseur de modèles de langage | `chat()`, `complete()`, `stream()` |
+| `embedding` | Fournisseur d'embeddings | `embed()`, `embedBatch()` |
+| `search` | Moteur de recherche | `search()`, `index()` |
+
+### Exemple : Provider LLM Custom
+
+```javascript
+context.registerProvider({
+  id: 'mon-llm-local',
+  name: 'Mon LLM Local',
+  type: 'llm',
+  priority: 10, // Plus haut = utilisé en premier
+
+  async initialize() {
+    // Charger le modèle
+  },
+
+  async chat(messages) {
+    // Envoyer les messages et retourner la réponse
+    return "Réponse du modèle local";
+  },
+
+  async complete(prompt, options) {
+    // Completion simple
+  },
+
+  async *stream(messages) {
+    // Streaming (générateur async)
+    yield { type: 'content', content: 'Bonjour' };
+    yield { type: 'content', content: ' monde' };
+    yield { type: 'done' };
+  }
+});
+```
+
+## 📊 Events (Avancé)
+
+Les plugins peuvent écouter et émettre des événements.
+
+### Écouter des Événements
+
+```javascript
+context.on('message:received', (data) => {
+  console.log('Message reçu:', data.content);
+});
+
+context.on('tool:executed', (data) => {
+  console.log(`Outil ${data.name} exécuté en ${data.duration}ms`);
+});
+```
+
+### Événements Disponibles
+
+| Événement | Description | Données |
+|-----------|-------------|---------|
+| `message:received` | Nouveau message utilisateur | `{ content, timestamp }` |
+| `message:sent` | Réponse de l'assistant | `{ content, toolCalls }` |
+| `tool:executed` | Outil exécuté | `{ name, args, result, duration }` |
+| `session:started` | Session démarrée | `{ sessionId }` |
+| `session:ended` | Session terminée | `{ sessionId, cost }` |
+
+## 🛡️ Permissions
+
+Les plugins peuvent déclarer les permissions nécessaires dans le manifest.
+
+```json
+{
+  "permissions": {
+    "shell": true,       // Exécution de commandes shell
+    "network": true,     // Accès réseau
+    "filesystem": true,  // Lecture/écriture de fichiers
+    "system": false      // Accès aux infos système
+  }
+}
+```
+
+## 🧪 Testing
+
+### Structure de Test
+
+```javascript
+// tests/mon-plugin.test.js
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import MonPlugin from '../index.js';
+
+describe('MonPlugin', () => {
+  let plugin;
+  let mockContext;
+
+  beforeEach(() => {
+    plugin = new MonPlugin();
+    mockContext = {
+      logger: { info: jest.fn(), error: jest.fn() },
+      registerCommand: jest.fn(),
+      registerTool: jest.fn(),
+    };
+  });
+
+  it('should activate without error', () => {
+    expect(() => plugin.activate(mockContext)).not.toThrow();
+  });
+
+  it('should register commands', () => {
+    plugin.activate(mockContext);
+    expect(mockContext.registerCommand).toHaveBeenCalled();
+  });
+});
+```
+
+## 📚 Référence API Complète
+
+### PluginContext
+
+| Méthode | Description |
+|---------|-------------|
+| `logger` | Logger scopé au plugin |
+| `registerCommand(cmd)` | Enregistre une commande slash |
+| `registerTool(tool)` | Enregistre un outil LLM |
+| `registerProvider(provider)` | Enregistre un provider |
+| `on(event, handler)` | Écoute un événement |
+| `emit(event, data)` | Émet un événement |
+| `config` | Configuration du plugin |
+| `dataDir` | Répertoire de données persistantes |
+
+### ToolResult
+
+```typescript
+interface ToolResult {
+  success: boolean;       // true si l'outil a réussi
+  output?: string;        // Sortie textuelle
+  error?: string;         // Message d'erreur
+  metadata?: object;      // Métadonnées supplémentaires
+}
+```
+
+### Command
+
+```typescript
+interface Command {
+  name: string;           // Nom de la commande (sans /)
+  description: string;    // Description affichée
+  prompt: string;         // Prompt envoyé au LLM
+  arguments?: Argument[]; // Arguments optionnels
+}
+```
+
+## 🔗 Ressources
+
+- [Exemples de plugins](https://github.com/phuetz/code-buddy/tree/main/examples/plugins)
+- [Plugin Hello World](https://github.com/phuetz/code-buddy/tree/main/.codebuddy/plugins/hello-world)
+- [API TypeScript](https://github.com/phuetz/code-buddy/blob/main/src/plugins/types.ts)

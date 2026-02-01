@@ -134,7 +134,7 @@ describe('GeminiProvider', () => {
       const uninitProvider = new GeminiProvider();
       await expect(uninitProvider.complete({
         messages: [{ role: 'user', content: 'Hello' }],
-      })).rejects.toThrow('Provider not initialized');
+      })).rejects.toThrow('Gemini provider not initialized');
       uninitProvider.dispose();
     });
 
@@ -196,7 +196,7 @@ describe('GeminiProvider', () => {
 
       await expect(provider.complete({
         messages: [{ role: 'user', content: 'Hello' }],
-      })).rejects.toThrow('Gemini API error: 400 Bad Request');
+      })).rejects.toThrow('Gemini API request failed with status 400');
     });
   });
 
@@ -284,6 +284,7 @@ describe('GeminiProvider', () => {
       });
 
       const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      // Parameters should have UPPERCASE types (Gemini API requirement)
       expect(callBody.tools).toEqual([
         {
           functionDeclarations: [
@@ -291,8 +292,8 @@ describe('GeminiProvider', () => {
               name: 'get_weather',
               description: 'Get weather information',
               parameters: {
-                type: 'object',
-                properties: { location: { type: 'string' } },
+                type: 'OBJECT',
+                properties: { location: { type: 'STRING' } },
                 required: ['location'],
               },
             },
@@ -355,7 +356,7 @@ describe('GeminiProvider', () => {
         for await (const _chunk of stream) {
           // Should throw
         }
-      }).rejects.toThrow('Provider not initialized');
+      }).rejects.toThrow('Gemini provider not initialized');
       uninitProvider.dispose();
     });
 
@@ -400,7 +401,7 @@ describe('GeminiProvider', () => {
         for await (const _chunk of stream) {
           // Should throw
         }
-      }).rejects.toThrow('Gemini API error: 500 Internal Server Error');
+      }).rejects.toThrow('Gemini API request failed with status 500');
     });
 
     it('should throw if no response body', async () => {
@@ -417,7 +418,7 @@ describe('GeminiProvider', () => {
         for await (const _chunk of stream) {
           // Should throw
         }
-      }).rejects.toThrow('No response body');
+      }).rejects.toThrow('empty response body');
     });
   });
 

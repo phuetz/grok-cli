@@ -1,5 +1,6 @@
-# Grok CLI - Official Docker Image
+# Code Buddy - Official Docker Image
 # Multi-stage build for optimized production image
+# Supports AMD64 and ARM64 architectures
 
 # ============================================================================
 # Stage 1: Build
@@ -35,34 +36,54 @@ RUN npm prune --production
 # ============================================================================
 FROM node:20-bookworm-slim AS production
 
+# Labels for container registry
+LABEL org.opencontainers.image.title="Code Buddy"
+LABEL org.opencontainers.image.description="AI-powered terminal assistant using Grok API (xAI)"
+LABEL org.opencontainers.image.version="2.0.0"
+LABEL org.opencontainers.image.vendor="phuetz"
+LABEL org.opencontainers.image.source="https://github.com/phuetz/code-buddy"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.documentation="https://github.com/phuetz/code-buddy#readme"
+
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ripgrep \
+    curl \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN useradd -m -s /bin/bash grok
+# Create non-root user for security
+RUN useradd -m -s /bin/bash -u 1001 codebuddy
 
-# Copy built application
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
+# Copy built application from builder stage
+COPY --from=builder --chown=codebuddy:codebuddy /app/dist ./dist
+COPY --from=builder --chown=codebuddy:codebuddy /app/node_modules ./node_modules
+COPY --from=builder --chown=codebuddy:codebuddy /app/package.json ./
 
-# Create directories for grok config
-RUN mkdir -p /home/grok/.grok && chown -R grok:grok /home/grok
+# Create directories for config and data
+RUN mkdir -p /home/codebuddy/.codebuddy /home/codebuddy/data \
+    && chown -R codebuddy:codebuddy /home/codebuddy
 
 # Set environment
 ENV NODE_ENV=production
-ENV HOME=/home/grok
+ENV HOME=/home/codebuddy
+ENV CODEBUDDY_HOME=/home/codebuddy/.codebuddy
 
 # Switch to non-root user
-USER grok
+USER codebuddy
 
 # Set working directory for projects
 WORKDIR /workspace
+
+# Health check for server mode
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health 2>/dev/null || exit 0
+
+# Expose server port (for server mode)
+EXPOSE 3000
 
 # Entry point
 ENTRYPOINT ["node", "/app/dist/index.js"]
@@ -71,19 +92,20 @@ ENTRYPOINT ["node", "/app/dist/index.js"]
 CMD ["--help"]
 
 # ============================================================================
-# Stage 3: Development (optional)
+# Stage 3: Development
 # ============================================================================
 FROM node:20-bookworm AS development
 
 WORKDIR /app
 
 # Install dev dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ripgrep \
     python3 \
     make \
     g++ \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package files and install
@@ -93,11 +115,11 @@ RUN npm ci
 # Copy source
 COPY . .
 
-# Build
-RUN npm run build
+# Environment
+ENV NODE_ENV=development
 
-# Expose for potential dev server
-EXPOSE 3000
+# Expose for dev server
+EXPOSE 3000 5173
 
 # Dev entry point
 CMD ["npm", "run", "dev:node"]

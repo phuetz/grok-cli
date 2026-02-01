@@ -13,6 +13,7 @@ import type {
   StreamChunk,
   ToolCall,
   ProviderFeature,
+  LLMMessage,
 } from './types.js';
 import { retry, RetryStrategies, RetryPredicates } from '../utils/retry.js';
 import { logger } from '../utils/logger.js';
@@ -21,6 +22,22 @@ import { logger } from '../utils/logger.js';
  * Implementation of the Google Gemini provider.
  * Uses `fetch` to interact with the REST API directly, avoiding the need for heavy SDKs.
  */
+// Keywords that indicate the user needs real-time information (tools required)
+const TOOL_TRIGGER_KEYWORDS = [
+  // News & current events
+  'actualités', 'actualité', 'news', 'nouvelles',
+  // TV & entertainment
+  'programme tv', 'télé ce soir', 'france 2', 'tf1', 'émission',
+  // Weather
+  'météo', 'temps qu\'il fait', 'temperature', 'température',
+  // Time-sensitive
+  'aujourd\'hui', 'ce soir', 'demain', 'cette semaine',
+  // Prices & availability
+  'prix de', 'coût de', 'combien coûte', 'tarif',
+  // Search queries
+  'cherche', 'recherche', 'trouve', 'où trouver',
+];
+
 export class GeminiProvider extends BaseProvider {
   readonly type: ProviderType = 'gemini';
   readonly name = 'Gemini (Google)';
@@ -59,6 +76,17 @@ export class GeminiProvider extends BaseProvider {
     const url = `${client.baseUrl}/models/${model}:generateContent?key=${client.apiKey}`;
 
     const body = this.formatRequest(options);
+
+    // Log request details for debugging tool calling
+    logger.debug('Gemini API request', {
+      source: 'GeminiProvider',
+      model,
+      contentsCount: (body.contents as unknown[])?.length ?? 0,
+      hasTools: !!body.tools,
+      toolCount: (body.tools as unknown[])?.length > 0 ? ((body.tools as Array<{ functionDeclarations?: unknown[] }>)[0]?.functionDeclarations?.length ?? 0) : 0,
+      toolConfigMode: (body.toolConfig as { functionCallingConfig?: { mode?: string } })?.functionCallingConfig?.mode ?? 'none',
+      systemPromptLength: (body.systemInstruction as { parts?: Array<{ text?: string }> })?.parts?.[0]?.text?.length ?? 0,
+    });
 
     // Use retry with exponential backoff for API calls
     const response = await retry(
@@ -121,6 +149,18 @@ export class GeminiProvider extends BaseProvider {
         });
       }
     }
+
+    // Log response details for debugging tool calling
+    logger.debug('Gemini API response', {
+      source: 'GeminiProvider',
+      hasFunctionCall: toolCalls.length > 0,
+      toolCallCount: toolCalls.length,
+      toolNames: toolCalls.map(tc => tc.function.name),
+      finishReason: candidate.finishReason,
+      textPreview: content ? content.slice(0, 100) + (content.length > 100 ? '...' : '') : null,
+      promptTokens: data.usageMetadata?.promptTokenCount || 0,
+      completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
+    });
 
     return {
       id: `gemini_${Date.now()}`,
@@ -311,13 +351,17 @@ export class GeminiProvider extends BaseProvider {
       const role = msg.role === 'assistant' ? 'model' : 'user';
 
       if (msg.role === 'tool') {
+        // Gemini expects functionResponse with { name, content } structure
         contents.push({
           role: 'function',
           parts: [
             {
               functionResponse: {
                 name: msg.name || 'unknown',
-                response: { result: msg.content },
+                response: {
+                  name: msg.name || 'unknown',
+                  content: msg.content,
+                },
               },
             },
           ],
@@ -342,18 +386,82 @@ export class GeminiProvider extends BaseProvider {
       request.systemInstruction = systemInstruction;
     }
 
-    if (options.tools) {
+    if (options.tools && options.tools.length > 0) {
+      // Convert parameter types to UPPERCASE as required by Gemini API
       request.tools = [
         {
           functionDeclarations: options.tools.map(tool => ({
             name: tool.name,
             description: tool.description,
-            parameters: tool.parameters,
+            parameters: this.convertParameterTypes(tool.parameters),
           })),
         },
       ];
+
+      // Determine tool calling mode:
+      // - ANY: Force tool use (first iteration when query needs tools)
+      // - AUTO: Let Gemini decide (subsequent iterations or normal queries)
+      const isFirstIteration = (options.toolCallIteration ?? 0) === 0;
+      const shouldForce = options.forceToolUse || (isFirstIteration && this.shouldForceToolUse(options.messages));
+
+      request.toolConfig = {
+        functionCallingConfig: {
+          mode: shouldForce ? 'ANY' : 'AUTO',
+        },
+      };
+
+      logger.debug('Gemini tool config', {
+        source: 'GeminiProvider',
+        mode: shouldForce ? 'ANY' : 'AUTO',
+        forceToolUse: options.forceToolUse,
+        isFirstIteration,
+        toolCount: options.tools.length,
+      });
     }
 
     return request;
+  }
+
+  /**
+   * Detects if the user's query requires tool use (real-time information).
+   * Returns true for queries about news, weather, TV, prices, etc.
+   */
+  private shouldForceToolUse(messages: LLMMessage[]): boolean {
+    // Get the last user message
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    if (!lastUserMessage) return false;
+
+    const content = lastUserMessage.content.toLowerCase();
+    return TOOL_TRIGGER_KEYWORDS.some(trigger => content.includes(trigger));
+  }
+
+  /**
+   * Converts parameter types to UPPERCASE as required by Gemini API.
+   * Example: { type: 'string' } -> { type: 'STRING' }
+   */
+  private convertParameterTypes(parameters: Record<string, unknown>): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(parameters)) {
+      if (key === 'type' && typeof value === 'string') {
+        result[key] = value.toUpperCase();
+      } else if (key === 'properties' && typeof value === 'object' && value !== null) {
+        const properties: Record<string, unknown> = {};
+        for (const [propKey, propValue] of Object.entries(value as Record<string, unknown>)) {
+          if (typeof propValue === 'object' && propValue !== null) {
+            properties[propKey] = this.convertParameterTypes(propValue as Record<string, unknown>);
+          } else {
+            properties[propKey] = propValue;
+          }
+        }
+        result[key] = properties;
+      } else if (key === 'items' && typeof value === 'object' && value !== null) {
+        result[key] = this.convertParameterTypes(value as Record<string, unknown>);
+      } else {
+        result[key] = value;
+      }
+    }
+
+    return result;
   }
 }

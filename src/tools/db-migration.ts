@@ -9,6 +9,7 @@
  */
 
 import Database from 'better-sqlite3';
+import { createHash } from 'crypto';
 import { UnifiedVfsRouter } from '../services/vfs/unified-vfs-router.js';
 import * as path from 'path';
 import * as os from 'os';
@@ -491,8 +492,7 @@ export class MigrationManager {
    * Compute checksum for migration SQL
    */
   private computeChecksum(sql: string): string {
-    const crypto = require('crypto');
-    return crypto.createHash('sha256').update(sql).digest('hex').slice(0, 16);
+    return createHash('sha256').update(sql).digest('hex').slice(0, 16);
   }
 
   /**

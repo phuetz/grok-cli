@@ -91,11 +91,13 @@ export function initializeOptimizations(config?: {
   modelRouter: import("./model-routing.js").ModelRouter;
   latencyOptimizer: import("./latency-optimizer.js").LatencyOptimizer;
 } {
-  const { initializeModelRouter } = require("./model-routing.js");
-  const { getLatencyOptimizer } = require("./latency-optimizer.js");
+  // Import model-routing and latency-optimizer modules
+  // Note: These are already exported above, using dynamic import to avoid TypeScript circular reference issues
+  const { initializeModelRouter: initRouter } = require("./model-routing.js");
+  const { getLatencyOptimizer: getOptimizer } = require("./latency-optimizer.js");
 
-  const modelRouter = initializeModelRouter(config?.modelRoutingConfig || {});
-  const latencyOptimizer = getLatencyOptimizer();
+  const modelRouter = initRouter(config?.modelRoutingConfig || {});
+  const latencyOptimizer = getOptimizer();
 
   return { modelRouter, latencyOptimizer };
 }

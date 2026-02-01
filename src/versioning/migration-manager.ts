@@ -309,7 +309,9 @@ export class MigrationManager extends EventEmitter {
           } catch {
             // Lock file might be corrupted, try to remove it
             this.logger.warn('Lock file corrupted, attempting removal');
-            await fs.unlink(lockPath).catch(() => {});
+            await fs.unlink(lockPath).catch((err) => {
+              this.logger.debug(`Lock file removal error (ignored): ${err instanceof Error ? err.message : String(err)}`);
+            });
             continue;
           }
 
