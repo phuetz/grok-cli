@@ -101,9 +101,11 @@ export class CodeBuddyClient {
   private currentModel: string = "grok-code-fast-1";
   private defaultMaxTokens: number;
   private baseURL: string;
+  private apiKey: string;
   private toolSupportProbed: boolean = false;
   private toolSupportDetected: boolean | null = null;
   private probePromise: Promise<boolean> | null = null;
+  private isGeminiProvider: boolean = false;
 
   constructor(apiKey: string, model?: string, baseURL?: string) {
     // Validate API key
@@ -125,11 +127,23 @@ export class CodeBuddyClient {
     }
 
     this.baseURL = baseURL || process.env.GROK_BASE_URL || "https://api.x.ai/v1";
-    this.client = new OpenAI({
-      apiKey,
-      baseURL: this.baseURL,
-      timeout: 360000,
-    });
+    this.apiKey = apiKey;
+
+    // Detect Gemini provider
+    this.isGeminiProvider = this.baseURL.includes('generativelanguage.googleapis.com');
+
+    // Only create OpenAI client for non-Gemini providers
+    if (!this.isGeminiProvider) {
+      this.client = new OpenAI({
+        apiKey,
+        baseURL: this.baseURL,
+        timeout: 360000,
+      });
+    } else {
+      // Create a dummy client for Gemini (won't be used)
+      this.client = null as unknown as OpenAI;
+      logger.info('Using native Gemini API');
+    }
     const envMax = Number(process.env.CODEBUDDY_MAX_TOKENS);
     this.defaultMaxTokens = Number.isFinite(envMax) && envMax > 0 ? envMax : 1536;
     if (model) {
@@ -348,6 +362,181 @@ export class CodeBuddyClient {
     return this.baseURL;
   }
 
+  /**
+   * Check if using Gemini provider
+   */
+  isGemini(): boolean {
+    return this.isGeminiProvider;
+  }
+
+  /**
+   * Gemini-specific chat implementation
+   */
+  private async geminiChat(
+    messages: CodeBuddyMessage[],
+    tools?: CodeBuddyTool[],
+    opts?: ChatOptions
+  ): Promise<CodeBuddyResponse> {
+    const model = opts?.model || this.currentModel;
+    const url = `${this.baseURL}/models/${model}:generateContent?key=${this.apiKey}`;
+
+    // Convert messages to Gemini format
+    const contents: Array<{
+      role: string;
+      parts: Array<{ text?: string; functionResponse?: { name: string; response: unknown } }>;
+    }> = [];
+
+    let systemInstruction: { parts: Array<{ text: string }> } | undefined;
+
+    for (const msg of messages) {
+      if (msg.role === 'system') {
+        // Gemini uses systemInstruction instead of system message
+        systemInstruction = { parts: [{ text: String(msg.content) }] };
+      } else if (msg.role === 'user') {
+        contents.push({
+          role: 'user',
+          parts: [{ text: String(msg.content) }],
+        });
+      } else if (msg.role === 'assistant') {
+        const assistantMsg = msg as { content?: string | null; tool_calls?: CodeBuddyToolCall[] };
+        if (assistantMsg.tool_calls && assistantMsg.tool_calls.length > 0) {
+          // Assistant with tool calls
+          const parts: Array<{ functionCall?: { name: string; args: unknown }; text?: string }> = [];
+          if (assistantMsg.content) {
+            parts.push({ text: assistantMsg.content });
+          }
+          for (const tc of assistantMsg.tool_calls) {
+            parts.push({
+              functionCall: {
+                name: tc.function.name,
+                args: JSON.parse(tc.function.arguments),
+              },
+            });
+          }
+          contents.push({ role: 'model', parts: parts as Array<{ text?: string; functionResponse?: { name: string; response: unknown } }> });
+        } else {
+          contents.push({
+            role: 'model',
+            parts: [{ text: String(msg.content || '') }],
+          });
+        }
+      } else if (msg.role === 'tool') {
+        const toolMsg = msg as { tool_call_id?: string; name?: string; content?: string };
+        contents.push({
+          role: 'user',
+          parts: [{
+            functionResponse: {
+              name: toolMsg.name || toolMsg.tool_call_id || 'unknown',
+              response: { result: toolMsg.content },
+            },
+          }],
+        });
+      }
+    }
+
+    // Build request body
+    const body: Record<string, unknown> = {
+      contents,
+      generationConfig: {
+        temperature: opts?.temperature ?? 0.7,
+        maxOutputTokens: this.defaultMaxTokens,
+      },
+    };
+
+    if (systemInstruction) {
+      body.systemInstruction = systemInstruction;
+    }
+
+    // Add tools if provided
+    if (tools && tools.length > 0) {
+      const functionDeclarations = tools.map(tool => ({
+        name: tool.function.name,
+        description: tool.function.description,
+        parameters: tool.function.parameters,
+      }));
+      body.tools = [{ functionDeclarations }];
+      body.toolConfig = { functionCallingConfig: { mode: 'AUTO' } };
+    }
+
+    // Make request with retry
+    const response = await retry(
+      async () => {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`${res.status} ${errorText || res.statusText}`);
+        }
+
+        return res;
+      },
+      {
+        ...RetryStrategies.llmApi,
+        isRetryable: RetryPredicates.llmApiError,
+        onRetry: (error, attempt, delay) => {
+          logger.warn(`Gemini API call failed, retrying (attempt ${attempt}) in ${delay}ms...`, {
+            source: 'CodeBuddyClient',
+            error: error instanceof Error ? error.message : String(error),
+          });
+        },
+      }
+    );
+
+    const data = await response.json() as {
+      candidates: Array<{
+        content: {
+          parts: Array<{ text?: string; functionCall?: { name: string; args: unknown } }>;
+        };
+        finishReason: string;
+      }>;
+      usageMetadata?: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+        totalTokenCount?: number;
+      };
+    };
+
+    // Convert response to CodeBuddy format
+    const candidate = data.candidates[0];
+    const toolCalls: CodeBuddyToolCall[] = [];
+    let content = '';
+
+    for (const part of candidate.content.parts) {
+      if (part.text) {
+        content += part.text;
+      } else if (part.functionCall) {
+        toolCalls.push({
+          id: `call_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          type: 'function',
+          function: {
+            name: part.functionCall.name,
+            arguments: JSON.stringify(part.functionCall.args),
+          },
+        });
+      }
+    }
+
+    return {
+      choices: [{
+        message: {
+          role: 'assistant',
+          content: content || null,
+          tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+        },
+        finish_reason: candidate.finishReason === 'STOP' ? 'stop' : candidate.finishReason.toLowerCase(),
+      }],
+      usage: data.usageMetadata ? {
+        prompt_tokens: data.usageMetadata.promptTokenCount || 0,
+        completion_tokens: data.usageMetadata.candidatesTokenCount || 0,
+        total_tokens: data.usageMetadata.totalTokenCount || 0,
+      } : undefined,
+    };
+  }
+
   async chat(
     messages: CodeBuddyMessage[],
     tools?: CodeBuddyTool[],
@@ -380,6 +569,11 @@ export class CodeBuddyClient {
       const opts: ChatOptions = typeof options === "string"
         ? { model: options, searchOptions }
         : options || {};
+
+      // Route to Gemini if using Gemini provider
+      if (this.isGeminiProvider) {
+        return await this.geminiChat(messages, tools, opts);
+      }
 
       // Disable tools for local inference (LM Studio) as they may not support function calling
       const useTools = !this.isLocalInference() && tools && tools.length > 0;
@@ -462,6 +656,79 @@ export class CodeBuddyClient {
     });
   }
 
+  /**
+   * Gemini-specific streaming (falls back to non-streaming for simplicity)
+   */
+  private async *geminiChatStream(
+    messages: CodeBuddyMessage[],
+    tools?: CodeBuddyTool[],
+    opts?: ChatOptions
+  ): AsyncGenerator<ChatCompletionChunk, void, unknown> {
+    // For Gemini, use non-streaming and emit as single chunk
+    // TODO: Implement proper streaming with streamGenerateContent API
+    const response = await this.geminiChat(messages, tools, opts);
+
+    const choice = response.choices[0];
+
+    // Emit content chunk
+    if (choice.message.content) {
+      yield {
+        id: `chatcmpl-${Date.now()}`,
+        object: 'chat.completion.chunk' as const,
+        created: Math.floor(Date.now() / 1000),
+        model: opts?.model || this.currentModel,
+        choices: [{
+          index: 0,
+          delta: {
+            role: 'assistant' as const,
+            content: choice.message.content,
+          },
+          finish_reason: null,
+        }],
+      };
+    }
+
+    // Emit tool calls if present
+    if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
+      for (const toolCall of choice.message.tool_calls) {
+        yield {
+          id: `chatcmpl-${Date.now()}`,
+          object: 'chat.completion.chunk' as const,
+          created: Math.floor(Date.now() / 1000),
+          model: opts?.model || this.currentModel,
+          choices: [{
+            index: 0,
+            delta: {
+              tool_calls: [{
+                index: 0,
+                id: toolCall.id,
+                type: 'function' as const,
+                function: {
+                  name: toolCall.function.name,
+                  arguments: toolCall.function.arguments,
+                },
+              }],
+            },
+            finish_reason: null,
+          }],
+        };
+      }
+    }
+
+    // Final chunk with finish_reason
+    yield {
+      id: `chatcmpl-${Date.now()}`,
+      object: 'chat.completion.chunk' as const,
+      created: Math.floor(Date.now() / 1000),
+      model: opts?.model || this.currentModel,
+      choices: [{
+        index: 0,
+        delta: {},
+        finish_reason: choice.finish_reason as 'stop' | 'tool_calls' | 'length' | 'content_filter' | null,
+      }],
+    };
+  }
+
   async *chatStream(
     messages: CodeBuddyMessage[],
     tools?: CodeBuddyTool[],
@@ -473,6 +740,12 @@ export class CodeBuddyClient {
       const opts: ChatOptions = typeof options === "string"
         ? { model: options, searchOptions }
         : options || {};
+
+      // Route to Gemini if using Gemini provider
+      if (this.isGeminiProvider) {
+        yield* this.geminiChatStream(messages, tools, opts);
+        return;
+      }
 
       // Disable tools for local inference (LM Studio) as they may not support function calling
       const useTools = !this.isLocalInference() && tools && tools.length > 0;
