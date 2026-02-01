@@ -199,19 +199,79 @@ async function ensureUserSettingsDirectory(): Promise<void> {
   }
 }
 
+// Detected provider configuration
+interface DetectedProvider {
+  provider: 'gemini' | 'grok' | 'openai' | 'anthropic' | 'unknown';
+  apiKey: string;
+  baseURL: string;
+  defaultModel: string;
+}
+
+// Detect provider from environment variables
+function detectProviderFromEnv(): DetectedProvider | null {
+  // Priority: Gemini > Grok > OpenAI > Anthropic
+  if (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY) {
+    return {
+      provider: 'gemini',
+      apiKey: process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '',
+      baseURL: 'https://generativelanguage.googleapis.com/v1beta',
+      defaultModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    };
+  }
+
+  if (process.env.GROK_API_KEY || process.env.XAI_API_KEY) {
+    return {
+      provider: 'grok',
+      apiKey: process.env.GROK_API_KEY || process.env.XAI_API_KEY || '',
+      baseURL: process.env.GROK_BASE_URL || 'https://api.x.ai/v1',
+      defaultModel: process.env.GROK_MODEL || 'grok-3-fast-latest',
+    };
+  }
+
+  if (process.env.OPENAI_API_KEY) {
+    return {
+      provider: 'openai',
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+      defaultModel: process.env.OPENAI_MODEL || 'gpt-4o',
+    };
+  }
+
+  if (process.env.ANTHROPIC_API_KEY) {
+    return {
+      provider: 'anthropic',
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      baseURL: 'https://api.anthropic.com/v1',
+      defaultModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
+    };
+  }
+
+  return null;
+}
+
+// Cache detected provider
+let cachedProvider: DetectedProvider | null | undefined = undefined;
+
+async function getDetectedProvider(): Promise<DetectedProvider | null> {
+  if (cachedProvider !== undefined) return cachedProvider;
+
+  await ensureEnvLoaded();
+  cachedProvider = detectProviderFromEnv();
+
+  if (cachedProvider) {
+    logger.info(`Auto-detected provider: ${cachedProvider.provider} (model: ${cachedProvider.defaultModel})`);
+  }
+
+  return cachedProvider;
+}
+
 // Load API key from environment, secure storage, or legacy settings
 async function loadApiKey(): Promise<string | undefined> {
   await ensureEnvLoaded();
 
-  // Check environment first (fastest path)
-  // Priority: Gemini > Grok > OpenAI > Anthropic
-  const envApiKey = process.env.GOOGLE_API_KEY ||
-                    process.env.GEMINI_API_KEY ||
-                    process.env.GROK_API_KEY ||
-                    process.env.XAI_API_KEY ||
-                    process.env.OPENAI_API_KEY ||
-                    process.env.ANTHROPIC_API_KEY;
-  if (envApiKey) return envApiKey;
+  // Check environment-detected provider first
+  const detected = await getDetectedProvider();
+  if (detected) return detected.apiKey;
 
   // Priority: secure credential storage > legacy settings file
   const getCredentialManager = await lazyImport.credentialManager();
@@ -228,11 +288,15 @@ async function loadApiKey(): Promise<string | undefined> {
   return settingsManager.getApiKey();
 }
 
-// Load base URL from user settings if not in environment
+// Load base URL from detected provider or user settings
 async function loadBaseURL(): Promise<string> {
   await ensureEnvLoaded();
 
-  // Check environment first
+  // Check environment-detected provider first
+  const detected = await getDetectedProvider();
+  if (detected) return detected.baseURL;
+
+  // Check explicit environment override
   const envBaseURL = process.env.GROK_BASE_URL;
   if (envBaseURL) return envBaseURL;
 
@@ -277,9 +341,13 @@ async function saveCommandLineSettings(
   }
 }
 
-// Load model from user settings if not in environment
+// Load model from detected provider or user settings
 async function loadModel(): Promise<string | undefined> {
   await ensureEnvLoaded();
+
+  // Check environment-detected provider first
+  const detected = await getDetectedProvider();
+  if (detected) return detected.defaultModel;
 
   // First check environment variables
   let model = process.env.GROK_MODEL;
