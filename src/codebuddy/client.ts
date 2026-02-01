@@ -314,6 +314,8 @@ export class CodeBuddyClient {
     if (this.baseURL.includes('localhost:1234')) return true;
     if (this.baseURL.includes('127.0.0.1:1234')) return true;
     if (this.baseURL.match(/10\.\d+\.\d+\.\d+:1234/)) return true; // LAN IP with LM Studio port
+    if (this.baseURL.match(/172\.\d+\.\d+\.\d+:1234/)) return true; // WSL/Docker IP with LM Studio port
+    if (this.baseURL.match(/192\.168\.\d+\.\d+:1234/)) return true; // Private network with LM Studio port
     return false;
   }
 

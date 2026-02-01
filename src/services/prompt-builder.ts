@@ -4,6 +4,10 @@
  * Handles the construction of system prompts for the agent,
  * supporting various modes (standard, YOLO, custom) and
  * integrating external Markdown prompts.
+ *
+ * Moltbot Integration:
+ * - Loads intro_hook.txt content and prepends to system prompt
+ * - Supports project-level and global intro hooks
  */
 
 import { logger } from "../utils/logger.js";
@@ -15,6 +19,7 @@ import {
 } from "../prompts/index.js";
 import { EnhancedMemory } from "../memory/index.js";
 import { PromptCacheManager } from "../optimization/prompt-cache.js";
+import { MoltbotHooksManager } from "../hooks/moltbot-hooks.js";
 
 export interface PromptBuilderConfig {
   yoloMode: boolean;
@@ -27,7 +32,8 @@ export class PromptBuilder {
   constructor(
     private config: PromptBuilderConfig,
     private promptCacheManager: PromptCacheManager,
-    private memory?: EnhancedMemory
+    private memory?: EnhancedMemory,
+    private moltbotHooksManager?: MoltbotHooksManager
   ) {}
 
   /**
@@ -40,6 +46,21 @@ export class PromptBuilder {
   ): Promise<string> {
     try {
       let systemPrompt: string;
+
+      // Load Moltbot intro hook content (role/personality instructions)
+      let introHookContent: string | undefined;
+      if (this.moltbotHooksManager) {
+        try {
+          const introManager = this.moltbotHooksManager.getIntroManager();
+          const introResult = await introManager.loadIntro();
+          if (introResult.content) {
+            introHookContent = introResult.content;
+            logger.debug(`Loaded intro hook from sources: ${introResult.sources.join(', ')}`);
+          }
+        } catch (err) {
+          logger.warn("Failed to load intro hook", { error: getErrorMessage(err) });
+        }
+      }
 
       // Get memory context if enabled
       let memoryContext: string | undefined;
@@ -96,6 +117,12 @@ export class PromptBuilder {
           this.config.cwd,
           customInstructions || undefined
         );
+      }
+
+      // Prepend intro hook content if available (Moltbot-style role injection)
+      if (introHookContent) {
+        systemPrompt = `# Role & Instructions (from intro_hook.txt)\n\n${introHookContent}\n\n---\n\n${systemPrompt}`;
+        logger.debug("Prepended intro hook content to system prompt");
       }
 
       // Cache system prompt for optimization

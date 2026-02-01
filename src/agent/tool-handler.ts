@@ -43,6 +43,7 @@ import { getMCPManager } from "../codebuddy/tools.js";
 import { getErrorMessage } from "../errors/index.js";
 import { logger } from "../utils/logger.js";
 import { RepairCoordinator } from "./execution/repair-coordinator.js";
+import { getPolicyManager, type PolicyDecision } from "../security/tool-policy/index.js";
 
 /**
  * Dependencies required to initialize the ToolHandler
@@ -68,6 +69,10 @@ export interface ToolHandlerDependencies {
  * - All tools are registered with FormalToolRegistry
  * - Provides type-safe execution with validation and metrics
  * - MCP and plugin tools are handled separately
+ *
+ * Policy integration:
+ * - Uses PolicyManager to check tool permissions before execution
+ * - Respects hierarchical tool groups and profiles
  */
 export class ToolHandler {
   // Formal tool registry for type-safe dispatch
@@ -80,9 +85,22 @@ export class ToolHandler {
   private _imageTool: ImageTool | null = null;
   private _bash: BashTool | null = null;
 
+  // Callback for requesting user confirmation
+  private confirmationCallback?: (toolName: string, args: Record<string, unknown>, decision: PolicyDecision) => Promise<boolean>;
+
   constructor(private deps: ToolHandlerDependencies) {
     this.registry = getFormalToolRegistry();
     this.initializeRegistry();
+  }
+
+  /**
+   * Set callback for user confirmation
+   * Called when policy requires confirmation before tool execution
+   */
+  setConfirmationCallback(
+    callback: (toolName: string, args: Record<string, unknown>, decision: PolicyDecision) => Promise<boolean>
+  ): void {
+    this.confirmationCallback = callback;
   }
 
   /**
@@ -155,6 +173,11 @@ export class ToolHandler {
    * - Plugin tools (plugin__*): Marketplace plugins
    * - edit_file: Morph Fast Apply (legacy, optional)
    *
+   * Policy integration:
+   * - Checks PolicyManager before execution
+   * - Denies blocked tools
+   * - Requests confirmation for tools requiring it
+   *
    * @param toolCall - Tool call structure from the LLM response
    * @returns Tool execution result with success status and output/error
    */
@@ -162,6 +185,34 @@ export class ToolHandler {
     try {
       const args = JSON.parse(toolCall.function.arguments);
       const toolName = toolCall.function.name;
+
+      // Check policy before execution
+      const policyDecision = this.checkToolPolicy(toolName, args);
+
+      if (policyDecision.action === 'deny') {
+        logger.info(`Tool denied by policy: ${toolName}`, { reason: policyDecision.reason });
+        return {
+          success: false,
+          error: `Tool "${toolName}" is not allowed: ${policyDecision.reason}`,
+        };
+      }
+
+      if (policyDecision.action === 'confirm') {
+        // Request user confirmation if callback is set
+        if (this.confirmationCallback) {
+          const confirmed = await this.confirmationCallback(toolName, args, policyDecision);
+          if (!confirmed) {
+            logger.info(`Tool execution cancelled by user: ${toolName}`);
+            return {
+              success: false,
+              error: `User cancelled execution of "${toolName}"`,
+            };
+          }
+          // User confirmed - set session override to allow future executions
+          getPolicyManager().setSessionOverride(toolName, 'allow');
+        }
+        // If no callback, proceed (for backwards compatibility)
+      }
 
       // Handle special tool prefixes first
       if (toolName.startsWith("mcp__")) {
@@ -203,6 +254,38 @@ export class ToolHandler {
         error: `Tool execution error: ${getErrorMessage(error)}`,
       };
     }
+  }
+
+  /**
+   * Check tool policy before execution
+   * @param toolName Tool name to check
+   * @param args Tool arguments
+   * @returns Policy decision
+   */
+  private checkToolPolicy(toolName: string, args: Record<string, unknown>): PolicyDecision {
+    const policyManager = getPolicyManager();
+    return policyManager.checkTool(toolName, args);
+  }
+
+  /**
+   * Check if a tool is allowed by policy
+   * @param toolName Tool name to check
+   * @param args Tool arguments
+   * @returns True if tool is allowed
+   */
+  public isToolAllowed(toolName: string, args?: Record<string, unknown>): boolean {
+    const policyManager = getPolicyManager();
+    return policyManager.isAllowed(toolName, args);
+  }
+
+  /**
+   * Get policy decision for a tool (for UI display)
+   * @param toolName Tool name to check
+   * @param args Tool arguments
+   * @returns Policy decision
+   */
+  public getToolPolicy(toolName: string, args?: Record<string, unknown>): PolicyDecision {
+    return this.checkToolPolicy(toolName, args || {});
   }
 
   /**

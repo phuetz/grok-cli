@@ -121,3 +121,6 @@ export interface ConfirmationState {
 
 // Cache types
 export * from './cache-types.js';
+
+// API types
+export type { ChatMessage, MessageContent, MessageContentPart, ToolCall } from './api.js';

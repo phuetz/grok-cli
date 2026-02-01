@@ -10,6 +10,21 @@ import {
   type UserSettings as ZodUserSettings,
   type Settings as ZodSettings,
 } from "./config-validator.js";
+import {
+  ConfigResolver,
+  getConfigResolver,
+} from "../config/config-resolver.js";
+import {
+  ConnectionConfig,
+  ConnectionProfile,
+  ResolvedConfig,
+  CLIOverrides,
+  ModernUserSettings,
+  needsMigration,
+  migrateSettings,
+  mergeWithDefaults,
+  validateConnectionConfig,
+} from "../config/index.js";
 
 /**
  * User-level settings stored in ~/.codebuddy/user-settings.json
@@ -22,6 +37,7 @@ export interface UserSettings {
   models?: string[]; // Available models list
   provider?: string; // Active AI provider (grok, claude, openai, gemini)
   model?: string; // Current model override
+  connection?: ConnectionConfig; // Connection profiles configuration
 }
 
 /**
@@ -63,6 +79,7 @@ export class SettingsManager {
 
   private userSettingsPath: string;
   private projectSettingsPath: string;
+  private configResolver: ConfigResolver | null = null;
 
   private constructor() {
     // User settings path: ~/.codebuddy/user-settings.json
@@ -418,6 +435,7 @@ export class SettingsManager {
 
   /**
    * Get API key from user settings or environment
+   * @deprecated Use getResolvedConfig() instead for proper priority handling
    */
   public getApiKey(): string | undefined {
     // First check environment variable
@@ -432,6 +450,7 @@ export class SettingsManager {
 
   /**
    * Get base URL from user settings or environment
+   * @deprecated Use getResolvedConfig() instead for proper priority handling
    */
   public getBaseURL(): string {
     // First check environment variable
@@ -445,6 +464,200 @@ export class SettingsManager {
     return (
       userBaseURL || DEFAULT_USER_SETTINGS.baseURL || "https://api.x.ai/v1"
     );
+  }
+
+  // ============================================================================
+  // Connection Profile Methods (Phase 7)
+  // ============================================================================
+
+  /**
+   * Get or initialize the ConfigResolver
+   */
+  private getResolver(): ConfigResolver {
+    if (!this.configResolver) {
+      const settings = this.loadUserSettings();
+
+      // Check if migration is needed
+      if (needsMigration(settings) && !settings.connection) {
+        logger.info("Migrating settings to new profile format...");
+        const migrated = migrateSettings(settings);
+        this.saveUserSettings(migrated);
+        this.configResolver = getConfigResolver();
+        if (migrated.connection) {
+          this.configResolver.fromConfig(migrated.connection);
+        }
+      } else if (settings.connection) {
+        // Use existing connection config
+        const validatedConfig = validateConnectionConfig(
+          mergeWithDefaults(settings.connection)
+        );
+        this.configResolver = getConfigResolver();
+        this.configResolver.fromConfig(validatedConfig);
+      } else {
+        // No connection config, use defaults
+        this.configResolver = getConfigResolver();
+      }
+    }
+    return this.configResolver;
+  }
+
+  /**
+   * Get resolved configuration with proper priority handling
+   *
+   * Priority (highest to lowest):
+   * 1. CLI arguments
+   * 2. Active profile
+   * 3. Environment variables (fallback)
+   * 4. Built-in defaults
+   */
+  public getResolvedConfig(cliOverrides?: CLIOverrides): ResolvedConfig {
+    return this.getResolver().resolve(cliOverrides);
+  }
+
+  /**
+   * Get all available connection profiles
+   */
+  public getProfiles(): ConnectionProfile[] {
+    return this.getResolver().getProfiles();
+  }
+
+  /**
+   * Get enabled connection profiles only
+   */
+  public getEnabledProfiles(): ConnectionProfile[] {
+    return this.getResolver().getEnabledProfiles();
+  }
+
+  /**
+   * Get the active profile
+   */
+  public getActiveProfile(): ConnectionProfile | undefined {
+    return this.getResolver().getActiveProfile();
+  }
+
+  /**
+   * Get the active profile ID
+   */
+  public getActiveProfileId(): string {
+    return this.getResolver().getActiveProfileId();
+  }
+
+  /**
+   * Switch to a different connection profile
+   */
+  public setActiveProfile(profileId: string): boolean {
+    const resolver = this.getResolver();
+    const success = resolver.setActiveProfile(profileId);
+
+    if (success) {
+      // Persist to user settings
+      const settings = this.loadUserSettings();
+      if (!settings.connection) {
+        settings.connection = resolver.toConfig();
+      } else {
+        settings.connection.activeProfileId = profileId;
+      }
+      this.saveUserSettings(settings);
+    }
+
+    return success;
+  }
+
+  /**
+   * Add a new connection profile
+   */
+  public addProfile(profile: ConnectionProfile): void {
+    const resolver = this.getResolver();
+    resolver.addProfile(profile);
+
+    // Persist to user settings
+    const settings = this.loadUserSettings();
+    settings.connection = resolver.toConfig();
+    this.saveUserSettings(settings);
+  }
+
+  /**
+   * Update an existing profile
+   */
+  public updateProfile(profileId: string, updates: Partial<ConnectionProfile>): boolean {
+    const resolver = this.getResolver();
+    const success = resolver.updateProfile(profileId, updates);
+
+    if (success) {
+      // Persist to user settings
+      const settings = this.loadUserSettings();
+      settings.connection = resolver.toConfig();
+      this.saveUserSettings(settings);
+    }
+
+    return success;
+  }
+
+  /**
+   * Remove a connection profile
+   */
+  public removeProfile(profileId: string): boolean {
+    const resolver = this.getResolver();
+    const success = resolver.removeProfile(profileId);
+
+    if (success) {
+      // Persist to user settings
+      const settings = this.loadUserSettings();
+      settings.connection = resolver.toConfig();
+      this.saveUserSettings(settings);
+    }
+
+    return success;
+  }
+
+  /**
+   * Auto-detect available local servers
+   */
+  public async detectLocalServers(): Promise<Array<{ profileId: string; available: boolean; error?: string }>> {
+    return this.getResolver().autoDetectLocalServers();
+  }
+
+  /**
+   * Test connection for the active profile
+   */
+  public async testConnection(): Promise<{ available: boolean; error?: string; responseTime?: number }> {
+    return this.getResolver().testConnection();
+  }
+
+  /**
+   * Get connection configuration
+   */
+  public getConnectionConfig(): ConnectionConfig {
+    return this.getResolver().toConfig();
+  }
+
+  /**
+   * Update connection configuration
+   */
+  public updateConnectionConfig(config: Partial<ConnectionConfig>): void {
+    const resolver = this.getResolver();
+    const currentConfig = resolver.toConfig();
+    const mergedConfig = {
+      ...currentConfig,
+      ...config,
+      profiles: config.profiles || currentConfig.profiles,
+    };
+    resolver.fromConfig(mergedConfig);
+
+    // Persist to user settings
+    const settings = this.loadUserSettings();
+    settings.connection = mergedConfig;
+    this.saveUserSettings(settings);
+  }
+
+  /**
+   * Reset connection config to defaults
+   */
+  public resetConnectionConfig(): void {
+    this.configResolver = null; // Force re-initialization
+    const settings = this.loadUserSettings();
+    delete settings.connection;
+    this.saveUserSettings(settings);
   }
 }
 

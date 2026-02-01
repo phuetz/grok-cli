@@ -173,13 +173,13 @@ export class CodeBuddyAgent extends BaseAgent {
       sessionCostLimit: this.sessionCostLimit,
     });
 
-    // Initialize PromptBuilder
+    // Initialize PromptBuilder with Moltbot hooks for intro injection
     this.promptBuilder = new PromptBuilder({
       yoloMode: this.yoloMode,
       memoryEnabled: this.memoryEnabled,
       morphEditorEnabled: !!this.toolHandler.morphEditor,
       cwd: process.cwd()
-    }, this.promptCacheManager, this.memory);
+    }, this.promptCacheManager, this.memory, this.infrastructure.moltbotHooksManager);
 
     // Set up executors for the repair coordinator
     this.repairCoordinator.setExecutors({
@@ -200,6 +200,9 @@ export class CodeBuddyAgent extends BaseAgent {
         await this.toolHandler.textEditor.create(path, content);
       },
     });
+
+    // Initialize facades (required before initializeMCP)
+    this.initializeFacades();
 
     // Initialize MCP servers if configured
     this.initializeMCP();

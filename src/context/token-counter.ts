@@ -170,3 +170,49 @@ class EstimatingTokenCounter implements TokenCounter {
 
   dispose(): void {}
 }
+
+// ============================================================================
+// Singleton and Helper Functions
+// ============================================================================
+
+/** Cache of token counters by model */
+const counterCache = new Map<string, TokenCounter>();
+
+/**
+ * Get or create a cached token counter for a model
+ */
+function getCounter(model: string = 'gpt-4'): TokenCounter {
+  let counter = counterCache.get(model);
+  if (!counter) {
+    counter = createTokenCounter(model);
+    counterCache.set(model, counter);
+  }
+  return counter;
+}
+
+/**
+ * Count tokens in a text string
+ * @param text - The text to count tokens in
+ * @param model - The model to use for token counting (default: gpt-4)
+ */
+export function countTokens(text: string, model: string = 'gpt-4'): number {
+  return getCounter(model).countTokens(text);
+}
+
+/**
+ * Count tokens in a single message
+ * @param message - The message to count tokens in
+ * @param model - The model to use for token counting (default: gpt-4)
+ */
+export function countMessageTokens(message: TokenCounterMessage, model: string = 'gpt-4'): number {
+  return getCounter(model).countMessageTokens([message]);
+}
+
+/**
+ * Count tokens in multiple messages
+ * @param messages - The messages to count tokens in
+ * @param model - The model to use for token counting (default: gpt-4)
+ */
+export function countMessagesTokens(messages: TokenCounterMessage[], model: string = 'gpt-4'): number {
+  return getCounter(model).countMessageTokens(messages);
+}

@@ -2,12 +2,19 @@
  * Security Module
  *
  * Unified security layer for Grok CLI:
+ * - Tool policies (hierarchical tool grouping and profiles)
  * - Approval modes (read-only, auto, full-access)
  * - Sandbox execution for commands
  * - Data redaction for sensitive information
  * - Permission configuration
  * - Command validation and sanitization
  */
+
+// Tool Policy System (new)
+export * from './tool-policy/index.js';
+
+// Bash Allowlist System (new)
+export * from './bash-allowlist/index.js';
 
 // Export specific items from approval-modes to avoid conflicts
 export {

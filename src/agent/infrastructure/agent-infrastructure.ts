@@ -20,6 +20,7 @@ import type { SandboxManager } from '../../security/sandbox.js';
 import type { MCPClient } from '../../mcp/mcp-client.js';
 import type { PromptCacheManager } from '../../optimization/prompt-cache.js';
 import type { HooksManager } from '../../hooks/lifecycle-hooks.js';
+import type { MoltbotHooksManager } from '../../hooks/moltbot-hooks.js';
 import type { ModelRouter, RoutingDecision } from '../../optimization/model-routing.js';
 import type { PluginMarketplace } from '../../plugins/marketplace.js';
 import type { RepairCoordinator } from '../execution/repair-coordinator.js';
@@ -37,6 +38,7 @@ import { getSandboxManager } from '../../security/sandbox.js';
 import { getMCPClient } from '../../mcp/mcp-client.js';
 import { getPromptCacheManager } from '../../optimization/prompt-cache.js';
 import { getHooksManager } from '../../hooks/lifecycle-hooks.js';
+import { getMoltbotHooksManager } from '../../hooks/moltbot-hooks.js';
 import { getModelRouter } from '../../optimization/model-routing.js';
 import { getPluginMarketplace } from '../../plugins/marketplace.js';
 import { getRepairCoordinator } from '../execution/repair-coordinator.js';
@@ -65,6 +67,8 @@ export interface AgentInfrastructureDeps {
   promptCacheManager: PromptCacheManager;
   /** Lifecycle hooks manager */
   hooksManager: HooksManager;
+  /** Moltbot hooks manager (intro, persistence, command logging) */
+  moltbotHooksManager: MoltbotHooksManager;
   /** Model router for optimization */
   modelRouter: ModelRouter;
   /** Plugin marketplace */
@@ -191,6 +195,11 @@ export class AgentInfrastructure extends EventEmitter {
   /** Hooks manager */
   get hooksManager() {
     return this.deps.hooksManager;
+  }
+
+  /** Moltbot hooks manager (intro, session persistence, command logging) */
+  get moltbotHooksManager() {
+    return this.deps.moltbotHooksManager;
   }
 
   /** Model router */
@@ -477,6 +486,7 @@ export async function createAgentInfrastructure(
   const { getMCPClient } = await import('../../mcp/mcp-client.js');
   const { getPromptCacheManager } = await import('../../optimization/prompt-cache.js');
   const { getHooksManager } = await import('../../hooks/lifecycle-hooks.js');
+  const { getMoltbotHooksManager } = await import('../../hooks/moltbot-hooks.js');
   const { getModelRouter } = await import('../../optimization/model-routing.js');
   const { getPluginMarketplace } = await import('../../plugins/marketplace.js');
   const { getRepairCoordinator } = await import('../execution/repair-coordinator.js');
@@ -492,6 +502,7 @@ export async function createAgentInfrastructure(
     mcpClient: getMCPClient(),
     promptCacheManager: getPromptCacheManager(),
     hooksManager: getHooksManager(process.cwd()),
+    moltbotHooksManager: getMoltbotHooksManager(process.cwd()),
     modelRouter: getModelRouter(),
     marketplace: getPluginMarketplace(),
     repairCoordinator: getRepairCoordinator(apiKey, baseURL),
@@ -528,6 +539,25 @@ export function createTestInfrastructure(
   const mockMCPClient = {} as MCPClient;
   const mockPromptCacheManager = {} as PromptCacheManager;
   const mockHooksManager = {} as HooksManager;
+  const mockMoltbotHooksManager = {
+    getIntroManager: () => ({
+      loadIntro: async () => ({ content: '', sources: [], truncated: false }),
+      getConfig: () => ({ enabled: false, sources: [], combineMode: 'prepend' }),
+    }),
+    getSessionManager: () => ({
+      startSession: async () => ({ id: 'test', projectPath: '', createdAt: '', updatedAt: '', messages: [], metadata: {} }),
+      endSession: async () => {},
+      dispose: () => {},
+    }),
+    getCommandLogger: () => ({
+      logToolCall: () => {},
+      logBashCommand: () => {},
+      logFileEdit: () => {},
+      flush: async () => {},
+      dispose: () => {},
+    }),
+    dispose: () => {},
+  } as unknown as MoltbotHooksManager;
   const mockModelRouter = {
     getTotalCost: () => 0,
     getEstimatedSavings: () => ({ saved: 0, percentage: 0 }),
@@ -547,6 +577,7 @@ export function createTestInfrastructure(
     mcpClient: mockMCPClient,
     promptCacheManager: mockPromptCacheManager,
     hooksManager: mockHooksManager,
+    moltbotHooksManager: mockMoltbotHooksManager,
     modelRouter: mockModelRouter,
     marketplace: mockMarketplace,
     repairCoordinator: mockRepairCoordinator,
@@ -587,6 +618,7 @@ export function createAgentInfrastructureSync(
     mcpClient: getMCPClient(),
     promptCacheManager: getPromptCacheManager(),
     hooksManager: getHooksManager(process.cwd()),
+    moltbotHooksManager: getMoltbotHooksManager(process.cwd()),
     modelRouter: getModelRouter(),
     marketplace: getPluginMarketplace(),
     repairCoordinator: getRepairCoordinator(options.apiKey, options.baseURL),
