@@ -191,23 +191,24 @@ export class TodoTool {
   async createTodoList(todos: TodoItem[]): Promise<ToolResult> {
     try {
       // Check max items limit (like mistral-vibe)
-      if (todos.length > this.maxItems) {
+      const totalAfterAdd = this.todos.length + todos.length;
+      if (totalAfterAdd > this.maxItems) {
         return {
           success: false,
-          error: `Cannot create more than ${this.maxItems} todos. Received ${todos.length}.`,
+          error: `Cannot have more than ${this.maxItems} todos. Current: ${this.todos.length}, adding: ${todos.length}.`,
         };
       }
 
-      // Validate unique IDs (like mistral-vibe)
-      const ids = new Set<string>();
+      // Check for duplicate IDs in new todos
+      const newIds = new Set<string>();
       for (const todo of todos) {
-        if (ids.has(todo.id)) {
+        if (newIds.has(todo.id)) {
           return {
             success: false,
-            error: `Duplicate todo ID: ${todo.id}. Todo IDs must be unique.`,
+            error: `Duplicate todo ID in new items: ${todo.id}. Todo IDs must be unique.`,
           };
         }
-        ids.add(todo.id);
+        newIds.add(todo.id);
       }
 
       // Validate todos
@@ -234,7 +235,15 @@ export class TodoTool {
         }
       }
 
-      this.todos = todos;
+      // Add new todos (update if ID exists, otherwise append)
+      for (const newTodo of todos) {
+        const existingIndex = this.todos.findIndex(t => t.id === newTodo.id);
+        if (existingIndex >= 0) {
+          this.todos[existingIndex] = newTodo;
+        } else {
+          this.todos.push(newTodo);
+        }
+      }
 
       const stats = this.getStats();
       return {
