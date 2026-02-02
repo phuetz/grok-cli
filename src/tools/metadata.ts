@@ -236,7 +236,7 @@ export const CATEGORY_KEYWORDS: Record<ToolCategory, string[]> = {
   file_search: ['search', 'find', 'locate', 'where', 'grep', 'look for', 'which file', 'contains'],
   system: ['run', 'execute', 'install', 'build', 'test', 'compile', 'npm', 'yarn', 'pip', 'command', 'terminal', 'docker', 'container', 'kubernetes', 'k8s', 'kubectl', 'pod', 'deployment', 'compose'],
   git: ['git', 'commit', 'push', 'pull', 'branch', 'merge', 'diff', 'status', 'version control'],
-  web: ['search online', 'google', 'web', 'internet', 'fetch url', 'website', 'documentation', 'latest', 'news', 'browser', 'automate', 'click', 'fill form', 'screenshot', 'scrape', 'headless', 'ui test'],
+  web: ['search online', 'google', 'web', 'internet', 'fetch url', 'website', 'documentation', 'latest', 'news', 'browser', 'automate', 'click', 'fill form', 'screenshot', 'scrape', 'headless', 'ui test', 'weather', 'météo', 'meteo', 'forecast', 'temperature', 'actualité', 'actualite', 'current events', 'real time', 'real-time'],
   planning: ['plan', 'todo', 'task', 'organize', 'steps', 'breakdown'],
   media: ['image', 'audio', 'video', 'screenshot', 'picture', 'photo', 'sound', 'music', 'capture'],
   document: ['pdf', 'document', 'docx', 'xlsx', 'word', 'excel', 'archive', 'zip'],

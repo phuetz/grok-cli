@@ -537,7 +537,7 @@ export class CodeBuddyClient {
 
     // Convert response to CodeBuddy format
     const candidate = data.candidates?.[0];
-    if (!candidate || !candidate.content || !candidate.content.parts) {
+    if (!candidate || !candidate.content) {
       logger.error('Gemini response missing candidate or content', {
         source: 'CodeBuddyClient',
         hasCandidates: !!data.candidates,
@@ -545,6 +545,30 @@ export class CodeBuddyClient {
         rawResponse: JSON.stringify(data).substring(0, 500),
       });
       throw new Error('Invalid Gemini response: missing candidate content');
+    }
+
+    // Handle empty content (Gemini may return content without parts for certain queries)
+    if (!candidate.content.parts || candidate.content.parts.length === 0) {
+      logger.warn('Gemini returned empty content parts', {
+        source: 'CodeBuddyClient',
+        finishReason: candidate.finishReason,
+      });
+      // Return a graceful response instead of throwing
+      return {
+        choices: [{
+          message: {
+            role: 'assistant',
+            content: "Je ne peux pas répondre à cette question. Il s'agit peut-être d'une requête nécessitant des données en temps réel (météo, actualités) auxquelles je n'ai pas accès, ou d'une question que le modèle ne peut pas traiter.",
+            tool_calls: undefined,
+          },
+          finish_reason: candidate.finishReason || 'stop',
+        }],
+        usage: {
+          prompt_tokens: data.usageMetadata?.promptTokenCount ?? 0,
+          completion_tokens: 0,
+          total_tokens: data.usageMetadata?.totalTokenCount ?? 0,
+        },
+      };
     }
 
     const toolCalls: CodeBuddyToolCall[] = [];
