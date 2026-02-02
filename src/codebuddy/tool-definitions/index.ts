@@ -77,5 +77,11 @@ export {
   COMPUTER_CONTROL_TOOLS,
 } from './computer-control-tools.js';
 
+// Browser tools (OpenClaw-inspired CDP automation)
+export {
+  BROWSER_TOOL,
+  BROWSER_TOOLS,
+} from './browser-tools.js';
+
 // Re-export CodeBuddyTool from client for convenience
 export type { CodeBuddyTool as Tool } from './types.js';
