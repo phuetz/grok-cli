@@ -430,3 +430,109 @@ export function resetCanvasManager(): void {
     canvasInstance = null;
   }
 }
+
+// ============================================================================
+// A2UI Protocol Exports
+// ============================================================================
+
+// A2UI Types
+export type {
+  ComponentType as A2UIComponentType,
+  A2UIStyles,
+  A2UIAction,
+  A2UIComponent,
+  ComponentProps,
+  LayoutComponentProps,
+  TextComponentProps,
+  HeadingComponentProps,
+  ImageComponentProps,
+  IconComponentProps,
+  ButtonComponentProps,
+  TextFieldComponentProps,
+  TextAreaComponentProps,
+  CheckboxComponentProps,
+  RadioComponentProps,
+  SwitchComponentProps,
+  SliderComponentProps,
+  SelectComponentProps,
+  CardComponentProps,
+  TabsComponentProps,
+  TabItemComponentProps,
+  ModalComponentProps,
+  TableComponentProps,
+  ChartComponentProps,
+  ProgressComponentProps,
+  ListComponentProps,
+  CodeComponentProps,
+  MarkdownComponentProps,
+  CustomComponentProps,
+  SurfaceUpdateMessage,
+  DataModelUpdateMessage,
+  BeginRenderingMessage,
+  DeleteSurfaceMessage,
+  A2UIMessage,
+  UserActionMessage,
+  ErrorMessage,
+  A2UIClientMessage,
+  CanvasPresentCommand,
+  CanvasNavigateCommand,
+  CanvasEvalCommand,
+  CanvasSnapshotCommand,
+  CanvasA2UICommand,
+  CanvasCommand,
+  Surface,
+  RenderedComponent,
+} from './a2ui-types.js';
+
+export {
+  A2UI_VERSION,
+  STANDARD_CATALOG_ID,
+  DEFAULT_SURFACE_STYLES,
+} from './a2ui-types.js';
+
+// A2UI Manager
+export type { A2UIManagerEvents } from './a2ui-manager.js';
+export {
+  A2UIManager,
+  getA2UIManager,
+  resetA2UIManager,
+} from './a2ui-manager.js';
+
+// A2UI Server
+export type { A2UIServerConfig, A2UIClient, A2UIServerEvents } from './a2ui-server.js';
+export {
+  A2UIServer,
+  getA2UIServer,
+  resetA2UIServer,
+  DEFAULT_A2UI_SERVER_CONFIG,
+} from './a2ui-server.js';
+
+// A2UI Tool
+export type { A2UIAction as A2UIToolAction, A2UIToolInput, A2UIToolResult } from './a2ui-tool.js';
+export {
+  A2UITool,
+  getA2UITool,
+  resetA2UITool,
+} from './a2ui-tool.js';
+
+// Visual Canvas Manager (separate from A2UI)
+export type {
+  Canvas,
+  CanvasConfig as VisualCanvasConfig,
+  CanvasElement,
+  CanvasElementType,
+  CanvasHistoryEntry,
+  Position,
+  Size,
+  ElementStyle,
+  ExportOptions,
+  ExportFormat,
+} from './types.js';
+
+export { DEFAULT_CANVAS_CONFIG as DEFAULT_VISUAL_CANVAS_CONFIG } from './types.js';
+
+export {
+  CanvasManager as VisualCanvasManager,
+  getCanvasManager as getVisualCanvasManager,
+  resetCanvasManager as resetVisualCanvasManager,
+} from './canvas-manager.js';

@@ -288,8 +288,7 @@ export class ComputerControlTool {
       return { success: false, error: 'Position required (x,y or element ref)' };
     }
 
-    await this.automation.mouseMove(point.x, point.y);
-    await this.automation.mouseClick({ button: input.button || 'left' });
+    await this.automation.click(point.x, point.y, { button: input.button || 'left' });
 
     return {
       success: true,
@@ -303,8 +302,7 @@ export class ComputerControlTool {
       return { success: false, error: 'Position required (x,y or element ref)' };
     }
 
-    await this.automation.mouseMove(point.x, point.y);
-    await this.automation.mouseClick({ button: 'left', clicks: 2 });
+    await this.automation.doubleClick(point.x, point.y, 'left');
 
     return {
       success: true,
@@ -318,8 +316,7 @@ export class ComputerControlTool {
       return { success: false, error: 'Position required (x,y or element ref)' };
     }
 
-    await this.automation.mouseMove(point.x, point.y);
-    await this.automation.mouseClick({ button: 'right' });
+    await this.automation.rightClick(point.x, point.y);
 
     return {
       success: true,
@@ -333,7 +330,7 @@ export class ComputerControlTool {
       return { success: false, error: 'Position required (x,y or element ref)' };
     }
 
-    await this.automation.mouseMove(point.x, point.y, {
+    await this.automation.moveMouse(point.x, point.y, {
       duration: input.duration,
       smooth: true,
     });
@@ -350,9 +347,9 @@ export class ComputerControlTool {
     }
 
     const currentPos = await this.automation.getMousePosition();
-    await this.automation.mouseDrag(
-      { x: currentPos.x, y: currentPos.y },
-      { x: input.x, y: input.y },
+    await this.automation.drag(
+      currentPos.x, currentPos.y,
+      input.x, input.y,
       { duration: input.duration }
     );
 
@@ -363,7 +360,7 @@ export class ComputerControlTool {
   }
 
   private async scroll(input: ComputerControlInput): Promise<ToolResult> {
-    await this.automation.mouseScroll({
+    await this.automation.scroll({
       deltaX: input.deltaX || 0,
       deltaY: input.deltaY || -3, // Default scroll down
     });
@@ -411,10 +408,9 @@ export class ComputerControlTool {
       return { success: false, error: 'Key is required' };
     }
 
-    await this.automation.hotkey({
-      keys: [input.key],
-      modifiers: input.modifiers as any,
-    });
+    // Build keys array: modifiers first, then the main key
+    const keys: string[] = [...(input.modifiers || []), input.key];
+    await this.automation.hotkey(...(keys as any));
 
     return {
       success: true,
@@ -445,7 +441,7 @@ export class ComputerControlTool {
       return { success: false, error: 'Window title is required' };
     }
 
-    const windows = await this.automation.findWindows({ title: input.windowTitle });
+    const windows = await this.automation.getWindows({ title: input.windowTitle });
     if (windows.length === 0) {
       return { success: false, error: `No window found matching: ${input.windowTitle}` };
     }
@@ -463,7 +459,7 @@ export class ComputerControlTool {
       return { success: false, error: 'Window title is required' };
     }
 
-    const windows = await this.automation.findWindows({ title: input.windowTitle });
+    const windows = await this.automation.getWindows({ title: input.windowTitle });
     if (windows.length === 0) {
       return { success: false, error: `No window found matching: ${input.windowTitle}` };
     }

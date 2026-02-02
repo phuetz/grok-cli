@@ -169,7 +169,6 @@ JavaScript:
         fields: {
           type: 'object',
           description: 'Fields to fill: { "refNumber": "value", ... }',
-          additionalProperties: { type: 'string' },
         },
         submit: {
           type: 'boolean',
@@ -237,7 +236,6 @@ JavaScript:
         headers: {
           type: 'object',
           description: 'HTTP headers to set',
-          additionalProperties: { type: 'string' },
         },
         offline: {
           type: 'boolean',

@@ -53,6 +53,22 @@ export type { SecurityMode } from './security-modes.js';
 export * from './permission-config.js';
 export * from './data-redaction.js';
 
+// Security Audit (OpenClaw-inspired)
+export type {
+  AuditSeverity,
+  AuditCategory,
+  AuditFinding,
+  AuditResult,
+  SecurityAuditConfig,
+} from './security-audit.js';
+
+export {
+  SecurityAuditor,
+  getSecurityAuditor,
+  resetSecurityAuditor,
+  DEFAULT_SECURITY_AUDIT_CONFIG,
+} from './security-audit.js';
+
 import { EventEmitter } from 'events';
 import { getApprovalModeManager, ApprovalMode, ApprovalResult, OperationRequest } from './approval-modes.js';
 import { getSandboxManager, SandboxResult } from './sandbox.js';

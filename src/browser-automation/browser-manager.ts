@@ -43,6 +43,7 @@ import {
 type Browser = any;
 type BrowserContext = any;
 type Page = any;
+type PlaywrightModule = any;
 
 // ============================================================================
 // Browser Manager
@@ -77,8 +78,9 @@ export class BrowserManager extends EventEmitter {
     }
 
     try {
-      // Lazy load Playwright
-      this.playwright = await import('playwright');
+      // Lazy load Playwright (optional dependency)
+      // @ts-ignore - playwright is an optional peer dependency
+      this.playwright = await import('playwright').catch(() => null);
 
       const browserType = this.playwright[this.config.browser];
 
@@ -120,7 +122,8 @@ export class BrowserManager extends EventEmitter {
    */
   async connect(cdpUrl: string): Promise<void> {
     try {
-      this.playwright = await import('playwright');
+      // @ts-ignore - playwright is an optional peer dependency
+      this.playwright = await import('playwright').catch(() => null);
 
       this.browser = await this.playwright.chromium.connectOverCDP(cdpUrl);
       const contexts = this.browser.contexts();

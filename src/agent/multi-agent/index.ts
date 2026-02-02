@@ -41,3 +41,33 @@ export {
   getMultiAgentSystem,
   resetMultiAgentSystem,
 } from "./multi-agent-system.js";
+
+// Session Registry (OpenClaw-inspired inter-session communication)
+export type {
+  SessionKind,
+  SessionStatus,
+  SessionInfo,
+  SessionMessage,
+  SessionRegistryConfig,
+} from "./session-registry.js";
+
+export {
+  SessionRegistry,
+  getSessionRegistry,
+  resetSessionRegistry,
+  DEFAULT_SESSION_REGISTRY_CONFIG,
+} from "./session-registry.js";
+
+// Session Tools
+export type { SessionToolResult } from "./session-tools.js";
+
+export {
+  SESSIONS_LIST_TOOL,
+  SESSIONS_HISTORY_TOOL,
+  SESSIONS_SEND_TOOL,
+  SESSIONS_SPAWN_TOOL,
+  SESSION_TOOLS,
+  SessionToolExecutor,
+  getSessionToolExecutor,
+  resetSessionToolExecutor,
+} from "./session-tools.js";

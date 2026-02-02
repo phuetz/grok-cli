@@ -83,5 +83,12 @@ export {
   BROWSER_TOOLS,
 } from './browser-tools.js';
 
+// Canvas/A2UI tools (OpenClaw-inspired visual workspaces)
+export {
+  A2UI_TOOL,
+  VISUAL_CANVAS_TOOL,
+  CANVAS_TOOLS,
+} from './canvas-tools.js';
+
 // Re-export CodeBuddyTool from client for convenience
 export type { CodeBuddyTool as Tool } from './types.js';
