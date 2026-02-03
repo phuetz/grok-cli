@@ -13,7 +13,7 @@
 // Types
 // ============================================================================
 
-export type ShellType = 'bash' | 'zsh' | 'fish';
+export type ShellType = 'bash' | 'zsh' | 'fish' | 'powershell';
 
 export interface CompletionOption {
   name: string;
@@ -310,6 +310,111 @@ complete -c grok -n 'not __fish_codebuddy_in_prompt' -a '(__fish_complete_path)'
 }
 
 // ============================================================================
+// PowerShell Completion
+// ============================================================================
+
+function generatePowerShellCompletion(): string {
+  const optionCompletions = CLI_OPTIONS.map((o) => {
+    const desc = o.description.replace(/'/g, "''");
+    return `        '${o.name}' { '${desc}' }`;
+  }).join('\n');
+
+  const slashCommandCompletions = SLASH_COMMANDS.map((c) => {
+    const desc = c.description.replace(/'/g, "''");
+    return `        '${c.name}' { '${desc}' }`;
+  }).join('\n');
+
+  const models = MODELS.map(m => `'${m}'`).join(', ');
+  const modes = APPROVAL_MODES.map(m => `'${m}'`).join(', ');
+  const themes = THEMES.map(t => `'${t}'`).join(', ');
+
+  return `# Grok CLI PowerShell Completion
+# Save to $PROFILE or run: grok --completions powershell | Out-File -Append $PROFILE
+
+$_codebuddyOptions = @(${CLI_OPTIONS.map(o => `'${o.name}'`).join(', ')})
+$_codebuddySlashCommands = @(${SLASH_COMMANDS.map(c => `'${c.name}'`).join(', ')})
+$_codebuddyModels = @(${models})
+$_codebuddyModes = @(${modes})
+$_codebuddyThemes = @(${themes})
+
+function Get-CodeBuddyOptionDescription {
+    param([string]$Option)
+    switch ($Option) {
+${optionCompletions}
+        default { '' }
+    }
+}
+
+function Get-CodeBuddySlashCommandDescription {
+    param([string]$Command)
+    switch ($Command) {
+${slashCommandCompletions}
+        default { '' }
+    }
+}
+
+Register-ArgumentCompleter -Native -CommandName grok, code-buddy -ScriptBlock {
+    param($wordToComplete, $commandAst, $cursorPosition)
+
+    $tokens = $commandAst.CommandElements
+    $prevToken = if ($tokens.Count -gt 1) { $tokens[-2].Extent.Text } else { '' }
+
+    # Handle option arguments
+    switch ($prevToken) {
+        { $_ -in '-d', '--dir' } {
+            Get-ChildItem -Directory -Name | Where-Object { $_ -like "$wordToComplete*" } |
+                ForEach-Object { [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', 'Directory') }
+            return
+        }
+        { $_ -in '-m', '--model' } {
+            $_codebuddyModels | Where-Object { $_ -like "$wordToComplete*" } |
+                ForEach-Object { [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', "Model: $_") }
+            return
+        }
+        '--resume' {
+            $sessionDir = Join-Path '.codebuddy' 'sessions'
+            if (Test-Path $sessionDir) {
+                Get-ChildItem -Path $sessionDir -Filter '*.json' -Name |
+                    Where-Object { $_ -like "$wordToComplete*" } |
+                    ForEach-Object { [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', "Session: $_") }
+            }
+            return
+        }
+    }
+
+    # Handle slash commands
+    if ($wordToComplete -like '/*') {
+        $_codebuddySlashCommands | Where-Object { $_ -like "$wordToComplete*" } |
+            ForEach-Object {
+                $desc = Get-CodeBuddySlashCommandDescription $_
+                [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $desc)
+            }
+        return
+    }
+
+    # Handle options
+    if ($wordToComplete -like '-*') {
+        $_codebuddyOptions | Where-Object { $_ -like "$wordToComplete*" } |
+            ForEach-Object {
+                $desc = Get-CodeBuddyOptionDescription $_
+                [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterName', $desc)
+            }
+        return
+    }
+
+    # Default to file completion
+    Get-ChildItem -Name | Where-Object { $_ -like "$wordToComplete*" } |
+        ForEach-Object {
+            $type = if (Test-Path $_ -PathType Container) { 'ProviderContainer' } else { 'ProviderItem' }
+            [System.Management.Automation.CompletionResult]::new($_, $_, $type, $_)
+        }
+}
+
+Write-Host "Grok CLI PowerShell completions loaded" -ForegroundColor Green
+`;
+}
+
+// ============================================================================
 // Main Generator
 // ============================================================================
 
@@ -324,6 +429,8 @@ export function generateCompletion(shell: ShellType): string {
       return generateZshCompletion();
     case 'fish':
       return generateFishCompletion();
+    case 'powershell':
+      return generatePowerShellCompletion();
     default:
       throw new Error(`Unsupported shell: ${shell}`);
   }
@@ -375,6 +482,25 @@ grok --completions fish > ~/.config/fish/completions/grok.fish
 
 # Apply immediately (or restart fish):
 source ~/.config/fish/completions/grok.fish
+`.trim();
+
+    case 'powershell':
+      return `
+# PowerShell completion installation:
+
+# Option 1: Add to your PowerShell profile
+grok --completions powershell | Out-File -Append $PROFILE -Encoding UTF8
+
+# Option 2: Save to a separate file and source it
+$completionFile = Join-Path (Split-Path $PROFILE) "grok-completions.ps1"
+grok --completions powershell | Out-File $completionFile -Encoding UTF8
+Add-Content $PROFILE ". '$completionFile'"
+
+# Apply immediately:
+. $PROFILE
+
+# Note: You may need to restart PowerShell or run:
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 `.trim();
 
     default:

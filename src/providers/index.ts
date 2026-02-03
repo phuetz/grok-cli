@@ -55,3 +55,17 @@ export type {
   ProviderHealth,
   FallbackChainEvents,
 } from './fallback-chain.js';
+
+// Smart router (unified routing with fallback + cost optimization)
+export {
+  SmartModelRouter,
+  getSmartRouter,
+  resetSmartRouter,
+} from './smart-router.js';
+export type {
+  SmartRouterConfig,
+  RouteRequest,
+  RouteResult,
+  SmartRouterEvents,
+  ProviderModels,
+} from './smart-router.js';

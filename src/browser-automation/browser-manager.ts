@@ -79,7 +79,7 @@ export class BrowserManager extends EventEmitter {
 
     try {
       // Lazy load Playwright (optional dependency)
-      // @ts-ignore - playwright is an optional peer dependency
+      // @ts-expect-error - playwright is an optional peer dependency
       this.playwright = await import('playwright').catch(() => null);
 
       const browserType = this.playwright[this.config.browser];
@@ -122,7 +122,7 @@ export class BrowserManager extends EventEmitter {
    */
   async connect(cdpUrl: string): Promise<void> {
     try {
-      // @ts-ignore - playwright is an optional peer dependency
+      // @ts-expect-error - playwright is an optional peer dependency
       this.playwright = await import('playwright').catch(() => null);
 
       this.browser = await this.playwright.chromium.connectOverCDP(cdpUrl);

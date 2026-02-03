@@ -1,0 +1,275 @@
+/**
+ * Skills Types
+ *
+ * OpenClaw-inspired natural language skills system.
+ * Skills are defined in SKILL.md format with YAML frontmatter.
+ */
+
+// ============================================================================
+// Skill Definition Types
+// ============================================================================
+
+/**
+ * Skill metadata from YAML frontmatter
+ */
+export interface SkillMetadata {
+  /** Unique skill name/identifier */
+  name: string;
+  /** Human-readable description */
+  description: string;
+  /** Skill version (semver) */
+  version?: string;
+  /** Author name */
+  author?: string;
+  /** Tags for categorization */
+  tags?: string[];
+  /** Required capabilities */
+  requires?: SkillRequirements;
+  /** Skill configuration schema */
+  config?: SkillConfigSchema;
+  /** OpenClaw-specific metadata */
+  openclaw?: OpenClawMetadata;
+}
+
+export interface SkillRequirements {
+  /** Required tools */
+  tools?: string[];
+  /** Required capabilities */
+  capabilities?: string[];
+  /** Minimum Code Buddy version */
+  minVersion?: string;
+  /** Required environment variables */
+  env?: string[];
+}
+
+export interface SkillConfigSchema {
+  /** Config properties */
+  properties?: Record<string, SkillConfigProperty>;
+  /** Required properties */
+  required?: string[];
+}
+
+export interface SkillConfigProperty {
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
+  description?: string;
+  default?: unknown;
+  enum?: unknown[];
+}
+
+export interface OpenClawMetadata {
+  /** Skill category */
+  category?: string;
+  /** Priority (higher = more likely to match) */
+  priority?: number;
+  /** Trigger patterns */
+  triggers?: string[];
+  /** Example invocations */
+  examples?: string[];
+}
+
+// ============================================================================
+// Skill Content Types
+// ============================================================================
+
+/**
+ * Parsed skill content from markdown body
+ */
+export interface SkillContent {
+  /** Main description/instructions */
+  description: string;
+  /** When to use this skill */
+  usage?: string;
+  /** Example requests that trigger this skill */
+  examples?: SkillExample[];
+  /** Implementation steps */
+  steps?: SkillStep[];
+  /** Tools to invoke */
+  tools?: SkillToolInvocation[];
+  /** Code blocks to execute */
+  codeBlocks?: SkillCodeBlock[];
+  /** Raw markdown content */
+  rawMarkdown: string;
+}
+
+export interface SkillExample {
+  /** User request pattern */
+  request: string;
+  /** Expected response/behavior */
+  response?: string;
+}
+
+export interface SkillStep {
+  /** Step number */
+  index: number;
+  /** Step description */
+  description: string;
+  /** Tool to use (if any) */
+  tool?: string;
+  /** Code to execute (if any) */
+  code?: string;
+  /** Condition for step */
+  condition?: string;
+}
+
+export interface SkillToolInvocation {
+  /** Tool name */
+  name: string;
+  /** Tool arguments template */
+  args?: Record<string, unknown>;
+  /** Description of what this tool call does */
+  description?: string;
+}
+
+export interface SkillCodeBlock {
+  /** Programming language */
+  language: string;
+  /** Code content */
+  code: string;
+  /** Block label/name */
+  label?: string;
+}
+
+// ============================================================================
+// Full Skill Type
+// ============================================================================
+
+/**
+ * Complete skill definition
+ */
+export interface Skill {
+  /** Skill metadata from frontmatter */
+  metadata: SkillMetadata;
+  /** Skill content from markdown body */
+  content: SkillContent;
+  /** Source file path */
+  sourcePath: string;
+  /** Source tier (workspace, managed, bundled) */
+  tier: SkillTier;
+  /** Load timestamp */
+  loadedAt: Date;
+  /** Whether skill is enabled */
+  enabled: boolean;
+}
+
+/**
+ * Skill loading tiers (priority order)
+ */
+export type SkillTier = 'workspace' | 'managed' | 'bundled';
+
+// ============================================================================
+// Skill Registry Types
+// ============================================================================
+
+export interface SkillRegistryConfig {
+  /** Workspace skills path (highest priority) */
+  workspacePath: string;
+  /** Managed/user skills path */
+  managedPath: string;
+  /** Bundled skills path (lowest priority) */
+  bundledPath: string;
+  /** Enable lazy loading */
+  lazyLoad: boolean;
+  /** Cache parsed skills */
+  cacheEnabled: boolean;
+  /** Watch for file changes */
+  watchEnabled: boolean;
+  /** Vector search for skill matching */
+  vectorSearchEnabled: boolean;
+}
+
+export const DEFAULT_SKILL_REGISTRY_CONFIG: SkillRegistryConfig = {
+  workspacePath: '.codebuddy/skills',
+  managedPath: '~/.codebuddy/skills',
+  bundledPath: '', // Set at runtime
+  lazyLoad: true,
+  cacheEnabled: true,
+  watchEnabled: true,
+  vectorSearchEnabled: false,
+};
+
+// ============================================================================
+// Skill Execution Types
+// ============================================================================
+
+export interface SkillExecutionContext {
+  /** User's original request */
+  request: string;
+  /** Conversation history */
+  history?: Array<{ role: string; content: string }>;
+  /** Available tools */
+  tools?: string[];
+  /** Current working directory */
+  cwd?: string;
+  /** Environment variables */
+  env?: Record<string, string>;
+  /** User configuration */
+  config?: Record<string, unknown>;
+}
+
+export interface SkillExecutionResult {
+  /** Whether execution succeeded */
+  success: boolean;
+  /** Output/response */
+  output?: string;
+  /** Error message if failed */
+  error?: string;
+  /** Tool calls made */
+  toolCalls?: Array<{
+    tool: string;
+    args: Record<string, unknown>;
+    result: unknown;
+  }>;
+  /** Execution duration in ms */
+  duration: number;
+}
+
+// ============================================================================
+// Skill Matching Types
+// ============================================================================
+
+export interface SkillMatch {
+  /** Matched skill */
+  skill: Skill;
+  /** Match confidence (0-1) */
+  confidence: number;
+  /** Why this skill matched */
+  reason: string;
+  /** Matched trigger patterns */
+  matchedTriggers?: string[];
+  /** Matched tags */
+  matchedTags?: string[];
+}
+
+export interface SkillSearchOptions {
+  /** Query string */
+  query: string;
+  /** Filter by tags */
+  tags?: string[];
+  /** Filter by tier */
+  tier?: SkillTier;
+  /** Maximum results */
+  limit?: number;
+  /** Minimum confidence threshold */
+  minConfidence?: number;
+  /** Include disabled skills */
+  includeDisabled?: boolean;
+}
+
+// ============================================================================
+// Events
+// ============================================================================
+
+export interface SkillEvents {
+  /** Skill loaded */
+  'skill:loaded': (skill: Skill) => void;
+  /** Skill unloaded */
+  'skill:unloaded': (skillName: string) => void;
+  /** Skill executed */
+  'skill:executed': (skill: Skill, result: SkillExecutionResult) => void;
+  /** Skill matched */
+  'skill:matched': (matches: SkillMatch[]) => void;
+  /** Skill error */
+  'skill:error': (skillName: string, error: Error) => void;
+  /** Registry reloaded */
+  'registry:reloaded': (count: number) => void;
+}
