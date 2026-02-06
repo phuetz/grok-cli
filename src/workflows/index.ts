@@ -1095,3 +1095,18 @@ export {
   getPipelineCompositor,
   resetPipelineCompositor,
 } from './pipeline.js';
+
+// ============================================================================
+// Pipeline CLI Utilities
+// ============================================================================
+
+export type {
+  PipelineFileDefinition,
+  PipelineValidationResult,
+} from '../commands/pipeline.js';
+
+export {
+  loadPipelineFile,
+  validatePipelineDefinition,
+  createPipelineCommand,
+} from '../commands/pipeline.js';

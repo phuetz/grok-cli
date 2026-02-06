@@ -3,6 +3,9 @@ import { getSecurityManager, ApprovalMode } from "../../security/index.js";
 import { getCodeGuardianAgent, CodeGuardianMode } from "../../agent/specialized/code-guardian-agent.js";
 import { ConfirmationService } from "../../utils/confirmation-service.js";
 import { getSecurityReviewAgent } from "../../agent/specialized/security-review-agent.js";
+import { getDMPairing } from "../../channels/dm-pairing.js";
+import { getIdentityLinker } from "../../channels/identity-links.js";
+import type { ChannelType } from "../../channels/index.js";
 
 export interface CommandHandlerResult {
   handled: boolean;
@@ -503,4 +506,281 @@ function getSeverityIcon(severity: string): string {
     case 'info': return '🔵';
     default: return '⚪';
   }
+}
+
+// ============================================================================
+// DM Pairing Command Handler
+// ============================================================================
+
+const VALID_PAIRING_CHANNELS: ChannelType[] = [
+  'telegram', 'discord', 'slack', 'whatsapp', 'signal', 'matrix',
+];
+
+/**
+ * Pairing - Manage DM pairing for channel access control
+ *
+ *   /pairing approve <channel> <code>  - Approve a pending pairing request
+ *   /pairing list                      - List all approved senders
+ *   /pairing pending                   - List pending pairing requests
+ *   /pairing revoke <channel> <userId> - Revoke a paired sender
+ *   /pairing status                    - Show pairing system status
+ */
+export function handlePairing(args: string[]): CommandHandlerResult {
+  const pairing = getDMPairing();
+  const action = args[0]?.toLowerCase();
+
+  let content: string;
+
+  switch (action) {
+    case 'approve': {
+      const channel = args[1]?.toLowerCase() as ChannelType | undefined;
+      const code = args[2]?.toUpperCase();
+
+      if (!channel || !code) {
+        content = 'Usage: /pairing approve <channel> <code>\n\nExample: /pairing approve telegram ABC123';
+        break;
+      }
+
+      if (!VALID_PAIRING_CHANNELS.includes(channel)) {
+        content = `Invalid channel: ${channel}\nValid channels: ${VALID_PAIRING_CHANNELS.join(', ')}`;
+        break;
+      }
+
+      const sender = pairing.approve(channel, code);
+      if (sender) {
+        content = `Pairing approved!\n\nChannel: ${sender.channelType}\nUser: ${sender.displayName || sender.senderId}\nID: ${sender.senderId}`;
+      } else {
+        content = `Pairing failed. No pending request found for channel "${channel}" with code "${code}".\n\nThe code may have expired or already been used. Use /pairing pending to see active requests.`;
+      }
+      break;
+    }
+
+    case 'list': {
+      const approved = pairing.listApproved();
+      if (approved.length === 0) {
+        content = 'No approved senders.\n\nWhen users message the bot on a paired channel, they will receive a pairing code.';
+      } else {
+        const lines = approved.map(s => {
+          const name = s.displayName || s.senderId;
+          const date = new Date(s.approvedAt).toLocaleDateString();
+          return `  ${s.channelType}: ${name} (${s.senderId}) - approved ${date}`;
+        });
+        content = `Approved Senders (${approved.length})\n\n${lines.join('\n')}`;
+      }
+      break;
+    }
+
+    case 'pending': {
+      const pending = pairing.listPending();
+      if (pending.length === 0) {
+        content = 'No pending pairing requests.';
+      } else {
+        const lines = pending.map(r => {
+          const name = r.displayName || r.senderId;
+          const expires = new Date(r.expiresAt).toLocaleTimeString();
+          return `  ${r.channelType}: ${name} - code: ${r.code} (expires ${expires})`;
+        });
+        content = `Pending Pairing Requests (${pending.length})\n\n${lines.join('\n')}\n\nUse: /pairing approve <channel> <code>`;
+      }
+      break;
+    }
+
+    case 'revoke': {
+      const channel = args[1]?.toLowerCase() as ChannelType | undefined;
+      const userId = args[2];
+
+      if (!channel || !userId) {
+        content = 'Usage: /pairing revoke <channel> <userId>\n\nExample: /pairing revoke telegram 123456789';
+        break;
+      }
+
+      if (!VALID_PAIRING_CHANNELS.includes(channel)) {
+        content = `Invalid channel: ${channel}\nValid channels: ${VALID_PAIRING_CHANNELS.join(', ')}`;
+        break;
+      }
+
+      const revoked = pairing.revoke(channel, userId);
+      if (revoked) {
+        content = `Access revoked for ${userId} on ${channel}.`;
+      } else {
+        content = `No approved sender found for ${userId} on ${channel}.`;
+      }
+      break;
+    }
+
+    case 'status': {
+      const stats = pairing.getStats();
+      const channelLines = Object.entries(stats.approvedByChannel)
+        .map(([ch, count]) => `  ${ch}: ${count}`)
+        .join('\n');
+
+      content = `DM Pairing Status\n\nEnabled: ${stats.enabled ? 'Yes' : 'No'}\nApproved: ${stats.totalApproved}\nPending: ${stats.totalPending}\nBlocked: ${stats.totalBlocked}${channelLines ? `\n\nBy Channel:\n${channelLines}` : ''}`;
+      break;
+    }
+
+    case 'help':
+    default:
+      content = `DM Pairing - Access Control for Messaging Channels
+
+Commands:
+  /pairing approve <channel> <code>  - Approve a pending pairing request
+  /pairing list                      - List all approved senders
+  /pairing pending                   - Show pending pairing requests
+  /pairing revoke <channel> <userId> - Revoke a paired sender
+  /pairing status                    - Show pairing system status
+
+How it works:
+  When pairing is enabled, unknown DM senders on messaging channels
+  (Telegram, Discord, Slack, etc.) receive a pairing code instead of
+  having their messages processed. The owner approves via the CLI
+  using the pairing code.
+
+Supported channels: ${VALID_PAIRING_CHANNELS.join(', ')}`;
+      break;
+  }
+
+  return {
+    handled: true,
+    entry: {
+      type: "assistant",
+      content,
+      timestamp: new Date(),
+    },
+  };
+}
+
+// ============================================================================
+// Identity Link Command Handler
+// ============================================================================
+
+const VALID_IDENTITY_CHANNELS: ChannelType[] = [
+  'telegram', 'discord', 'slack', 'whatsapp', 'signal', 'matrix', 'cli', 'web', 'api',
+];
+
+/**
+ * Identity - Manage cross-channel identity links
+ *
+ *   /identity link <ch1> <id1> <ch2> <id2>  - Link two channel identities
+ *   /identity list                           - List all linked identities
+ *   /identity unlink <channel> <userId>      - Remove an identity link
+ *   /identity status                         - Show identity linker statistics
+ */
+export function handleIdentity(args: string[]): CommandHandlerResult {
+  const linker = getIdentityLinker();
+  const action = args[0]?.toLowerCase();
+
+  let content: string;
+
+  switch (action) {
+    case 'link': {
+      const channel1 = args[1]?.toLowerCase() as ChannelType | undefined;
+      const userId1 = args[2];
+      const channel2 = args[3]?.toLowerCase() as ChannelType | undefined;
+      const userId2 = args[4];
+
+      if (!channel1 || !userId1 || !channel2 || !userId2) {
+        content = 'Usage: /identity link <channel1> <userId1> <channel2> <userId2>\n\nExample: /identity link telegram 12345 discord user#6789\n\nLinks two channel identities together so they share the same session.';
+        break;
+      }
+
+      if (!VALID_IDENTITY_CHANNELS.includes(channel1)) {
+        content = `Invalid channel: ${channel1}\nValid channels: ${VALID_IDENTITY_CHANNELS.join(', ')}`;
+        break;
+      }
+
+      if (!VALID_IDENTITY_CHANNELS.includes(channel2)) {
+        content = `Invalid channel: ${channel2}\nValid channels: ${VALID_IDENTITY_CHANNELS.join(', ')}`;
+        break;
+      }
+
+      const canonical = linker.link(
+        { channelType: channel1, peerId: userId1 },
+        { channelType: channel2, peerId: userId2 }
+      );
+
+      const identityList = canonical.identities
+        .map(i => `  ${i.channelType}: ${i.peerId}${i.displayName ? ` (${i.displayName})` : ''}`)
+        .join('\n');
+
+      content = `Identity linked!\n\nCanonical ID: ${canonical.id}\nName: ${canonical.name}\nLinked identities:\n${identityList}`;
+      break;
+    }
+
+    case 'list': {
+      const all = linker.listAll();
+      if (all.length === 0) {
+        content = 'No identity links configured.\n\nUse /identity link <channel1> <userId1> <channel2> <userId2> to create one.';
+      } else {
+        const lines = all.map(c => {
+          const ids = c.identities
+            .map(i => `    ${i.channelType}: ${i.peerId}${i.displayName ? ` (${i.displayName})` : ''}`)
+            .join('\n');
+          return `  [${c.id}] ${c.name}\n${ids}`;
+        });
+        content = `Identity Links (${all.length})\n\n${lines.join('\n\n')}`;
+      }
+      break;
+    }
+
+    case 'unlink': {
+      const channel = args[1]?.toLowerCase() as ChannelType | undefined;
+      const userId = args[2];
+
+      if (!channel || !userId) {
+        content = 'Usage: /identity unlink <channel> <userId>\n\nExample: /identity unlink telegram 12345';
+        break;
+      }
+
+      if (!VALID_IDENTITY_CHANNELS.includes(channel)) {
+        content = `Invalid channel: ${channel}\nValid channels: ${VALID_IDENTITY_CHANNELS.join(', ')}`;
+        break;
+      }
+
+      const unlinked = linker.unlink({ channelType: channel, peerId: userId });
+      if (unlinked) {
+        content = `Identity unlinked: ${channel}:${userId}`;
+      } else {
+        content = `No identity link found for ${channel}:${userId}.`;
+      }
+      break;
+    }
+
+    case 'status': {
+      const stats = linker.getStats();
+      const channelLines = Object.entries(stats.channelDistribution)
+        .map(([ch, count]) => `  ${ch}: ${count}`)
+        .join('\n');
+
+      content = `Identity Linker Status\n\nCanonical identities: ${stats.totalCanonical}\nTotal linked: ${stats.totalLinked}\nMulti-channel: ${stats.multiChannelCount}${channelLines ? `\n\nBy Channel:\n${channelLines}` : ''}`;
+      break;
+    }
+
+    case 'help':
+    default:
+      content = `Identity Links - Cross-Channel Identity Unification
+
+Commands:
+  /identity link <ch1> <id1> <ch2> <id2>  - Link two channel identities
+  /identity list                           - List all linked identities
+  /identity unlink <channel> <userId>      - Remove an identity link
+  /identity status                         - Show identity linker statistics
+
+How it works:
+  When identities are linked across channels, the session isolator
+  uses the canonical identity to compute session keys. This means
+  the same person messaging from Telegram and Discord will share
+  the same session context.
+
+Valid channels: ${VALID_IDENTITY_CHANNELS.join(', ')}`;
+      break;
+  }
+
+  return {
+    handled: true,
+    entry: {
+      type: "assistant",
+      content,
+      timestamp: new Date(),
+    },
+  };
 }

@@ -77,7 +77,8 @@ export class ClipboardManager {
       }
 
       return true;
-    } catch (_error) {
+    } catch (_err) {
+      // Intentionally ignored: clipboard write can fail on systems without clipboard support
       return false;
     }
   }
@@ -107,7 +108,8 @@ export class ClipboardManager {
     try {
       const content = await this.readFromClipboard();
       return content;
-    } catch {
+    } catch (_err) {
+      // Intentionally ignored: clipboard read can fail when clipboard is unavailable
       return null;
     }
   }
@@ -125,7 +127,8 @@ export class ClipboardManager {
         timestamp: new Date(),
         type: this.detectType(content),
       };
-    } catch {
+    } catch (_err) {
+      // Intentionally ignored: clipboard read can fail when clipboard is unavailable
       return null;
     }
   }
@@ -213,7 +216,8 @@ export class ClipboardManager {
     try {
       await this.readFromClipboard();
       return true;
-    } catch {
+    } catch (_err) {
+      // Intentionally ignored: clipboard availability check - failure means clipboard is not available
       return false;
     }
   }
@@ -384,7 +388,8 @@ export class ClipboardManager {
           }));
         }
       }
-    } catch {
+    } catch (_err) {
+      // Intentionally ignored: history file may be corrupted or missing, start with empty history
       this.history = [];
     }
   }
@@ -396,8 +401,8 @@ export class ClipboardManager {
     try {
       fs.ensureDirSync(path.dirname(this.historyPath));
       fs.writeJsonSync(this.historyPath, this.history, { spaces: 2 });
-    } catch {
-      // Ignore save errors
+    } catch (_err) {
+      // Intentionally ignored: clipboard history save is best-effort, failure is non-critical
     }
   }
 }

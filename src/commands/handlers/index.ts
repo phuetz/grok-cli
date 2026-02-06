@@ -27,6 +27,7 @@ export {
   handleSecurity,
   handleDryRun,
   handleGuardian,
+  handlePairing,
 } from './security-handlers.js';
 
 // Voice handlers

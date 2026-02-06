@@ -514,8 +514,8 @@ print(json.dumps(all_elements[:100]))
             visible: item.bounds.width > 0 && item.bounds.height > 0,
           });
         }
-      } catch {
-        // Fallback to mock elements
+      } catch (_err) {
+        // Intentionally ignored: AT-SPI parsing may fail, fallback to mock elements
         elements.push(...this.getMockElements());
       }
     } catch (error) {
@@ -603,7 +603,8 @@ if ($focused) {
             visible: item.width > 0 && item.height > 0,
           });
         }
-      } catch {
+      } catch (_err) {
+        // Intentionally ignored: UIAutomation JSON parsing may fail, fallback to mock elements
         elements.push(...this.getMockElements());
       }
     } catch (error) {
@@ -734,8 +735,8 @@ if ($focused) {
         const data = JSON.parse(output);
         return { width: data.Width, height: data.Height };
       }
-    } catch {
-      // Ignore errors
+    } catch (_err) {
+      // Intentionally ignored: screen resolution detection is best-effort, defaults to 1920x1080
     }
 
     return { width: 1920, height: 1080 }; // Default fallback

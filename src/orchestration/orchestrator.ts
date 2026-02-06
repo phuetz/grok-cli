@@ -19,6 +19,7 @@ import type {
   OrchestratorEventHandler,
   TaskPriority,
 } from './types.js';
+import { safeEvalCondition } from '../sandbox/safe-eval.js';
 
 // Default configuration
 const DEFAULT_CONFIG: OrchestratorConfig = {
@@ -715,18 +716,13 @@ export class Orchestrator extends EventEmitter {
    * Evaluate a condition
    */
   private evaluateCondition(condition: string, context: Record<string, unknown>): boolean {
-    try {
-      // Simple variable substitution
-      let resolved = condition;
-      for (const [key, value] of Object.entries(context)) {
-        resolved = resolved.replace(new RegExp(`\\$${key}`, 'g'), JSON.stringify(value));
-      }
-
-      // Basic evaluation (be careful with this in production)
-      return Boolean(eval(resolved));
-    } catch {
-      return false;
+    // Substitute $variable references with their JSON values
+    let resolved = condition;
+    for (const [key, value] of Object.entries(context)) {
+      resolved = resolved.replace(new RegExp(`\\$${key}`, 'g'), JSON.stringify(value));
     }
+
+    return safeEvalCondition(resolved, context);
   }
 
   // ============================================================================

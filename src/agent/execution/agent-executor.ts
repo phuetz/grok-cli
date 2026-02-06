@@ -17,6 +17,7 @@ import { ContextManagerV2 } from "../../context/context-manager-v2.js";
 import { TokenCounter } from "../../utils/token-counter.js";
 import { logger } from "../../utils/logger.js";
 import { getErrorMessage } from "../../errors/index.js";
+import type { LaneQueue } from "../../concurrency/lane-queue.js";
 
 /**
  * Dependencies injected into the AgentExecutor
@@ -34,6 +35,10 @@ export interface ExecutorDependencies {
   contextManager: ContextManagerV2;
   /** Counts tokens for cost calculation */
   tokenCounter: TokenCounter;
+  /** Optional lane queue for serialized tool execution */
+  laneQueue?: LaneQueue;
+  /** Lane ID for tool execution serialization (defaults to 'default') */
+  laneId?: string;
 }
 
 /**
@@ -72,6 +77,34 @@ export class AgentExecutor {
     private deps: ExecutorDependencies,
     private config: ExecutorConfig
   ) {}
+
+  /**
+   * Execute a tool call, optionally through the LaneQueue for serialization.
+   * Read-only tools (grep, glob, read_file) run in parallel; mutating tools run serially.
+   */
+  private executeToolViaLane(toolCall: Parameters<ToolHandler['executeTool']>[0]): ReturnType<ToolHandler['executeTool']> {
+    const laneQueue = this.deps.laneQueue;
+    if (!laneQueue) {
+      return this.deps.toolHandler.executeTool(toolCall);
+    }
+
+    const laneId = this.deps.laneId ?? 'default';
+    const readOnlyTools = new Set([
+      'grep', 'glob', 'read_file', 'list_files', 'search_files',
+      'get_file_info', 'tree', 'find_references',
+    ]);
+    const isParallel = readOnlyTools.has(toolCall.function.name);
+
+    return laneQueue.enqueue(
+      laneId,
+      () => this.deps.toolHandler.executeTool(toolCall),
+      {
+        parallel: isParallel,
+        category: toolCall.function.name,
+        timeout: 120000,
+      }
+    );
+  }
 
   /**
    * Process a user message sequentially (non-streaming)
@@ -165,7 +198,7 @@ export class AgentExecutor {
             history.push(toolCallEntry);
             newEntries.push(toolCallEntry);
 
-            const result = await this.deps.toolHandler.executeTool(toolCall);
+            const result = await this.executeToolViaLane(toolCall);
 
             // Update entry with result
             const updatedEntry: ChatEntry = {
@@ -368,7 +401,7 @@ export class AgentExecutor {
               return;
             }
 
-            const result = await this.deps.toolHandler.executeTool(toolCall);
+            const result = await this.executeToolViaLane(toolCall);
             const toolResultEntry: ChatEntry = {
               type: "tool_result",
               content: result.success ? result.output || "Success" : result.error || "Error occurred",

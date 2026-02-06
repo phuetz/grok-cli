@@ -10,6 +10,7 @@ import type { ServerConfig, WebSocketMessage, WebSocketResponse } from '../types
 import { validateApiKey } from '../auth/api-keys.js';
 import { logger } from "../../utils/logger.js";
 import { verifyToken } from '../auth/jwt.js';
+import { enqueueMessage } from '../../channels/index.js';
 
 // Agent interface for WebSocket handler
 // Note: These methods don't exist in CodeBuddyAgent - this is a placeholder for future API alignment
@@ -366,8 +367,13 @@ async function processMessage(ws: WebSocket, state: ConnectionState, data: RawDa
     return;
   }
 
+  // Use the connection ID as the session key for lane queue serialization.
+  // This ensures messages from the same WebSocket connection are processed
+  // serially while different connections run in parallel.
+  const sessionKey = `ws:${state.id}`;
+
   try {
-    await handler(ws, state, payload || {});
+    await enqueueMessage(sessionKey, () => handler(ws, state, payload || {}));
   } catch (error) {
     sendError(ws, 'HANDLER_ERROR', error instanceof Error ? error.message : String(error), id);
   }

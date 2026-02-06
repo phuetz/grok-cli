@@ -131,7 +131,7 @@ export interface DMPairingConfig {
 // ============================================================================
 
 export const DEFAULT_DM_PAIRING_CONFIG: DMPairingConfig = {
-  enabled: true,
+  enabled: false,
   pairingChannels: ['telegram', 'discord', 'slack', 'whatsapp', 'signal', 'matrix'],
   codeLength: 6,
   codeExpiryMs: 15 * 60 * 1000, // 15 minutes

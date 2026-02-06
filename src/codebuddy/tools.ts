@@ -387,5 +387,61 @@ export { getToolSelector };
  */
 export type { ToolSelectionResult, QueryClassification, ToolCategory };
 
+// ============================================================================
+// Skill-Augmented Tool Selection
+// ============================================================================
+
+import type { UnifiedSkill } from '../skills/types.js';
+
+/**
+ * Augment a set of tools based on a matched skill's requirements.
+ *
+ * When a skill specifies `requires.tools` or `tools`, this function ensures
+ * those tools are present in the selection. Missing tools are pulled from
+ * the full tool registry so the LLM has everything the skill needs.
+ *
+ * @param currentTools - The currently selected tools (e.g. from RAG)
+ * @param skill - The matched UnifiedSkill whose tool requirements should be honoured
+ * @returns The augmented tool list (may be unchanged if all required tools are present)
+ */
+export function getSkillAugmentedTools(
+  currentTools: CodeBuddyTool[],
+  skill: UnifiedSkill
+): CodeBuddyTool[] {
+  // Collect required tool names from the skill
+  const requiredToolNames: string[] = [
+    ...(skill.requires?.tools ?? []),
+    ...(skill.tools ?? []),
+  ];
+
+  if (requiredToolNames.length === 0) {
+    return currentTools;
+  }
+
+  // Determine which required tools are missing from the current selection
+  const currentNames = new Set(currentTools.map(t => t.function.name));
+  const missingNames = requiredToolNames.filter(name => !currentNames.has(name));
+
+  if (missingNames.length === 0) {
+    return currentTools;
+  }
+
+  // Pull missing tools from the registry
+  initializeToolRegistry();
+  const registry = getToolRegistry();
+  const allRegistered = registry.getEnabledTools();
+
+  const missingTools = allRegistered.filter(t => missingNames.includes(t.function.name));
+
+  if (missingTools.length > 0) {
+    logger.debug('Skill-augmented tools added', {
+      skill: skill.name,
+      added: missingTools.map(t => t.function.name),
+    });
+  }
+
+  return [...currentTools, ...missingTools];
+}
+
 // Initialize registry on module load
 initializeToolRegistry();

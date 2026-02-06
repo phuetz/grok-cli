@@ -581,6 +581,102 @@ export class PipelineCompositor extends EventEmitter {
   }
 
   // ==========================================================================
+  // File Loading & Validation
+  // ==========================================================================
+
+  /**
+   * Load a pipeline definition from a JSON or YAML file.
+   * Returns parsed PipelineStep array ready for execution.
+   */
+  async loadFromFile(filePath: string): Promise<{
+    name: string;
+    description?: string;
+    steps: PipelineStep[];
+  }> {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const resolvedPath = path.default.resolve(filePath);
+    if (!fs.default.existsSync(resolvedPath)) {
+      throw new Error(`Pipeline file not found: ${resolvedPath}`);
+    }
+
+    const content = fs.default.readFileSync(resolvedPath, 'utf-8');
+    const ext = path.default.extname(resolvedPath).toLowerCase();
+
+    let raw: Record<string, unknown>;
+
+    if (ext === '.json') {
+      raw = JSON.parse(content) as Record<string, unknown>;
+    } else if (ext === '.yaml' || ext === '.yml') {
+      const yaml = await import('js-yaml');
+      raw = yaml.default.load(content) as Record<string, unknown>;
+    } else {
+      throw new Error(`Unsupported file format: ${ext}`);
+    }
+
+    const rawSteps = raw.steps as Array<Record<string, unknown>> | undefined;
+    if (!rawSteps || !Array.isArray(rawSteps)) {
+      throw new Error('Pipeline file must contain a "steps" array');
+    }
+
+    const steps: PipelineStep[] = rawSteps.map((s) => ({
+      type: (s.type as PipelineStep['type']) || 'tool',
+      name: String(s.name || ''),
+      args: (s.args as Record<string, unknown>) || {},
+      rawArgs: s.rawArgs as string | undefined,
+      label: s.label as string | undefined,
+      timeout: s.timeout as number | undefined,
+    }));
+
+    return {
+      name: String(raw.name || ''),
+      description: raw.description as string | undefined,
+      steps,
+    };
+  }
+
+  /**
+   * Validate a pipeline definition (steps array).
+   * Returns a list of error/warning messages.
+   */
+  validateDefinition(steps: PipelineStep[]): { valid: boolean; errors: string[]; warnings: string[] } {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    if (!steps || steps.length === 0) {
+      errors.push('Pipeline must have at least one step');
+      return { valid: false, errors, warnings };
+    }
+
+    if (steps.length > this.config.maxSteps) {
+      errors.push(`Pipeline exceeds maximum of ${this.config.maxSteps} steps (has ${steps.length})`);
+    }
+
+    const names = new Set<string>();
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      if (!step.name) {
+        errors.push(`Step ${i + 1}: missing name`);
+      }
+      if (names.has(step.name)) {
+        warnings.push(`Step ${i + 1}: duplicate name "${step.name}"`);
+      }
+      names.add(step.name);
+
+      if (step.type && !['tool', 'skill', 'function', 'transform'].includes(step.type)) {
+        errors.push(`Step ${i + 1} ("${step.name}"): invalid type "${step.type}"`);
+      }
+
+      if (step.type === 'transform' && !BUILTIN_TRANSFORMS[step.name]) {
+        warnings.push(`Step ${i + 1} ("${step.name}"): unknown transform (not built-in)`);
+      }
+    }
+
+    return { valid: errors.length === 0, errors, warnings };
+  }
+
+  // ==========================================================================
   // Lifecycle
   // ==========================================================================
 

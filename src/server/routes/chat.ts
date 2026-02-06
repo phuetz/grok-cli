@@ -9,6 +9,7 @@ import { randomBytes } from 'crypto';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { requireScope, asyncHandler, ApiServerError, validateRequired } from '../middleware/index.js';
 import type { ChatRequest, ChatResponse, ChatStreamChunk } from '../types.js';
+import { enqueueMessage } from '../../channels/index.js';
 
 // Agent interface for server routes (subset of CodeBuddyAgent methods used)
 interface AgentAPI {
@@ -104,31 +105,36 @@ router.post(
     }
 
     // Non-streaming response
+    // Use session key from request body (or a default) for lane queue serialization
+    const sessionKey = `api:chat:${body.sessionId || 'default'}`;
     const agent = await getAgent();
     const requestId = randomBytes(8).toString('hex');
 
     try {
-      // Process messages
-      const messages = body.messages as ChatCompletionMessageParam[];
+      // Enqueue through lane queue for per-session serialization
+      const result = await enqueueMessage(sessionKey, async () => {
+        // Process messages
+        const messages = body.messages as ChatCompletionMessageParam[];
 
-      // Add system prompt if provided
-      if (body.systemPrompt && messages[0]?.role !== 'system') {
-        messages.unshift({
-          role: 'system',
-          content: body.systemPrompt,
-        });
-      }
-
-      // Get completion
-      const result = await agent.processUserInput(
-        messages[messages.length - 1].content as string,
-        {
-          model: body.model,
-          temperature: body.temperature,
-          maxTokens: body.maxTokens,
-          enableTools: body.tools,
+        // Add system prompt if provided
+        if (body.systemPrompt && messages[0]?.role !== 'system') {
+          messages.unshift({
+            role: 'system',
+            content: body.systemPrompt,
+          });
         }
-      );
+
+        // Get completion
+        return agent.processUserInput(
+          messages[messages.length - 1].content as string,
+          {
+            model: body.model,
+            temperature: body.temperature,
+            maxTokens: body.maxTokens,
+            enableTools: body.tools,
+          }
+        );
+      });
 
       const response: ChatResponse = {
         id: requestId,

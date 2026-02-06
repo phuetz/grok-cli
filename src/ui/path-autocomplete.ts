@@ -102,7 +102,8 @@ export async function getPathSuggestions(
   let entries: string[];
   try {
     entries = await fs.readdir(directory);
-  } catch {
+  } catch (_err) {
+    // Intentionally ignored: directory may not exist or be unreadable during autocomplete
     return [];
   }
 
@@ -138,7 +139,8 @@ export async function getPathSuggestions(
     let stats: fs.Stats;
     try {
       stats = await fs.stat(fullPath);
-    } catch {
+    } catch (_err) {
+      // Intentionally ignored: file may be inaccessible or a broken symlink
       continue;
     }
 
@@ -312,8 +314,8 @@ async function loadGitignorePatterns(directory: string): Promise<string[]> {
           .map(l => l.trim())
           .filter(l => l && !l.startsWith('#'));
         patterns.push(...lines);
-      } catch {
-        // Ignore read errors
+      } catch (_err) {
+        // Intentionally ignored: .gitignore file may not exist or be unreadable in parent directories
       }
       break;
     }

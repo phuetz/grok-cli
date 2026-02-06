@@ -145,7 +145,9 @@ process.on("uncaughtException", async (error) => {
   try {
     const crashHandler = await lazyImport.crashHandler();
     crashFile = crashHandler.handleCrash(error, "Uncaught exception");
-  } catch { /* ignore */ }
+  } catch (_err) {
+    // Intentionally ignored: crash handler itself may fail during fatal error recovery
+  }
 
   startupLogger.error("\nUnexpected error occurred:", error);
   if (crashFile) {
@@ -156,7 +158,8 @@ process.on("uncaughtException", async (error) => {
   // Use graceful shutdown with error exit code
   try {
     await getShutdownManager().shutdown({ exitCode: 1, showProgress: false });
-  } catch {
+  } catch (_err) {
+    // Intentionally ignored: shutdown itself failed, force exit as last resort
     process.exit(1);
   }
 });
@@ -167,7 +170,9 @@ process.on("unhandledRejection", async (reason, _promise) => {
   try {
     const crashHandler = await lazyImport.crashHandler();
     crashFile = crashHandler.handleCrash(error, "Unhandled rejection");
-  } catch { /* ignore */ }
+  } catch (_err) {
+    // Intentionally ignored: crash handler itself may fail during fatal error recovery
+  }
 
   startupLogger.error("\nUnhandled promise rejection:", error);
   if (crashFile) {
@@ -178,7 +183,8 @@ process.on("unhandledRejection", async (reason, _promise) => {
   // Use graceful shutdown with error exit code
   try {
     await getShutdownManager().shutdown({ exitCode: 1, showProgress: false });
-  } catch {
+  } catch (_err) {
+    // Intentionally ignored: shutdown itself failed, force exit as last resort
     process.exit(1);
   }
 });
@@ -194,8 +200,8 @@ async function ensureUserSettingsDirectory(): Promise<void> {
     const manager = getSettingsManager();
     // This will create default settings if they don't exist
     manager.loadUserSettings();
-  } catch (_error) {
-    // Silently ignore errors during setup
+  } catch (_err) {
+    logger.debug('Failed to initialize user settings directory', { error: _err });
   }
 }
 
@@ -358,8 +364,8 @@ async function loadModel(): Promise<string | undefined> {
       const getSettingsManager = await lazyImport.settingsManager();
       const manager = getSettingsManager();
       model = manager.getCurrentModel();
-    } catch (_error) {
-      // Ignore errors, model will remain undefined
+    } catch (_err) {
+      logger.debug('Failed to load model from settings manager', { error: _err });
     }
   }
 
@@ -1150,8 +1156,8 @@ program
         try {
           const { initializeCLILazyLoader } = await lazyImport.lazyLoader();
           initializeCLILazyLoader();
-        } catch {
-          // Ignore preloading errors
+        } catch (_err) {
+          logger.debug('Failed to preload CLI lazy loader', { error: _err });
         }
       });
     } catch (error: unknown) {
@@ -1252,6 +1258,21 @@ program
     // Replace stub with real command and re-run
     const args = process.argv.slice(2);
     mcpCmd.parse(args, { from: 'user' });
+  });
+
+// Pipeline command - stub for help, lazy load actual implementation
+program
+  .command("pipeline")
+  .description("Manage and run pipeline workflows")
+  .allowUnknownOption()
+  .action(async (_options, _command) => {
+    // Lazy load the full pipeline command implementation
+    const { createPipelineCommand } = await import("./commands/pipeline.js");
+    const pipelineCmd = createPipelineCommand();
+
+    // Replace stub with real command and re-run
+    const args = process.argv.slice(2);
+    pipelineCmd.parse(args, { from: 'user' });
   });
 
 program.parse();

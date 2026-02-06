@@ -201,15 +201,10 @@ export class USearchVectorIndex extends EventEmitter {
    */
   private async loadUSearch(): Promise<USearchModule> {
     try {
-      // Try to load usearch dynamically
-      // Using Function constructor to bypass TypeScript module resolution
-      // eslint-disable-next-line @typescript-eslint/no-implied-eval
-      const importModule = new Function('specifier', 'return import(specifier)') as (
-        specifier: string
-      ) => Promise<unknown>;
-      const usearch = (await importModule('usearch')) as USearchModule;
+      // Dynamic import for optional dependency
+      const usearch = (await import('usearch')) as unknown as USearchModule;
       return usearch;
-    } catch {
+    } catch (_err) {
       throw new Error('usearch module not installed. Run: npm install usearch');
     }
   }
@@ -473,8 +468,8 @@ export class USearchVectorIndex extends EventEmitter {
         if (existsSync(mappingsPath)) {
           unlinkSync(mappingsPath);
         }
-      } catch {
-        // Ignore cleanup errors
+      } catch (_err) {
+        logger.debug('Failed to clean up USearch index files', { error: _err });
       }
     }
   }

@@ -17,6 +17,10 @@ import { createAgentInfrastructureSync, AgentInfrastructure } from "./infrastruc
 import type { CheckpointManager } from "../checkpoints/checkpoint-manager.js";
 import type { SessionStore } from "../persistence/session-store.js";
 import type { CostTracker } from "../utils/cost-tracker.js";
+import { getLaneQueue } from "../concurrency/lane-queue.js";
+import type { RouteAgentConfig } from "../channels/peer-routing.js";
+import { findSkill } from "../skills/index.js";
+import { skillMdToUnified } from "../skills/adapters/index.js";
 
 // Re-export types for backwards compatibility
 export type { ChatEntry, StreamingChunk } from "./types.js";
@@ -47,6 +51,9 @@ export class CodeBuddyAgent extends BaseAgent {
   private executor: AgentExecutor;
 
   private toolSelectionStrategy: ToolSelectionStrategy;
+
+  /** Optional peer routing config applied from channel route resolution */
+  private peerRoutingConfig: RouteAgentConfig | null = null;
 
   /**
    * Create a new CodeBuddyAgent instance
@@ -164,6 +171,8 @@ export class CodeBuddyAgent extends BaseAgent {
       streamingHandler: this.streamingHandler,
       contextManager: this.contextManager,
       tokenCounter: this.tokenCounter,
+      laneQueue: getLaneQueue(),
+      laneId: 'agent-tools',
     }, {
       maxToolRounds: this.maxToolRounds,
       isGrokModel: this.isGrokModel.bind(this),
@@ -235,9 +244,64 @@ export class CodeBuddyAgent extends BaseAgent {
     return currentModel.toLowerCase().includes("codebuddy");
   }
 
+  /**
+   * Match the user query against the skill registry and apply the matched
+   * skill's context to the tool selection strategy (for tool augmentation)
+   * and inject the skill's system prompt into the conversation.
+   *
+   * This is called at the start of every message processing cycle.
+   */
+  private applySkillMatching(message: string): void {
+    try {
+      const match = findSkill(message);
+      if (match && match.confidence >= 0.3) {
+        const unifiedSkill = skillMdToUnified(match.skill);
+
+        // Set active skill on the tool selection strategy so required tools are included
+        this.toolSelectionStrategy.setActiveSkill(unifiedSkill);
+
+        // Inject skill system prompt into the conversation context
+        const skillPrompt = unifiedSkill.systemPrompt || unifiedSkill.description;
+        if (skillPrompt) {
+          // Find existing skill context message and replace, or insert before the last user message
+          const existingIdx = this.messages.findIndex(
+            m => m.role === 'system' && typeof m.content === 'string' && m.content.startsWith('[Skill:')
+          );
+          const skillMessage = {
+            role: 'system' as const,
+            content: `[Skill: ${unifiedSkill.name}]\n${skillPrompt}`,
+          };
+
+          if (existingIdx >= 0) {
+            this.messages[existingIdx] = skillMessage;
+          } else {
+            // Insert after the main system prompt (index 1)
+            const insertIdx = Math.min(1, this.messages.length);
+            this.messages.splice(insertIdx, 0, skillMessage);
+          }
+        }
+
+        logger.debug('Skill matched for query', {
+          skill: unifiedSkill.name,
+          confidence: match.confidence,
+          reason: match.reason,
+        });
+      } else {
+        // No skill matched - clear any previous skill context
+        this.toolSelectionStrategy.setActiveSkill(null);
+      }
+    } catch (error) {
+      // Skill matching is best-effort; don't block message processing
+      logger.debug('Skill matching failed (non-fatal)', { error: String(error) });
+    }
+  }
+
   async processUserMessage(message: string): Promise<ChatEntry[]> {
     // Reset cached tools for new conversation turn
     this.toolSelectionStrategy.clearCache();
+
+    // Match user query against skill registry
+    this.applySkillMatching(message);
 
     // Add user message to conversation
     const userEntry: ChatEntry = {
@@ -268,6 +332,9 @@ export class CodeBuddyAgent extends BaseAgent {
 
     // Reset cached tools for new conversation turn
     this.toolSelectionStrategy.clearCache();
+
+    // Match user query against skill registry
+    this.applySkillMatching(message);
 
     // Add user message to conversation
     const userEntry: ChatEntry = {
@@ -648,11 +715,79 @@ export class CodeBuddyAgent extends BaseAgent {
     return `${modeStr} | Session: $${this.sessionCost.toFixed(4)} / ${limitStr} | Rounds: ${this.maxToolRounds} max`;
   }
 
+  // =========================================================================
+  // Peer Routing
+  // =========================================================================
+
+  /**
+   * Apply peer routing configuration to the agent.
+   *
+   * When a message is resolved to a specific route via the PeerRouter,
+   * the resulting RouteAgentConfig can be applied here to override model,
+   * system prompt, temperature, and tool constraints for that session.
+   *
+   * @param config - The route agent config from peer routing resolution
+   */
+  applyPeerRouting(config: RouteAgentConfig): void {
+    this.peerRoutingConfig = config;
+
+    // Apply model override
+    if (config.model) {
+      this.setModel(config.model);
+      logger.debug(`Peer routing: model set to ${config.model}`);
+    }
+
+    // Apply system prompt override
+    if (config.systemPrompt) {
+      this.setSystemPrompt(config.systemPrompt);
+      logger.debug('Peer routing: system prompt overridden');
+    }
+
+    // Apply max tool rounds
+    if (config.maxToolRounds !== undefined) {
+      this.maxToolRounds = config.maxToolRounds;
+      logger.debug(`Peer routing: max tool rounds set to ${config.maxToolRounds}`);
+    }
+
+    this.emit('peer-routing:applied', config);
+  }
+
+  /**
+   * Get the currently applied peer routing configuration.
+   *
+   * @returns The current peer routing config, or null if none is applied
+   */
+  getPeerRoutingConfig(): RouteAgentConfig | null {
+    return this.peerRoutingConfig;
+  }
+
+  /**
+   * Clear peer routing configuration, reverting to defaults.
+   */
+  clearPeerRouting(): void {
+    this.peerRoutingConfig = null;
+    this.emit('peer-routing:cleared');
+  }
+
+  /**
+   * Check if a message should be forwarded to a different agent
+   * based on the peer routing config.
+   *
+   * @returns The target agent ID if message should be forwarded, null otherwise
+   */
+  shouldForwardToAgent(): string | null {
+    if (!this.peerRoutingConfig?.agentId) {
+      return null;
+    }
+    return this.peerRoutingConfig.agentId;
+  }
+
   /**
    * Clean up all resources
    * Should be called when the agent is no longer needed
    */
   dispose(): void {
+    this.peerRoutingConfig = null;
     super.dispose();
   }
 }

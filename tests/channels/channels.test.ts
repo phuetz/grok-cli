@@ -7,6 +7,8 @@ import {
   ChannelManager,
   getChannelManager,
   resetChannelManager,
+  getSessionKey,
+  resetSessionIsolator,
   type InboundMessage,
   type OutboundMessage,
   type BaseChannel,
@@ -497,6 +499,72 @@ describe('Multi-Channel Support', () => {
 
       const sent = channel.getSentMessages();
       expect(sent[0].disablePreview).toBe(true);
+    });
+  });
+
+  describe('Session Key on Messages', () => {
+    beforeEach(() => {
+      resetSessionIsolator();
+    });
+
+    afterEach(() => {
+      resetSessionIsolator();
+    });
+
+    it('should allow sessionKey to be set on InboundMessage', () => {
+      const channel = new MockChannel();
+      const msg = channel.simulateMessage('Hello', {
+        channel: {
+          id: 'channel-1',
+          type: 'telegram',
+        },
+        sender: {
+          id: 'user-1',
+        },
+      });
+
+      // sessionKey is optional; getSessionKey computes it
+      const key = getSessionKey(msg);
+      expect(key).toBeDefined();
+      expect(typeof key).toBe('string');
+
+      // Can assign it back
+      msg.sessionKey = key;
+      expect(msg.sessionKey).toBe(key);
+    });
+
+    it('should produce consistent session keys for messages from the same source', () => {
+      const channel = new MockChannel();
+      const msg1 = channel.simulateMessage('Message 1', {
+        channel: { id: 'ch-1', type: 'discord' },
+        sender: { id: 'user-1' },
+      });
+      const msg2 = channel.simulateMessage('Message 2', {
+        channel: { id: 'ch-1', type: 'discord' },
+        sender: { id: 'user-1' },
+      });
+
+      const key1 = getSessionKey(msg1);
+      const key2 = getSessionKey(msg2);
+
+      expect(key1).toBe(key2);
+    });
+
+    it('should produce different session keys for messages from different sources', () => {
+      const channel = new MockChannel();
+      const msg1 = channel.simulateMessage('Message 1', {
+        channel: { id: 'ch-1', type: 'telegram' },
+        sender: { id: 'user-1' },
+      });
+      const msg2 = channel.simulateMessage('Message 2', {
+        channel: { id: 'ch-1', type: 'slack' },
+        sender: { id: 'user-1' },
+      });
+
+      const key1 = getSessionKey(msg1);
+      const key2 = getSessionKey(msg2);
+
+      expect(key1).not.toBe(key2);
     });
   });
 });

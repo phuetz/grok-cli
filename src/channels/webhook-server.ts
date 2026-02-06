@@ -10,6 +10,10 @@ import http from 'http';
 import https from 'https';
 import { URL } from 'url';
 import { logger } from '../utils/logger.js';
+import { enqueueMessage } from './index.js';
+import { getPeerRouter } from './peer-routing.js';
+import type { ResolvedRoute } from './peer-routing.js';
+import type { InboundMessage, ChannelType } from './index.js';
 import type { TelegramChannel } from './telegram/index.js';
 import type { SlackChannel } from './slack/index.js';
 
@@ -289,8 +293,23 @@ export class WebhookServer extends EventEmitter {
         rawBody,
       };
 
-      // Call handler
-      const response = await handler.handler(webhookRequest);
+      // Derive a session key from the webhook path and optional session/chat ID
+      // This serializes messages for the same session while allowing parallel
+      // processing of different sessions.
+      const sessionKey = this.deriveSessionKey(webhookRequest);
+
+      // Attempt peer route resolution from the webhook body
+      const resolvedRoute = this.resolveWebhookRoute(webhookRequest);
+      if (resolvedRoute) {
+        this.emit('route:resolved', resolvedRoute, webhookRequest);
+        logger.debug(`Webhook peer route resolved: ${resolvedRoute.matchType} -> agent=${resolvedRoute.agent.agentId || 'default'}`, {
+          routeId: resolvedRoute.route.id,
+          matchType: resolvedRoute.matchType,
+        });
+      }
+
+      // Enqueue handler execution through the lane queue for session serialization
+      const response = await enqueueMessage(sessionKey, () => handler.handler(webhookRequest));
 
       // Send response
       const status = response.status ?? 200;
@@ -325,6 +344,102 @@ export class WebhookServer extends EventEmitter {
           error: error instanceof Error ? error.message : 'Internal server error',
         })
       );
+    }
+  }
+
+  /**
+   * Derive a session key from a webhook request.
+   *
+   * Extracts a chat/channel ID from the request body when possible
+   * (e.g. Telegram chat.id, Slack channel), falling back to the
+   * webhook path so that all requests for the same endpoint are
+   * serialized together.
+   */
+  private deriveSessionKey(req: WebhookRequest): string {
+    const base = `webhook:${req.path}`;
+
+    // Try to extract a session-level identifier from the body
+    if (typeof req.body === 'object' && req.body !== null) {
+      const body = req.body as Record<string, unknown>;
+
+      // Telegram: message.chat.id or callback_query.message.chat.id
+      const message = body.message as Record<string, unknown> | undefined;
+      const chatId = (message?.chat as Record<string, unknown> | undefined)?.id;
+      if (chatId !== undefined) {
+        return `${base}:chat:${chatId}`;
+      }
+
+      // Slack: event.channel or channel
+      const event = body.event as Record<string, unknown> | undefined;
+      const slackChannel = event?.channel ?? body.channel;
+      if (slackChannel !== undefined) {
+        return `${base}:channel:${slackChannel}`;
+      }
+
+      // Generic session_id or sessionId field
+      const sessionId = body.session_id ?? body.sessionId;
+      if (sessionId !== undefined) {
+        return `${base}:session:${sessionId}`;
+      }
+    }
+
+    return base;
+  }
+
+  /**
+   * Attempt to resolve a peer route from a webhook request body.
+   *
+   * Builds a minimal InboundMessage from the webhook payload and
+   * runs it through the PeerRouter. Returns null if no route matches
+   * or if the body lacks the necessary fields.
+   */
+  private resolveWebhookRoute(req: WebhookRequest): ResolvedRoute | null {
+    try {
+      if (typeof req.body !== 'object' || req.body === null) {
+        return null;
+      }
+
+      const body = req.body as Record<string, unknown>;
+
+      // Try to extract enough info for an InboundMessage
+      let channelType: ChannelType = 'api';
+      let senderId = 'unknown';
+      let channelId = 'unknown';
+      let content = '';
+
+      // Telegram webhook body
+      const telegramMsg = body.message as Record<string, unknown> | undefined;
+      if (telegramMsg) {
+        channelType = 'telegram';
+        const from = telegramMsg.from as Record<string, unknown> | undefined;
+        senderId = String(from?.id ?? 'unknown');
+        const chat = telegramMsg.chat as Record<string, unknown> | undefined;
+        channelId = String(chat?.id ?? 'unknown');
+        content = String(telegramMsg.text ?? '');
+      }
+
+      // Slack webhook body
+      const slackEvent = body.event as Record<string, unknown> | undefined;
+      if (slackEvent && !telegramMsg) {
+        channelType = 'slack';
+        senderId = String(slackEvent.user ?? 'unknown');
+        channelId = String(slackEvent.channel ?? 'unknown');
+        content = String(slackEvent.text ?? '');
+      }
+
+      const message: InboundMessage = {
+        id: `webhook-${Date.now()}`,
+        channel: { id: channelId, type: channelType },
+        sender: { id: senderId },
+        content,
+        contentType: 'text',
+        timestamp: new Date(),
+      };
+
+      const router = getPeerRouter();
+      return router.resolve(message);
+    } catch {
+      return null;
     }
   }
 

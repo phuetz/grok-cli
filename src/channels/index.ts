@@ -7,6 +7,9 @@
 
 import { EventEmitter } from 'events';
 import { logger } from '../utils/logger.js';
+import { getSessionIsolator } from './session-isolation.js';
+import { getIdentityLinker } from './identity-links.js';
+import type { CanonicalIdentity, ChannelIdentity } from './identity-links.js';
 
 // ============================================================================
 // Types
@@ -143,6 +146,8 @@ export interface InboundMessage {
   commandArgs?: string[];
   /** Thread/topic ID */
   threadId?: string;
+  /** Session isolation key (computed by SessionIsolator) */
+  sessionKey?: string;
   /** Raw platform message */
   raw?: unknown;
 }
@@ -254,6 +259,101 @@ export interface ChannelEvents {
   'error': (channel: ChannelType, error: Error) => void;
   'typing': (channel: ChannelInfo, user: ChannelUser) => void;
   'reaction': (channel: ChannelInfo, messageId: string, emoji: string, user: ChannelUser) => void;
+}
+
+// ============================================================================
+// Session Key Helper
+// ============================================================================
+
+/**
+ * Generate a session key for an inbound message using the SessionIsolator.
+ *
+ * This is a convenience function that uses the singleton SessionIsolator
+ * to compute a session key from the message's channel and sender info.
+ * Returns undefined if session isolation is not available.
+ *
+ * @param message - The inbound message to generate a key for
+ * @param accountId - Optional bot account ID for multi-account setups
+ * @returns The session key string, or undefined if isolation fails
+ */
+export function getSessionKey(message: InboundMessage, accountId?: string): string | undefined {
+  try {
+    const isolator = getSessionIsolator();
+    return isolator.getSessionKey(message, accountId);
+  } catch {
+    return undefined;
+  }
+}
+
+// ============================================================================
+// Identity Resolution Helper
+// ============================================================================
+
+/**
+ * Resolve the canonical identity for an inbound message's sender.
+ *
+ * Uses the singleton IdentityLinker to look up cross-channel identity links.
+ * Returns null if no canonical identity exists for the sender.
+ *
+ * @param message - The inbound message whose sender to resolve
+ * @returns The canonical identity, or null if no link exists
+ */
+export function getCanonicalIdentity(message: InboundMessage): CanonicalIdentity | null {
+  try {
+    const linker = getIdentityLinker();
+    return linker.resolve({
+      channelType: message.channel.type,
+      peerId: message.sender.id,
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================================
+// Peer Routing Helper
+// ============================================================================
+
+import { getPeerRouter } from './peer-routing.js';
+import type { ResolvedRoute, RouteAgentConfig } from './peer-routing.js';
+
+/**
+ * Resolve the best route for an inbound message using the singleton PeerRouter.
+ *
+ * This is a convenience function similar to `getSessionKey()` and
+ * `checkDMPairing()`. It delegates to the singleton PeerRouter and
+ * returns the resolved route (or null if no route matches).
+ *
+ * @param message - The inbound message to resolve a route for
+ * @param accountId - Optional bot account ID for multi-account setups
+ * @returns The resolved route with agent config, or null if no route matches
+ */
+export function resolveRoute(message: InboundMessage, accountId?: string): ResolvedRoute | null {
+  try {
+    const router = getPeerRouter();
+    return router.resolve(message, accountId);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get the effective agent configuration for an inbound message.
+ *
+ * Resolves the route and merges the matched agent config with defaults.
+ * Always returns a config object (falls back to default if no route matches).
+ *
+ * @param message - The inbound message to get config for
+ * @param accountId - Optional bot account ID for multi-account setups
+ * @returns The effective agent configuration
+ */
+export function getRouteAgentConfig(message: InboundMessage, accountId?: string): RouteAgentConfig {
+  try {
+    const router = getPeerRouter();
+    return router.getAgentConfig(message, accountId);
+  } catch {
+    return {};
+  }
 }
 
 // ============================================================================
@@ -726,3 +826,104 @@ export {
   getDMPairing,
   resetDMPairing,
 } from './dm-pairing.js';
+
+// ============================================================================
+// Lane Queue Helpers
+// ============================================================================
+
+import { LaneQueue } from '../concurrency/lane-queue.js';
+import type { TaskOptions } from '../concurrency/lane-queue.js';
+
+/** Dedicated LaneQueue instance for channel message processing */
+let channelLaneQueue: LaneQueue | null = null;
+
+/**
+ * Get the singleton LaneQueue for channel message processing.
+ *
+ * This is separate from the agent executor's lane queue so that
+ * channel-level serialization and tool-level serialization each
+ * have their own queue configurations.
+ */
+export function getChannelLaneQueue(): LaneQueue {
+  if (!channelLaneQueue) {
+    channelLaneQueue = new LaneQueue({
+      maxParallel: 3,
+      defaultTimeout: 120000, // 2 minutes for message processing
+      maxPending: 200,
+    });
+  }
+  return channelLaneQueue;
+}
+
+/**
+ * Reset the channel lane queue (for testing).
+ */
+export function resetChannelLaneQueue(): void {
+  if (channelLaneQueue) {
+    channelLaneQueue.clear();
+  }
+  channelLaneQueue = null;
+}
+
+/**
+ * Enqueue a message handler for serial execution within a session.
+ *
+ * Messages for the same session key are processed one at a time
+ * (serial by default). Different sessions run in parallel.
+ *
+ * @param sessionKey - The session key used as the lane ID
+ * @param handler - Async function to process the message
+ * @param options - Optional task options (e.g., timeout, priority)
+ * @returns Promise that resolves with the handler's return value
+ */
+export function enqueueMessage<T>(
+  sessionKey: string,
+  handler: () => Promise<T>,
+  options?: TaskOptions,
+): Promise<T> {
+  const queue = getChannelLaneQueue();
+  return queue.enqueue(sessionKey, handler, {
+    category: 'channel-message',
+    ...options,
+  });
+}
+
+// ============================================================================
+// DM Pairing Helper
+// ============================================================================
+
+import { getDMPairing } from './dm-pairing.js';
+import type { PairingStatus } from './dm-pairing.js';
+
+/**
+ * Check if a DM sender is approved via the pairing system.
+ *
+ * When DM pairing is disabled (the default), this always returns
+ * `{ approved: true }` so callers can skip gating logic.
+ *
+ * @param message - The inbound message to check
+ * @returns PairingStatus indicating approval state and pairing code if needed
+ */
+export async function checkDMPairing(message: InboundMessage): Promise<PairingStatus> {
+  const pairing = getDMPairing();
+
+  // If pairing is not enabled, always approve
+  if (!pairing.requiresPairing(message.channel.type)) {
+    return {
+      approved: true,
+      senderId: message.sender.id,
+      channelType: message.channel.type,
+    };
+  }
+
+  // Only gate DM messages, not group messages
+  if (!message.channel.isDM) {
+    return {
+      approved: true,
+      senderId: message.sender.id,
+      channelType: message.channel.type,
+    };
+  }
+
+  return pairing.checkSender(message);
+}

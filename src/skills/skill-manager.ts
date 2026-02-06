@@ -1,6 +1,8 @@
 import fs from "fs-extra";
 import * as path from "path";
 import { EventEmitter } from "events";
+import type { UnifiedSkill } from './types.js';
+import { legacyToUnified } from './adapters/index.js';
 
 export interface Skill {
   name: string;
@@ -165,9 +167,14 @@ Automate and optimize deployment workflows.`,
   },
 };
 
+let _skillManagerDeprecationWarned = false;
+
 /**
  * Skill Manager - Auto-activating specialized abilities
  * Inspired by Claude Code's Skills system
+ *
+ * @deprecated Use the SKILL.md system instead (SkillRegistry from './registry.js').
+ * See src/skills/MIGRATION.md for migration guide.
  */
 export class SkillManager extends EventEmitter {
   private skills: Map<string, Skill> = new Map();
@@ -176,6 +183,10 @@ export class SkillManager extends EventEmitter {
 
   constructor(projectRoot: string = process.cwd()) {
     super();
+    if (!_skillManagerDeprecationWarned) {
+      _skillManagerDeprecationWarned = true;
+      console.warn('[DEPRECATED] SkillManager is deprecated. Use SKILL.md system (SkillRegistry) instead. See src/skills/MIGRATION.md');
+    }
     this.skillsDir = path.join(projectRoot, ".codebuddy", "skills");
 
     // Load predefined skills
@@ -300,6 +311,28 @@ export class SkillManager extends EventEmitter {
    */
   getSkill(name: string): Skill | null {
     return this.skills.get(name) || null;
+  }
+
+  /**
+   * Get all skills as UnifiedSkill format.
+   * Converts all legacy skills to the unified format and optionally
+   * includes skills from the SKILL.md registry.
+   *
+   * @returns An array of UnifiedSkill objects from the legacy system
+   */
+  getAllSkills(): UnifiedSkill[] {
+    const unified: UnifiedSkill[] = [];
+
+    for (const skill of this.skills.values()) {
+      // Determine if this is a predefined/bundled skill
+      const isPredefined = Object.prototype.hasOwnProperty.call(PREDEFINED_SKILLS, skill.name);
+      unified.push(legacyToUnified(skill, {
+        source: isPredefined ? 'bundled' : 'legacy',
+        enabled: true,
+      }));
+    }
+
+    return unified;
   }
 
   /**

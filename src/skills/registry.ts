@@ -17,9 +17,15 @@ import type {
   SkillMatch,
   SkillSearchOptions,
   SkillEvents,
+  UnifiedSkill,
 } from './types.js';
 import { DEFAULT_SKILL_REGISTRY_CONFIG } from './types.js';
 import { parseSkillFile, validateSkill } from './parser.js';
+import {
+  legacyToUnified,
+  skillMdToUnified,
+  type LegacySkill,
+} from './adapters/index.js';
 
 // ============================================================================
 // Skill Registry Class
@@ -360,6 +366,60 @@ export class SkillRegistry extends EventEmitter {
     });
 
     return matches.length > 0 ? matches[0] : null;
+  }
+
+  // ==========================================================================
+  // Unified Skill Access
+  // ==========================================================================
+
+  /**
+   * Register a legacy JSON-based skill by converting it to SKILL.md format.
+   * The skill is stored internally as a SKILL.md Skill after conversion
+   * from the legacy adapter.
+   *
+   * @param legacySkill - A legacy skill object (from SkillManager or SkillLoader)
+   * @param tier - The tier to register under (defaults to 'workspace')
+   */
+  registerLegacySkill(legacySkill: LegacySkill, tier: SkillTier = 'workspace'): void {
+    // Convert to SKILL.md Skill format for internal storage
+    const skill: Skill = {
+      metadata: {
+        name: legacySkill.name,
+        description: legacySkill.description || '',
+        tags: legacySkill.triggers ? legacySkill.triggers.slice(0, 10) : undefined,
+        requires: legacySkill.tools ? { tools: legacySkill.tools } : undefined,
+        openclaw: {
+          priority: legacySkill.priority,
+          triggers: legacySkill.triggers ? [...legacySkill.triggers] : undefined,
+        },
+      },
+      content: {
+        description: legacySkill.systemPrompt || '',
+        rawMarkdown: legacySkill.systemPrompt || '',
+      },
+      sourcePath: 'legacy://' + legacySkill.name,
+      tier,
+      loadedAt: new Date(),
+      enabled: true,
+    };
+
+    this.registerSkill(skill);
+  }
+
+  /**
+   * Get all skills as UnifiedSkill format.
+   * Converts all registered SKILL.md skills to the unified format.
+   *
+   * @returns An array of UnifiedSkill objects
+   */
+  getAllUnified(): UnifiedSkill[] {
+    const unified: UnifiedSkill[] = [];
+
+    for (const skill of this.skills.values()) {
+      unified.push(skillMdToUnified(skill));
+    }
+
+    return unified;
   }
 
   // ==========================================================================

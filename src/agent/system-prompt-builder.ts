@@ -25,9 +25,12 @@
  *   .withSkills(activeSkills)
  *   .withMemory(relevantMemories)
  *   .withMode('code')
+ *   .withSkillContext(matchedSkill)
  *   .build();
  * ```
  */
+
+import type { UnifiedSkill } from '../skills/types.js';
 
 // ============================================================================
 // Types
@@ -132,6 +135,7 @@ export class SystemPromptBuilder {
   private mode: OperatingMode = 'code';
   private buildConfig: PromptBuildConfig;
   private customInstructions: string[] = [];
+  private activeSkillContext: UnifiedSkill | null = null;
 
   constructor(config: Partial<PromptBuildConfig> = {}) {
     this.buildConfig = { ...DEFAULT_BUILD_CONFIG, ...config };
@@ -200,6 +204,20 @@ export class SystemPromptBuilder {
    */
   withSection(section: Omit<PromptSection, 'required'> & { required?: boolean }): this {
     this.addSection({ required: false, ...section });
+    return this;
+  }
+
+  /**
+   * Inject context from a matched UnifiedSkill.
+   *
+   * When a skill is matched for the current query, this method adds the
+   * skill's system prompt / description as a high-priority section so the
+   * LLM receives skill-specific instructions.
+   *
+   * @param skill - The matched UnifiedSkill (or null to clear)
+   */
+  withSkillContext(skill: UnifiedSkill | null): this {
+    this.activeSkillContext = skill;
     return this;
   }
 
@@ -366,6 +384,22 @@ export class SystemPromptBuilder {
       });
     }
 
+    // Active skill context
+    if (this.activeSkillContext) {
+      const skill = this.activeSkillContext;
+      const skillContent = this.buildActiveSkillSection(skill);
+      if (skillContent) {
+        this.addSection({
+          id: 'active-skill',
+          title: `Active Skill: ${skill.name}`,
+          content: skillContent,
+          priority: 95, // Very high - just below base instructions
+          required: true,
+          maxTokens: 1500,
+        });
+      }
+    }
+
     // Custom instructions
     if (this.customInstructions.length > 0) {
       this.addSection({
@@ -426,6 +460,45 @@ export class SystemPromptBuilder {
     return sorted.map(m =>
       `- [${m.category}] ${m.key}: ${m.value}`
     ).join('\n');
+  }
+
+  /**
+   * Build active skill section from UnifiedSkill context
+   */
+  private buildActiveSkillSection(skill: UnifiedSkill): string {
+    const lines: string[] = [];
+
+    // Skill description
+    lines.push(skill.description);
+
+    // System prompt (the main skill instructions)
+    if (skill.systemPrompt) {
+      lines.push('');
+      lines.push(skill.systemPrompt);
+    }
+
+    // Steps
+    if (skill.steps && skill.steps.length > 0) {
+      lines.push('');
+      lines.push('### Steps');
+      for (const step of skill.steps) {
+        const toolHint = step.tool ? ` (use: ${step.tool})` : '';
+        lines.push(`${step.index}. ${step.description}${toolHint}`);
+      }
+    }
+
+    // Required tools
+    const requiredTools = [
+      ...(skill.requires?.tools ?? []),
+      ...(skill.tools ?? []),
+    ];
+    if (requiredTools.length > 0) {
+      const unique = [...new Set(requiredTools)];
+      lines.push('');
+      lines.push(`**Required tools**: ${unique.join(', ')}`);
+    }
+
+    return lines.join('\n');
   }
 
   /**
@@ -494,6 +567,7 @@ export class SystemPromptBuilder {
     this.memories = [];
     this.mode = 'code';
     this.customInstructions = [];
+    this.activeSkillContext = null;
     return this;
   }
 }

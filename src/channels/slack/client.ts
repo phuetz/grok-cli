@@ -33,7 +33,7 @@ import type {
   MessageAttachment,
   MessageButton,
 } from '../index.js';
-import { BaseChannel } from '../index.js';
+import { BaseChannel, getSessionKey, checkDMPairing } from '../index.js';
 
 const SLACK_API_BASE = 'https://slack.com/api';
 const SLACK_SOCKET_URL = 'wss://wss-primary.slack.com/websocket';
@@ -283,6 +283,23 @@ export class SlackChannel extends BaseChannel {
     const message = await this.convertEvent(event);
     const parsed = this.parseCommand(message);
 
+    // Attach session key for session isolation
+    parsed.sessionKey = getSessionKey(parsed);
+
+    // DM pairing check: gate unapproved DM senders
+    const pairingStatus = await checkDMPairing(parsed);
+    if (!pairingStatus.approved) {
+      const { getDMPairing } = await import('../dm-pairing.js');
+      const pairingMessage = getDMPairing().getPairingMessage(pairingStatus);
+      if (pairingMessage && event.channel) {
+        await this.send({
+          channelId: event.channel,
+          content: pairingMessage,
+        });
+      }
+      return;
+    }
+
     this.emit('message', parsed);
 
     if (parsed.isCommand) {
@@ -318,6 +335,9 @@ export class SlackChannel extends BaseChannel {
         raw: payload,
       };
 
+      // Attach session key for session isolation
+      message.sessionKey = getSessionKey(message);
+
       this.emit('command', message);
     }
   }
@@ -345,6 +365,9 @@ export class SlackChannel extends BaseChannel {
       commandArgs: command.text.split(/\s+/).filter(Boolean),
       raw: command,
     };
+
+    // Attach session key for session isolation
+    message.sessionKey = getSessionKey(message);
 
     this.emit('command', message);
   }

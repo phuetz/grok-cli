@@ -21,6 +21,7 @@ import {
   getAllCodeBuddyTools,
   getRelevantTools,
   classifyQuery,
+  getSkillAugmentedTools,
 } from '../../codebuddy/tools.js';
 import {
   getToolSelector,
@@ -35,6 +36,7 @@ import type {
 } from '../../tools/types.js';
 import { getPromptCacheManager } from '../../optimization/prompt-cache.js';
 import { logger } from '../../utils/logger.js';
+import type { UnifiedSkill } from '../../skills/types.js';
 
 // Re-export types for convenience
 export type {
@@ -121,6 +123,7 @@ export class ToolSelectionStrategy {
   private lastQuery: string = '';
   private lastSelection: ToolSelectionResult | null = null;
   private cacheTimestamp: number = 0;
+  private activeSkill: UnifiedSkill | null = null;
 
   /**
    * Create a new ToolSelectionStrategy instance
@@ -193,6 +196,17 @@ export class ToolSelectionStrategy {
       });
     }
 
+    // Augment with skill-required tools if a skill is active
+    if (this.activeSkill) {
+      tools = getSkillAugmentedTools(tools, this.activeSkill);
+      this.cachedToolNames = tools.map(t => t.function.name);
+
+      logger.debug('Tools augmented by active skill', {
+        skill: this.activeSkill.name,
+        toolCount: tools.length,
+      });
+    }
+
     // Cache tools for prompt optimization
     const promptCacheManager = getPromptCacheManager();
     promptCacheManager.cacheTools(tools);
@@ -238,6 +252,29 @@ export class ToolSelectionStrategy {
   }
 
   /**
+   * Set the active skill for tool augmentation.
+   *
+   * When set, `selectToolsForQuery` will ensure all tools required by the
+   * skill are included in the selection, even if RAG filtering would have
+   * excluded them.
+   *
+   * @param skill - The matched UnifiedSkill, or null to clear
+   */
+  setActiveSkill(skill: UnifiedSkill | null): void {
+    this.activeSkill = skill;
+    if (skill) {
+      logger.debug('Active skill set for tool selection', { skill: skill.name });
+    }
+  }
+
+  /**
+   * Get the currently active skill
+   */
+  getActiveSkill(): UnifiedSkill | null {
+    return this.activeSkill;
+  }
+
+  /**
    * Clear the tool cache
    *
    * Should be called at the start of a new conversation turn.
@@ -246,6 +283,7 @@ export class ToolSelectionStrategy {
     this.cachedTools = null;
     this.cachedToolNames = [];
     this.cacheTimestamp = 0;
+    this.activeSkill = null;
     logger.debug('Tool selection cache cleared');
   }
 

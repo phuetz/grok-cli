@@ -27,7 +27,7 @@ import type {
   ContentType,
   MessageButton,
 } from '../index.js';
-import { BaseChannel } from '../index.js';
+import { BaseChannel, getSessionKey, checkDMPairing } from '../index.js';
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org';
 
@@ -373,6 +373,24 @@ export class TelegramChannel extends BaseChannel {
     const message = this.convertMessage(msg);
     const parsed = this.parseCommand(message);
 
+    // Attach session key for session isolation
+    parsed.sessionKey = getSessionKey(parsed);
+
+    // DM pairing check: gate unapproved DM senders
+    const pairingStatus = await checkDMPairing(parsed);
+    if (!pairingStatus.approved) {
+      // Respond with pairing code and instructions
+      const { getDMPairing } = await import('../dm-pairing.js');
+      const pairingMessage = getDMPairing().getPairingMessage(pairingStatus);
+      if (pairingMessage) {
+        await this.send({
+          channelId: chatId,
+          content: pairingMessage,
+        });
+      }
+      return;
+    }
+
     this.emit('message', parsed);
 
     if (parsed.isCommand) {
@@ -407,6 +425,9 @@ export class TelegramChannel extends BaseChannel {
         commandArgs: [query.data],
         raw: query,
       };
+
+      // Attach session key for session isolation
+      message.sessionKey = getSessionKey(message);
 
       this.emit('command', message);
     }

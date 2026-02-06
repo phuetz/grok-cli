@@ -84,8 +84,13 @@ export const DEFAULT_SKILL_LOADER_CONFIG: SkillLoaderConfig = {
 // Skill Loader
 // ============================================================================
 
+let _skillLoaderDeprecationWarned = false;
+
 /**
  * Loads skills from multiple directories
+ *
+ * @deprecated Use the SKILL.md system instead (SkillRegistry from './registry.js').
+ * See src/skills/MIGRATION.md for migration guide.
  */
 export class SkillLoader {
   private config: SkillLoaderConfig;
@@ -93,6 +98,10 @@ export class SkillLoader {
   private agentSkillsDir: Map<string, string> = new Map();
 
   constructor(config: Partial<SkillLoaderConfig> = {}) {
+    if (!_skillLoaderDeprecationWarned) {
+      _skillLoaderDeprecationWarned = true;
+      console.warn('[DEPRECATED] SkillLoader is deprecated. Use SKILL.md system (SkillRegistry) instead. See src/skills/MIGRATION.md');
+    }
     this.config = { ...DEFAULT_SKILL_LOADER_CONFIG, ...config };
   }
 

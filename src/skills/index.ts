@@ -1,16 +1,19 @@
 /**
  * Skills Module
  *
- * Two skill systems available:
+ * Unified skill system that bridges two underlying implementations:
  * 1. Legacy JSON-based skills (skill-manager, skill-loader)
  * 2. OpenClaw-inspired SKILL.md natural language skills (registry, executor)
  *
+ * The UnifiedSkill type and adapters provide a single interface over both.
  * The SKILL.md system uses YAML frontmatter + Markdown for natural language
  * skill definitions with three-tier loading (workspace > managed > bundled).
  */
 
-// Legacy skill system
+// Legacy skill system (deprecated - use SKILL.md system instead)
+/** @deprecated Use SKILL.md system (SkillRegistry) instead */
 export * from "./skill-manager.js";
+/** @deprecated Use SKILL.md system (SkillRegistry) instead */
 export * from "./skill-loader.js";
 export * from "./eligibility.js";
 
@@ -32,6 +35,25 @@ export { SkillRegistry, getSkillRegistry, resetSkillRegistry } from './registry.
 export { SkillExecutor, getSkillExecutor, resetSkillExecutor } from './executor.js';
 export type { SkillExecutorConfig, ToolExecutorFn, CodeExecutorFn } from './executor.js';
 
+// Unified skill types and adapters
+export type {
+  UnifiedSkill,
+  UnifiedSkillSource,
+  LegacySkillRef,
+} from './types.js';
+export {
+  legacyToUnified,
+  legacyLoadedToUnified,
+  unifiedToLegacy,
+  skillMdToUnified,
+  unifiedToSkillMd,
+} from './adapters/index.js';
+export type {
+  LegacySkill as LegacySkillShape,
+  LegacySkillScript as LegacySkillScriptShape,
+  LegacyLoadedSkill as LegacyLoadedSkillShape,
+} from './adapters/index.js';
+
 // ============================================================================
 // Bundled Skills Path
 // ============================================================================
@@ -47,7 +69,8 @@ export function getBundledSkillsPath(): string {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     return path.join(__dirname, 'bundled');
-  } catch {
+  } catch (_err) {
+    // Intentionally ignored: import.meta.url may not be available in all environments, fallback to __dirname
     return path.join(__dirname, 'bundled');
   }
 }
@@ -58,10 +81,58 @@ export function getBundledSkillsPath(): string {
 
 import { getSkillRegistry } from './registry.js';
 import { getSkillExecutor } from './executor.js';
-import type { Skill as SkillMdType, SkillExecutionContext, SkillExecutionResult, SkillMatch as SkillMdMatchType } from './types.js';
+import { getSkillManager } from './skill-manager.js';
+import type {
+  Skill as SkillMdType,
+  SkillExecutionContext,
+  SkillExecutionResult,
+  SkillMatch as SkillMdMatchType,
+  UnifiedSkill,
+} from './types.js';
 
 /**
- * Initialize the SKILL.md skills system
+ * Initialize both skill systems (legacy and SKILL.md) and unify them.
+ *
+ * This loads the SKILL.md registry from bundled/workspace/managed paths,
+ * initializes the legacy SkillManager, and registers legacy skills into
+ * the SKILL.md registry so they can be queried through a single interface.
+ *
+ * @param projectRoot - The project root for the legacy SkillManager (defaults to cwd)
+ */
+export async function initializeAllSkills(projectRoot?: string): Promise<{
+  registry: import('./registry.js').SkillRegistry;
+  manager: import('./skill-manager.js').SkillManager;
+  unified: UnifiedSkill[];
+}> {
+  // Initialize the SKILL.md registry
+  const registry = getSkillRegistry({
+    bundledPath: getBundledSkillsPath(),
+  });
+  await registry.load();
+
+  // Initialize the legacy skill manager
+  const manager = getSkillManager(projectRoot);
+  await manager.initialize();
+
+  // Register legacy skills into the SKILL.md registry so they are searchable
+  // via the unified interface. Only register those not already present.
+  for (const skillName of manager.getAvailableSkills()) {
+    if (!registry.get(skillName)) {
+      const legacySkill = manager.getSkill(skillName);
+      if (legacySkill) {
+        registry.registerLegacySkill(legacySkill, 'workspace');
+      }
+    }
+  }
+
+  // Return unified view
+  const unified = registry.getAllUnified();
+
+  return { registry, manager, unified };
+}
+
+/**
+ * Initialize the SKILL.md skills system only (backward-compatible).
  */
 export async function initializeSkills(): Promise<void> {
   const registry = getSkillRegistry({
@@ -114,4 +185,16 @@ export function listSkillMdSkills(): SkillMdType[] {
 export function searchSkillMd(query: string, limit?: number): SkillMdMatchType[] {
   const registry = getSkillRegistry();
   return registry.search({ query, limit });
+}
+
+/**
+ * Get all skills from both systems as UnifiedSkill objects.
+ * This is a convenience function that combines skills from
+ * both the SKILL.md registry and the legacy SkillManager.
+ *
+ * @returns An array of UnifiedSkill objects
+ */
+export function getAllUnifiedSkills(): UnifiedSkill[] {
+  const registry = getSkillRegistry();
+  return registry.getAllUnified();
 }

@@ -26,6 +26,8 @@ import { chatRoutes, toolsRoutes, sessionsRoutes, memoryRoutes, healthRoutes, me
 import { setupWebSocket, closeAllConnections, getConnectionStats } from './websocket/index.js';
 import { logger } from '../utils/logger.js';
 import { initMetrics, getMetrics as _getMetrics } from '../metrics/index.js';
+import { getPeerRouter } from '../channels/peer-routing.js';
+import type { InboundMessage } from '../channels/index.js';
 
 /**
  * Generate a secure random secret for development use only
@@ -138,6 +140,27 @@ function createApp(config: ServerConfig): Application {
 
   // OpenAI-compatible alias
   app.use('/v1/chat', chatRoutes);
+
+  // Peer routing stats endpoint
+  app.get('/api/routing/stats', (_req, res) => {
+    const router = getPeerRouter();
+    res.json(router.getStats());
+  });
+
+  // Peer route resolution endpoint (for testing/debugging)
+  app.post('/api/routing/resolve', (req, res) => {
+    const message = req.body.message as InboundMessage | undefined;
+    const accountId = req.body.accountId as string | undefined;
+
+    if (!message) {
+      res.status(400).json({ error: 'message is required in request body' });
+      return;
+    }
+
+    const router = getPeerRouter();
+    const resolved = router.resolve(message, accountId);
+    res.json({ resolved });
+  });
 
   // Root endpoint
   app.get('/', (_req, res) => {
@@ -256,6 +279,11 @@ export async function startServer(userConfig: Partial<ServerConfig> = {}): Promi
       logger.info(`Auth: ${config.authEnabled ? 'Enabled' : 'Disabled'}`);
       logger.info(`Rate Limit: ${config.rateLimit ? `${config.rateLimitMax} req/${config.rateLimitWindow / 1000}s` : 'Disabled'}`);
       logger.info(`Security Headers: ${config.securityHeaders?.enabled !== false ? 'Enabled (CSP, X-Frame-Options, HSTS, etc.)' : 'Disabled'}`);
+
+      // Log peer routing stats
+      const peerRouter = getPeerRouter();
+      const routeStats = peerRouter.getStats();
+      logger.info(`Peer Routing: ${routeStats.totalRoutes} routes (${routeStats.activeRoutes} active)`);
 
       resolve({ app, server, config });
     });

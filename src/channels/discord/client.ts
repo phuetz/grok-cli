@@ -29,7 +29,7 @@ import type {
   MessageAttachment,
   MessageButton,
 } from '../index.js';
-import { BaseChannel } from '../index.js';
+import { BaseChannel, getSessionKey, checkDMPairing } from '../index.js';
 
 const DISCORD_API_BASE = 'https://discord.com/api/v10';
 const DISCORD_GATEWAY = 'wss://gateway.discord.gg/?v=10&encoding=json';
@@ -500,6 +500,23 @@ export class DiscordChannel extends BaseChannel {
     const message = await this.convertMessage(msg);
     const parsed = this.parseCommand(message);
 
+    // Attach session key for session isolation
+    parsed.sessionKey = getSessionKey(parsed);
+
+    // DM pairing check: gate unapproved DM senders
+    const pairingStatus = await checkDMPairing(parsed);
+    if (!pairingStatus.approved) {
+      const { getDMPairing } = await import('../dm-pairing.js');
+      const pairingMessage = getDMPairing().getPairingMessage(pairingStatus);
+      if (pairingMessage) {
+        await this.send({
+          channelId: msg.channel_id,
+          content: pairingMessage,
+        });
+      }
+      return;
+    }
+
     this.emit('message', parsed);
 
     if (parsed.isCommand) {
@@ -551,6 +568,9 @@ export class DiscordChannel extends BaseChannel {
         raw: interaction,
       };
 
+      // Attach session key for session isolation
+      message.sessionKey = getSessionKey(message);
+
       this.emit('command', message);
 
       // Defer reply (bot should respond within 3 seconds)
@@ -576,6 +596,9 @@ export class DiscordChannel extends BaseChannel {
         commandArgs: [interaction.data.custom_id ?? ''],
         raw: interaction,
       };
+
+      // Attach session key for session isolation
+      message.sessionKey = getSessionKey(message);
 
       this.emit('command', message);
     }

@@ -643,12 +643,12 @@ const toolCommands: SlashCommand[] = [
   },
   {
     name: 'pipeline',
-    description: 'Run agent pipeline workflow',
+    description: 'Run or manage pipeline workflows (pipe syntax or file-based)',
     prompt: '__PIPELINE__',
     filePath: '',
     isBuiltin: true,
     arguments: [
-      { name: 'name', description: 'Pipeline name: code-review, bug-fix, feature-development, security-audit, documentation', required: false }
+      { name: 'action', description: 'run <file|pipe-syntax>, list, validate <file>, status, or pipeline name (code-review, bug-fix, feature-development, security-audit, documentation)', required: false }
     ]
   },
   {

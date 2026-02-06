@@ -24,6 +24,7 @@
 
 import { EventEmitter } from 'events';
 import type { InboundMessage, ChannelType } from './index.js';
+import type { IdentityLinker } from './identity-links.js';
 
 // ============================================================================
 // Types
@@ -66,6 +67,8 @@ export interface SessionIsolationConfig {
   sessionTtlMs: number;
   /** Enable session activity tracking */
   trackActivity: boolean;
+  /** Optional identity linker for cross-channel identity unification */
+  identityLinker?: IdentityLinker;
 }
 
 /**
@@ -124,14 +127,50 @@ export class SessionIsolator extends EventEmitter {
   // ==========================================================================
 
   /**
-   * Generate session key for an inbound message
+   * Set or replace the identity linker used for canonical identity resolution
+   */
+  setIdentityLinker(linker: IdentityLinker | undefined): void {
+    this.config.identityLinker = linker;
+  }
+
+  /**
+   * Generate session key for an inbound message.
+   *
+   * If an identity linker is configured, the sender's peer ID is resolved
+   * to its canonical identity ID before computing the session key. This
+   * allows the same person on different channels to share a session when
+   * their identities are linked.
    */
   getSessionKey(message: InboundMessage, accountId?: string): string {
+    let peerId = message.sender.id;
+    let channelType = message.channel.type;
+    let channelId = message.channel.id;
+
+    // Resolve canonical identity if linker is available
+    if (this.config.identityLinker) {
+      const canonical = this.config.identityLinker.resolve({
+        channelType: message.channel.type,
+        peerId: message.sender.id,
+      });
+      if (canonical) {
+        // Use the canonical identity ID as the peer ID so that
+        // linked identities across channels produce the same key.
+        peerId = canonical.id;
+        // Use the first identity's channel info as the canonical reference
+        // so cross-channel identities converge to the same session.
+        const primary = canonical.identities[0];
+        if (primary) {
+          channelType = primary.channelType;
+          channelId = `canonical-${canonical.id}`;
+        }
+      }
+    }
+
     const components: SessionKeyComponents = {
       accountId,
-      channelType: message.channel.type,
-      channelId: message.channel.id,
-      peerId: message.sender.id,
+      channelType,
+      channelId,
+      peerId,
     };
 
     return this.computeSessionKey(components);

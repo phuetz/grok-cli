@@ -58,8 +58,8 @@ function tryRenderStructuredData(content: string): string | null {
         return '⚠ Error rendering output';
       }
     }
-  } catch {
-    // Not JSON, not structured data
+  } catch (_err) {
+    // Intentionally ignored: content is not valid JSON, so it is not structured data
   }
   return null;
 }
@@ -77,7 +77,8 @@ function StructuredContent({ content, color }: { content: string; color?: string
         ))}
       </Box>
     );
-  } catch {
+  } catch (_err) {
+    // Intentionally ignored: content rendering may fail for malformed data, show error UI
     return (
       <Text color="yellow">
         ⚠ Error rendering structured content
@@ -130,7 +131,8 @@ const MemoizedChatEntry = React.memo(
             </Text>
           );
         });
-      } catch {
+      } catch (_err) {
+        // Intentionally ignored: file content rendering can fail for large or binary files
         return (
           <Text color="yellow">
             ⚠ Error rendering file content (file too large or invalid format)
@@ -217,7 +219,8 @@ const MemoizedChatEntry = React.memo(
                 return args.query;
               }
               return args.path || args.file_path || args.command || "";
-            } catch {
+            } catch (_err) {
+              // Intentionally ignored: tool call arguments may not be valid JSON
               return "";
             }
           }
@@ -247,8 +250,8 @@ const MemoizedChatEntry = React.memo(
                   // For objects, show a formatted version
                   return { text: JSON.stringify(parsed, null, 2), isStructured: false };
                 }
-              } catch {
-                // If not JSON, return as is
+              } catch (_err) {
+                // Intentionally ignored: content is not valid JSON, return as plain text
                 return { text: content, isStructured: false };
               }
             }

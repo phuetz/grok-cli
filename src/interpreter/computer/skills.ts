@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { EventEmitter } from 'events';
+import { safeEval, safeEvalAsync, safeInterpolate } from '../../sandbox/safe-eval.js';
 
 // ============================================================================
 // Types
@@ -652,17 +653,14 @@ export class ComputerSkills extends EventEmitter {
     step: SkillStep,
     context: { params: Record<string, unknown>; stepResults: unknown[] }
   ): Promise<unknown> {
-    // Create a safe evaluation context
-    const code = step.content;
-
-    // Simple JavaScript execution (in production, use a proper sandbox)
-    const fn = new Function('params', 'stepResults', `
-      return (async () => {
-        ${code}
-      })();
-    `);
-
-    return fn(context.params, context.stepResults);
+    // Sandboxed JavaScript execution via vm.runInNewContext
+    return safeEvalAsync(step.content, {
+      context: {
+        params: context.params,
+        stepResults: context.stepResults,
+      },
+      timeout: 10000,
+    });
   }
 
   private async executeShellStep(
@@ -701,23 +699,31 @@ export class ComputerSkills extends EventEmitter {
     }
 
     const condition = this.interpolate(step.condition, context);
-    const fn = new Function('params', 'stepResults', `return ${condition}`);
-    return fn(context.params, context.stepResults);
+    return safeEval(condition, {
+      context: {
+        params: context.params,
+        stepResults: context.stepResults,
+      },
+    });
   }
 
   private async executeLoopStep(
     step: SkillStep,
     context: { params: Record<string, unknown>; stepResults: unknown[] },
     params: Record<string, unknown>,
-    previousResults: StepResult[]
+    _previousResults: StepResult[]
   ): Promise<unknown> {
     if (!step.items) {
       throw new Error('Loop step requires items');
     }
 
     const itemsExpr = this.interpolate(step.items, context);
-    const fn = new Function('params', 'stepResults', `return ${itemsExpr}`);
-    const items = fn(context.params, context.stepResults) as unknown[];
+    const items = safeEval(itemsExpr, {
+      context: {
+        params: context.params,
+        stepResults: context.stepResults,
+      },
+    }) as unknown[];
 
     const results: unknown[] = [];
 
@@ -858,15 +864,7 @@ export class ComputerSkills extends EventEmitter {
   }
 
   private interpolate(template: string, context: Record<string, unknown>): string {
-    return template.replace(/\{\{([^}]+)\}\}/g, (_, expr) => {
-      try {
-        const fn = new Function(...Object.keys(context), `return ${expr.trim()}`);
-        const result = fn(...Object.values(context));
-        return String(result);
-      } catch {
-        return `{{${expr}}}`;
-      }
-    });
+    return safeInterpolate(template, context);
   }
 
   private resolvePath(p: string): string {

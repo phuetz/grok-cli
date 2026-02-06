@@ -256,6 +256,102 @@ export interface SkillSearchOptions {
 }
 
 // ============================================================================
+// Unified Skill Types
+// ============================================================================
+
+/**
+ * Source discriminator for unified skills.
+ * - 'legacy': Skills from the legacy JSON-based skill system (SkillManager/SkillLoader)
+ * - 'skillmd': Skills from the SKILL.md natural language system (SkillRegistry)
+ * - 'bundled': Built-in/predefined skills shipped with the application
+ */
+export type UnifiedSkillSource = 'legacy' | 'skillmd' | 'bundled';
+
+/**
+ * Unified skill representation that encompasses both legacy JSON-based
+ * skills and SKILL.md natural language skills.
+ */
+export interface UnifiedSkill {
+  /** Unique skill name/identifier */
+  name: string;
+  /** Human-readable description */
+  description: string;
+  /** Source system discriminator */
+  source: UnifiedSkillSource;
+  /** Whether the skill is currently enabled */
+  enabled: boolean;
+
+  // -- Metadata --
+  /** Skill version (semver), if available */
+  version?: string;
+  /** Author name */
+  author?: string;
+  /** Tags for categorization and search */
+  tags?: string[];
+  /** Priority for matching (higher = more likely to match) */
+  priority?: number;
+
+  // -- Trigger & Matching --
+  /** Trigger patterns that activate this skill */
+  triggers?: string[];
+  /** Example invocations */
+  examples?: SkillExample[];
+
+  // -- Execution --
+  /** System prompt / instructions for this skill */
+  systemPrompt?: string;
+  /** Implementation steps */
+  steps?: SkillStep[];
+  /** Tool invocations defined by the skill */
+  toolInvocations?: SkillToolInvocation[];
+  /** Code blocks to execute */
+  codeBlocks?: SkillCodeBlock[];
+  /** Restricted tool set (empty = all tools available) */
+  tools?: string[];
+  /** Specific model for this skill */
+  model?: string;
+
+  // -- Loading Metadata --
+  /** Source file path or 'builtin' */
+  sourcePath?: string;
+  /** Skill tier for SKILL.md skills */
+  tier?: SkillTier;
+  /** Load timestamp */
+  loadedAt?: Date;
+
+  // -- Requirements --
+  /** Required capabilities (from SKILL.md system) */
+  requires?: SkillRequirements;
+
+  // -- Original References --
+  /** Reference to original SKILL.md Skill if source is 'skillmd' */
+  originalSkillMd?: Skill;
+  /** Reference to original legacy Skill if source is 'legacy' */
+  originalLegacy?: LegacySkillRef;
+}
+
+/**
+ * Lightweight reference to a legacy skill's original data.
+ * Avoids circular dependency by not importing the legacy Skill type directly.
+ */
+export interface LegacySkillRef {
+  name: string;
+  description: string;
+  triggers: string[];
+  systemPrompt: string;
+  tools?: string[];
+  model?: string;
+  priority?: number;
+  autoActivate?: boolean;
+  scripts?: Array<{
+    name: string;
+    command: string;
+    runOn: 'activate' | 'complete' | 'both';
+    timeout?: number;
+  }>;
+}
+
+// ============================================================================
 // Events
 // ============================================================================
 
