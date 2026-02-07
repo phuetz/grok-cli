@@ -55,7 +55,7 @@ describe('ToolOrchestrator', () => {
 
 ## Architecture Overview
 
-Code Buddy is an open-source multi-provider AI coding agent that runs in the terminal. It supports multiple LLM backends (Grok, Claude, ChatGPT, Gemini, Ollama, LM Studio) via OpenAI-compatible APIs and provider-specific SDKs. The core pattern is an **agentic loop** where the AI autonomously calls tools to complete tasks. It features multi-channel messaging (Telegram, Discord, Slack), a SKILL.md natural language skills system, pipeline workflows, DM pairing security, OpenClaw-inspired concurrency control, daemon mode for 24/7 background operation, DAG-based task planning, screen observation with event triggers, proactive agent communication, multi-agent orchestration with self-healing, voice conversation with multi-provider TTS (Edge TTS, OpenAI, ElevenLabs, AudioReader/Kokoro-82M), and Gemini vision support (image_url → inlineData conversion).
+Code Buddy is an open-source multi-provider AI coding agent that runs in the terminal. It supports multiple LLM backends (Grok, Claude, ChatGPT, Gemini, Ollama, LM Studio) via OpenAI-compatible APIs and provider-specific SDKs. The core pattern is an **agentic loop** where the AI autonomously calls tools to complete tasks. It features multi-channel messaging (Telegram, Discord, Slack), a SKILL.md natural language skills system, pipeline workflows, DM pairing security, OpenClaw-inspired concurrency control, daemon mode for 24/7 background operation, DAG-based task planning, screen observation with event triggers, proactive agent communication, multi-agent orchestration with self-healing, voice conversation with multi-provider TTS (Edge TTS, OpenAI, ElevenLabs, AudioReader/Kokoro-82M), Gemini vision support (image_url → inlineData conversion), model failover chain, webhook triggers, Docker sandbox, skills registry with YAML frontmatter, media pipeline, ACP inter-agent protocol, extension system, live canvas (A2UI), copilot proxy, and onboarding wizard + doctor diagnostics.
 
 ### Core Flow
 
@@ -139,7 +139,19 @@ CodeBuddyAgent
 - `src/input/text-to-speech.ts` - TextToSpeechManager used by voice conversation loop
 - `src/input/voice-control.ts` - Continuous voice conversation (STT → Agent → TTS loop), Porcupine wake word integration
 - `src/voice/wake-word.ts` - Wake word detection via Porcupine (Picovoice) with text-match fallback
-- `src/server/index.ts` - HTTP/WebSocket API server
+- `src/server/index.ts` - HTTP/WebSocket API server (includes webhook routes)
+- `src/doctor/index.ts` - Environment diagnostics (`buddy doctor`)
+- `src/wizard/onboarding.ts` - Interactive setup wizard (`buddy onboard`)
+- `src/agents/model-failover.ts` - Cascading provider failover chain
+- `src/webhooks/webhook-manager.ts` - HMAC-verified webhook triggers
+- `src/presence/typing-indicator.ts` - Typing & presence events for channels
+- `src/canvas/canvas-server.ts` - Live Canvas A2UI (HTTP + WebSocket visual workspace)
+- `src/sandbox/docker-sandbox.ts` - Docker-based command sandboxing
+- `src/skills/skill-registry.ts` - Skills registry (bundled/managed/workspace)
+- `src/media/media-pipeline.ts` - Media ingest, tracking, transcription hooks
+- `src/acp/protocol.ts` - Agent Communication Protocol router
+- `src/extensions/extension-loader.ts` - Manifest-based extension system
+- `src/copilot/copilot-proxy.ts` - IDE-compatible completions proxy
 
 ### Tool Implementation Pattern
 

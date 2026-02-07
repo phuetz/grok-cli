@@ -82,6 +82,23 @@ Code Buddy incorporates advanced patterns from the [OpenClaw](https://github.com
 | **Checkpoint Rollback** | ✅ 100% | Auto-checkpoint before risky ops, rollback to last good state |
 | **Shared Context** | ✅ 100% | Thread-safe key-value store with optimistic locking |
 
+### Phase 5 — OpenClaw-Inspired Platform
+
+| Module | Status | Description |
+|:-------|:------:|:------------|
+| **Doctor Command** | ✅ 100% | Environment/deps/config diagnostics (`buddy doctor`) |
+| **Onboarding Wizard** | ✅ 100% | Interactive setup wizard (`buddy onboard`) |
+| **Model Failover Chain** | ✅ 100% | Cascading provider fallback with health tracking |
+| **Webhook Triggers** | ✅ 100% | HMAC-verified HTTP triggers + CLI + API routes |
+| **Typing Indicators** | ✅ 100% | Presence & typing events for channels |
+| **Live Canvas** | ✅ 100% | WebSocket-driven visual workspace (A2UI) |
+| **Docker Sandbox** | ✅ 100% | Containerized command execution with resource limits |
+| **Skills Registry** | ✅ 100% | Bundled/managed/workspace skills with YAML frontmatter |
+| **Media Pipeline** | ✅ 100% | Ingest, track, transcode with transcription hooks |
+| **ACP Protocol** | ✅ 100% | Inter-agent communication router with request/response |
+| **Extension System** | ✅ 100% | Manifest-based plugin loader with lifecycle hooks |
+| **Copilot Proxy** | ✅ 100% | IDE-compatible completions backend (`/v1/completions`) |
+
 ---
 
 ## Installation
@@ -696,8 +713,8 @@ Create `.codebuddy/settings.json`:
 | Multi-Agent Orchestrator | HIGH | ✅ Done |
 | Self-Healing & Checkpoint Rollback | HIGH | ✅ Done |
 | Gateway WebSocket Control Plane | HIGH | 🔲 Planned |
-| Canvas A2UI Visual Workspace | HIGH | 🔲 Planned |
-| ClawHub Skills Registry | MEDIUM | 🔲 Planned |
+| Canvas A2UI Visual Workspace | HIGH | ✅ Done |
+| ClawHub Skills Registry | MEDIUM | ✅ Done |
 | OAuth Authentication | MEDIUM | 🔲 Planned |
 | Voice Wake Word Detection | MEDIUM | ✅ Done |
 | TTS Providers (OpenAI, ElevenLabs, AudioReader) | MEDIUM | ✅ Done |
