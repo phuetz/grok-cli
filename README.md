@@ -150,6 +150,32 @@ buddy --profile lmstudio
 YOLO_MODE=true buddy
 ```
 
+### Typical Project Workflow
+
+```bash
+# 1. First-time setup
+buddy onboard                # Interactive config wizard
+buddy doctor                 # Verify environment & dependencies
+
+# 2. Start coding
+buddy                        # Launch interactive chat
+
+# 3. Describe what you want in natural language
+> "Create a Node.js project with Express and Prisma"
+> "Add Google OAuth authentication"
+> "Write tests for the auth module"
+> "Fix the typecheck errors"
+> "Commit everything"
+
+# 4. Advanced modes
+buddy --profile gemini       # Switch AI provider
+buddy speak                  # Voice conversation mode
+buddy daemon start           # Run 24/7 in background
+buddy server --port 3000     # Expose REST/WebSocket API
+```
+
+Code Buddy autonomously reads files, writes code, runs commands, and fixes errors — typically 5-15 tool calls per task (up to 50, or 400 in YOLO mode).
+
 ---
 
 ## Architecture
