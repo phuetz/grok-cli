@@ -83,6 +83,7 @@
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.24.3",
     "@nut-tree-fork/nut-js": "^4.2.6",
+    "@picovoice/porcupine-node": "^4.0.1",
     "@resvg/resvg-js": "^2.6.2",
     "axios": "^1.13.2",
     "better-sqlite3": "^11.10.0",

@@ -8,7 +8,7 @@
 // Provider Types
 // ============================================================================
 
-export type TTSProvider = 'piper' | 'coqui' | 'espeak' | 'system' | 'mock' | 'openai' | 'elevenlabs' | 'edge';
+export type TTSProvider = 'piper' | 'coqui' | 'espeak' | 'system' | 'mock' | 'openai' | 'elevenlabs' | 'edge' | 'audioreader';
 
 export interface TTSProviderConfig {
   /** Provider identifier */
@@ -119,6 +119,19 @@ export interface ElevenLabsConfig {
   style?: number;
   /** Use speaker boost */
   useSpeakerBoost?: boolean;
+}
+
+export interface AudioReaderTTSConfig {
+  /** Base URL of the AudioReader API */
+  baseURL?: string;
+  /** Model name */
+  model?: string;
+  /** Default voice ID */
+  defaultVoice?: string;
+  /** Speaking speed */
+  speed?: number;
+  /** Output format */
+  format?: 'wav' | 'mp3';
 }
 
 export interface EdgeTTSConfig {

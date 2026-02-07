@@ -41,6 +41,12 @@ export interface WakeWordConfig {
   modelPath?: string;
   /** Use built-in wake words only */
   builtInOnly?: boolean;
+  /** Picovoice access key (or env PICOVOICE_ACCESS_KEY) */
+  accessKey?: string;
+  /** Custom Porcupine keyword file paths (.ppn) */
+  keywordPaths?: string[];
+  /** Detection engine: 'porcupine' for real detection, 'text-match' for STT fallback */
+  engine?: 'porcupine' | 'text-match';
 }
 
 /**

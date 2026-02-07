@@ -7,6 +7,7 @@
 export { OpenAITTSProvider } from './openai-tts.js';
 export { ElevenLabsProvider } from './elevenlabs.js';
 export { EdgeTTSProvider } from './edge-tts.js';
+export { AudioReaderTTSProvider } from './audioreader-tts.js';
 
 // Re-export types
 export type {
@@ -14,4 +15,5 @@ export type {
   OpenAIVoice,
   ElevenLabsConfig,
   EdgeTTSConfig,
+  AudioReaderTTSConfig,
 } from '../types.js';

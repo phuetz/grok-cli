@@ -6,7 +6,7 @@ import os from 'os';
 
 export interface TTSConfig {
   enabled: boolean;
-  provider: 'edge-tts' | 'espeak' | 'say' | 'piper';
+  provider: 'edge-tts' | 'espeak' | 'say' | 'piper' | 'audioreader';
   voice?: string;
   rate?: string;
   volume?: string;
@@ -29,6 +29,7 @@ export class TextToSpeechManager extends EventEmitter {
   private state: TTSState;
   private speakingProcess: ChildProcess | null = null;
   private tempDir: string;
+  private audioreaderBaseURL = 'http://localhost:8000';
 
   // Default voices for different languages
   private static readonly EDGE_VOICES: Record<string, string> = {
@@ -106,6 +107,18 @@ export class TextToSpeechManager extends EventEmitter {
    * Check if TTS is available
    */
   async isAvailable(): Promise<{ available: boolean; reason?: string }> {
+    // AudioReader uses HTTP API, not a CLI binary
+    if (this.config.provider === 'audioreader') {
+      try {
+        const res = await fetch(`${this.audioreaderBaseURL}/api/v2/health`, {
+          signal: AbortSignal.timeout(3000),
+        });
+        return { available: res.ok };
+      } catch {
+        return { available: false, reason: 'AudioReader not running. Start it with: cd ~/claude/AudioReader && python main.py' };
+      }
+    }
+
     return new Promise((resolve) => {
       const command = this.config.provider === 'edge-tts' ? 'edge-tts' :
                       this.config.provider === 'espeak' ? 'espeak' :
@@ -189,6 +202,9 @@ export class TextToSpeechManager extends EventEmitter {
           break;
         case 'piper':
           await this.speakWithPiper(text);
+          break;
+        case 'audioreader':
+          await this.speakWithAudioReader(text);
           break;
         default:
           await this.speakWithEdgeTTS(text, language);
@@ -325,6 +341,38 @@ export class TextToSpeechManager extends EventEmitter {
       piper.on('error', reject);
       this.speakingProcess = piper;
     });
+  }
+
+  /**
+   * Speak with AudioReader (Kokoro-82M via local API)
+   */
+  private async speakWithAudioReader(text: string): Promise<void> {
+    const voice = this.config.voice || 'ff_siwis';
+    const response = await fetch(`${this.audioreaderBaseURL}/v1/audio/speech`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'kokoro',
+        input: text,
+        voice,
+        speed: 1.0,
+        response_format: 'wav',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`AudioReader TTS error: ${response.status} ${await response.text()}`);
+    }
+
+    const audioFile = path.join(this.tempDir, `tts_${Date.now()}.wav`);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    fs.writeFileSync(audioFile, buffer);
+
+    try {
+      await this.playAudio(audioFile);
+    } finally {
+      try { fs.unlinkSync(audioFile); } catch { /* ignore */ }
+    }
   }
 
   /**

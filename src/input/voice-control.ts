@@ -17,6 +17,7 @@ import { spawn, ChildProcess } from 'child_process';
 import fs from 'fs-extra';
 import * as path from 'path';
 import * as os from 'os';
+import { WakeWordDetector } from '../voice/wake-word.js';
 
 export interface VoiceControlConfig {
   enabled: boolean;
@@ -196,6 +197,7 @@ export class VoiceControl extends EventEmitter {
   private commands: Map<string, VoiceCommand> = new Map();
   private recordingProcess: ChildProcess | null = null;
   private vadProcess: ChildProcess | null = null;
+  private wakeWordDetector: WakeWordDetector | null = null;
   private tempDir: string;
   private audioBuffer: Buffer[] = [];
 
@@ -396,6 +398,21 @@ export class VoiceControl extends EventEmitter {
   private async startContinuousListening(): Promise<void> {
     this.emit('mode:continuous');
 
+    // Initialize wake word detector if wake word is enabled
+    if (this.config.wakeWordEnabled && !this.wakeWordDetector) {
+      this.wakeWordDetector = new WakeWordDetector({
+        wakeWords: [this.config.wakeWord, 'hey grok', 'ok grok'],
+      });
+      this.wakeWordDetector.on('detected', (detection) => {
+        this.state.isWakeWordActive = true;
+        this.emit('wakeword:detected', detection);
+        if (this.config.feedbackSound) {
+          this.playFeedbackSound('wakeword');
+        }
+      });
+      await this.wakeWordDetector.start();
+    }
+
     // Use sox with silence detection for VAD
     const vadProcess = spawn('sox', [
       '-d',                          // Default audio device
@@ -412,6 +429,11 @@ export class VoiceControl extends EventEmitter {
     this.vadProcess = vadProcess;
 
     vadProcess.stdout.on('data', (data: Buffer) => {
+      // Feed raw audio to Porcupine wake word detector if active
+      if (this.wakeWordDetector && this.wakeWordDetector.getEngine() === 'porcupine' && !this.state.isWakeWordActive) {
+        this.wakeWordDetector.processFrame(data);
+      }
+
       if (this.state.isWakeWordActive || !this.config.wakeWordEnabled) {
         this.audioBuffer.push(data);
       }
@@ -734,6 +756,18 @@ print(json.dumps({"text": text.strip()}))
    * Detect wake word in transcription
    */
   private detectWakeWord(text: string): boolean {
+    // Use WakeWordDetector's text-match if available and in text-match mode
+    if (this.wakeWordDetector && this.wakeWordDetector.getEngine() === 'text-match') {
+      const detection = this.wakeWordDetector.detectWakeWordText(text);
+      return detection !== null;
+    }
+
+    // If Porcupine is active, wake word is detected via audio frames, not text
+    if (this.wakeWordDetector && this.wakeWordDetector.getEngine() === 'porcupine') {
+      return false;
+    }
+
+    // Fallback: inline text matching (no detector available)
     const normalized = text.toLowerCase().trim();
     const wakeWords = [
       this.config.wakeWord.toLowerCase(),
@@ -826,6 +860,11 @@ print(json.dumps({"text": text.strip()}))
     if (this.vadProcess) {
       this.vadProcess.kill('SIGINT');
       this.vadProcess = null;
+    }
+
+    if (this.wakeWordDetector) {
+      this.wakeWordDetector.stop();
+      this.wakeWordDetector = null;
     }
 
     this.state.isListening = false;

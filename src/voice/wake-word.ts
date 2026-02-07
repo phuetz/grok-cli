@@ -1,15 +1,14 @@
 /**
  * Wake Word Detector
  *
- * Detects wake words in audio stream to activate voice commands.
- * Uses pattern matching and/or neural network-based detection.
+ * Detects wake words in audio stream using Porcupine (Picovoice) engine
+ * with fallback to text-match mode when no access key is available.
  */
 
 import { EventEmitter } from 'events';
 import type {
   WakeWordConfig,
   WakeWordDetection,
-  AudioChunk,
 } from './types.js';
 import { DEFAULT_WAKE_WORD_CONFIG } from './types.js';
 
@@ -21,8 +20,8 @@ export interface IWakeWordDetector {
   start(): Promise<void>;
   /** Stop detection */
   stop(): Promise<void>;
-  /** Process audio frame */
-  processFrame(frame: Buffer): WakeWordDetection | null;
+  /** Process audio frame (Int16Array for Porcupine, Buffer for text-match) */
+  processFrame(frame: Buffer | Int16Array): WakeWordDetection | null;
   /** Check if running */
   isRunning(): boolean;
   /** Get configuration */
@@ -32,19 +31,46 @@ export interface IWakeWordDetector {
 }
 
 /**
- * Simple pattern-based wake word detector
- *
- * This is a placeholder implementation. A production implementation would use:
- * - Porcupine (https://picovoice.ai/platform/porcupine/)
- * - Snowboy
- * - Or a custom neural network
+ * Built-in Porcupine keyword mapping.
+ * Maps friendly wake word names to Porcupine built-in keyword identifiers.
+ */
+const BUILTIN_KEYWORD_MAP: Record<string, string> = {
+  'hey buddy': 'COMPUTER',
+  'ok code': 'PICOVOICE',
+  'computer': 'COMPUTER',
+  'picovoice': 'PICOVOICE',
+  'alexa': 'ALEXA',
+  'hey google': 'HEY_GOOGLE',
+  'hey siri': 'HEY_SIRI',
+  'ok google': 'OK_GOOGLE',
+  'jarvis': 'JARVIS',
+  'bumblebee': 'BUMBLEBEE',
+  'porcupine': 'PORCUPINE',
+  'terminator': 'TERMINATOR',
+  'blueberry': 'BLUEBERRY',
+  'grapefruit': 'GRAPEFRUIT',
+  'grasshopper': 'GRASSHOPPER',
+  'americano': 'AMERICANO',
+};
+
+type PorcupineInstance = {
+  process(frame: Int16Array): number;
+  release(): void;
+  frameLength: number;
+  sampleRate: number;
+};
+
+/**
+ * Wake word detector with Porcupine engine and text-match fallback
  */
 export class WakeWordDetector extends EventEmitter implements IWakeWordDetector {
   private config: WakeWordConfig;
   private running = false;
-  private audioBuffer: Buffer[] = [];
+  private porcupine: PorcupineInstance | null = null;
+  private engine: 'porcupine' | 'text-match' = 'text-match';
   private lastDetection: Date | null = null;
-  private cooldownMs = 1000; // Prevent double triggers
+  private cooldownMs = 1000;
+  private keywordLabels: string[] = [];
 
   constructor(config: Partial<WakeWordConfig> = {}) {
     super();
@@ -54,54 +80,154 @@ export class WakeWordDetector extends EventEmitter implements IWakeWordDetector 
   async start(): Promise<void> {
     if (this.running) return;
 
+    const accessKey = this.config.accessKey || process.env.PICOVOICE_ACCESS_KEY;
+    const requestedEngine = this.config.engine;
+
+    if (requestedEngine === 'text-match' || !accessKey) {
+      this.engine = 'text-match';
+      if (!accessKey && requestedEngine !== 'text-match') {
+        console.warn('[WakeWord] No PICOVOICE_ACCESS_KEY found, falling back to text-match mode');
+      }
+    } else {
+      try {
+        await this.initPorcupine(accessKey);
+        this.engine = 'porcupine';
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.warn(`[WakeWord] Porcupine init failed (${msg}), falling back to text-match mode`);
+        this.engine = 'text-match';
+      }
+    }
+
     this.running = true;
-    this.audioBuffer = [];
     this.emit('started');
+  }
+
+  private async initPorcupine(accessKey: string): Promise<void> {
+    const { Porcupine, BuiltinKeyword, getBuiltinKeywordPath } = await import('@picovoice/porcupine-node');
+
+    if (this.config.keywordPaths && this.config.keywordPaths.length > 0) {
+      // Custom .ppn keyword files
+      const sensitivities = this.config.keywordPaths.map(() => this.config.sensitivity);
+      this.porcupine = new Porcupine(
+        accessKey,
+        this.config.keywordPaths,
+        sensitivities,
+      ) as unknown as PorcupineInstance;
+      this.keywordLabels = this.config.keywordPaths.map((p, i) => this.config.wakeWords[i] || `keyword_${i}`);
+    } else {
+      // Map configured wake words to built-in keyword paths
+      const keywordPaths: string[] = [];
+      const labels: string[] = [];
+
+      for (const word of this.config.wakeWords) {
+        const builtinName = BUILTIN_KEYWORD_MAP[word.toLowerCase()];
+        if (builtinName) {
+          const builtinEnum = BuiltinKeyword[builtinName as keyof typeof BuiltinKeyword];
+          if (builtinEnum !== undefined) {
+            keywordPaths.push(getBuiltinKeywordPath(builtinEnum));
+            labels.push(word);
+          }
+        }
+      }
+
+      if (keywordPaths.length === 0) {
+        // Default to COMPUTER if no mapping found
+        keywordPaths.push(getBuiltinKeywordPath(BuiltinKeyword.COMPUTER));
+        labels.push(this.config.wakeWords[0] || 'hey buddy');
+      }
+
+      const sensitivities = keywordPaths.map(() => this.config.sensitivity);
+      this.porcupine = new Porcupine(
+        accessKey,
+        keywordPaths,
+        sensitivities,
+      ) as unknown as PorcupineInstance;
+      this.keywordLabels = labels;
+    }
   }
 
   async stop(): Promise<void> {
     if (!this.running) return;
 
     this.running = false;
-    this.audioBuffer = [];
+
+    if (this.porcupine) {
+      this.porcupine.release();
+      this.porcupine = null;
+    }
+
     this.emit('stopped');
   }
 
-  processFrame(frame: Buffer): WakeWordDetection | null {
+  processFrame(frame: Buffer | Int16Array): WakeWordDetection | null {
     if (!this.running) return null;
 
-    // Add frame to buffer
-    this.audioBuffer.push(frame);
-
-    // Keep only last 3 seconds of audio
-    const maxFrames = Math.ceil(
-      (3 * this.config.sampleRate) / this.config.frameSize
-    );
-    while (this.audioBuffer.length > maxFrames) {
-      this.audioBuffer.shift();
-    }
-
-    // Check cooldown
-    if (
-      this.lastDetection &&
-      Date.now() - this.lastDetection.getTime() < this.cooldownMs
-    ) {
+    // Cooldown check
+    if (this.lastDetection && Date.now() - this.lastDetection.getTime() < this.cooldownMs) {
       return null;
     }
 
-    // Simple energy-based detection as placeholder
-    // Real implementation would use proper wake word model
-    const energy = this.calculateEnergy(frame);
+    if (this.engine === 'porcupine' && this.porcupine) {
+      return this.processPorcupineFrame(frame);
+    }
 
-    // For testing: simulate random detection when high energy
-    if (energy > 0.1 && Math.random() < 0.001) {
+    // text-match mode: no-op for raw audio frames
+    // Text matching is handled via detectWakeWordText()
+    return null;
+  }
+
+  private processPorcupineFrame(frame: Buffer | Int16Array): WakeWordDetection | null {
+    if (!this.porcupine) return null;
+
+    let int16Frame: Int16Array;
+    if (frame instanceof Int16Array) {
+      int16Frame = frame;
+    } else {
+      // Convert Buffer to Int16Array
+      int16Frame = new Int16Array(frame.buffer, frame.byteOffset, frame.length / 2);
+    }
+
+    const keywordIndex = this.porcupine.process(int16Frame);
+
+    if (keywordIndex >= 0) {
       const detection: WakeWordDetection = {
-        wakeWord: this.config.wakeWords[0],
-        confidence: 0.8 + Math.random() * 0.2,
+        wakeWord: this.keywordLabels[keywordIndex] || `keyword_${keywordIndex}`,
+        confidence: 1.0, // Porcupine is binary (detected or not)
         timestamp: new Date(),
+        frameIndex: keywordIndex,
       };
 
-      if (detection.confidence >= this.config.minConfidence) {
+      this.lastDetection = new Date();
+      this.emit('detected', detection);
+      return detection;
+    }
+
+    return null;
+  }
+
+  /**
+   * Text-based wake word detection (fallback for when Porcupine is not available).
+   * Call this with transcribed text instead of raw audio frames.
+   */
+  detectWakeWordText(text: string): WakeWordDetection | null {
+    if (!this.running) return null;
+
+    // Cooldown check
+    if (this.lastDetection && Date.now() - this.lastDetection.getTime() < this.cooldownMs) {
+      return null;
+    }
+
+    const normalized = text.toLowerCase().trim();
+
+    for (const word of this.config.wakeWords) {
+      if (normalized.includes(word.toLowerCase())) {
+        const detection: WakeWordDetection = {
+          wakeWord: word,
+          confidence: 0.85,
+          timestamp: new Date(),
+        };
+
         this.lastDetection = new Date();
         this.emit('detected', detection);
         return detection;
@@ -109,6 +235,27 @@ export class WakeWordDetector extends EventEmitter implements IWakeWordDetector 
     }
 
     return null;
+  }
+
+  /**
+   * Get the active detection engine
+   */
+  getEngine(): 'porcupine' | 'text-match' {
+    return this.engine;
+  }
+
+  /**
+   * Get Porcupine frame length (samples per frame required)
+   */
+  get frameLength(): number {
+    return this.porcupine?.frameLength ?? this.config.frameSize;
+  }
+
+  /**
+   * Get Porcupine sample rate
+   */
+  get sampleRate(): number {
+    return this.porcupine?.sampleRate ?? this.config.sampleRate;
   }
 
   isRunning(): boolean {
@@ -121,22 +268,6 @@ export class WakeWordDetector extends EventEmitter implements IWakeWordDetector 
 
   updateConfig(config: Partial<WakeWordConfig>): void {
     this.config = { ...this.config, ...config };
-  }
-
-  /**
-   * Calculate energy level of audio frame
-   */
-  private calculateEnergy(frame: Buffer): number {
-    let sum = 0;
-    const samples = frame.length / 2; // 16-bit samples
-
-    for (let i = 0; i < samples; i++) {
-      const sample = frame.readInt16LE(i * 2);
-      sum += sample * sample;
-    }
-
-    const rms = Math.sqrt(sum / samples);
-    return rms / 32768; // Normalize to 0-1
   }
 
   /**
@@ -173,10 +304,10 @@ export class WakeWordDetector extends EventEmitter implements IWakeWordDetector 
   }
 
   /**
-   * Clear audio buffer
+   * Clear audio buffer (no-op, kept for API compatibility)
    */
   clearBuffer(): void {
-    this.audioBuffer = [];
+    // Porcupine processes frames individually, no buffer to clear
   }
 }
 

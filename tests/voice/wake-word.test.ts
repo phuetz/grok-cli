@@ -2,6 +2,26 @@
  * Wake Word Detector Tests
  */
 
+// Mock @picovoice/porcupine-node before imports
+const mockProcess = jest.fn().mockReturnValue(-1);
+const mockRelease = jest.fn();
+
+jest.mock('@picovoice/porcupine-node', () => ({
+  Porcupine: jest.fn().mockImplementation(() => ({
+    process: mockProcess,
+    release: mockRelease,
+    frameLength: 512,
+    sampleRate: 16000,
+  })),
+  BuiltinKeyword: {
+    COMPUTER: 'computer',
+    PICOVOICE: 'picovoice',
+    ALEXA: 'alexa',
+    JARVIS: 'jarvis',
+  },
+  getBuiltinKeywordPath: jest.fn().mockImplementation((keyword: string) => `/mock/path/${keyword}.ppn`),
+}));
+
 import {
   WakeWordDetector,
   createWakeWordDetector,
@@ -12,6 +32,8 @@ describe('WakeWordDetector', () => {
   let detector: WakeWordDetector;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    delete process.env.PICOVOICE_ACCESS_KEY;
     detector = new WakeWordDetector();
   });
 
@@ -71,46 +93,182 @@ describe('WakeWordDetector', () => {
     });
   });
 
+  describe('Porcupine engine', () => {
+    it('should init Porcupine when access key is provided', async () => {
+      const det = new WakeWordDetector({ accessKey: 'test-key' });
+      await det.start();
+
+      expect(det.getEngine()).toBe('porcupine');
+      expect(det.frameLength).toBe(512);
+      expect(det.sampleRate).toBe(16000);
+
+      await det.stop();
+    });
+
+    it('should init Porcupine from env variable', async () => {
+      process.env.PICOVOICE_ACCESS_KEY = 'env-key';
+      const det = new WakeWordDetector();
+      await det.start();
+
+      expect(det.getEngine()).toBe('porcupine');
+
+      await det.stop();
+    });
+
+    it('should call release() on stop', async () => {
+      const det = new WakeWordDetector({ accessKey: 'test-key' });
+      await det.start();
+      await det.stop();
+
+      expect(mockRelease).toHaveBeenCalled();
+    });
+
+    it('should detect keyword when Porcupine returns >= 0', async () => {
+      const det = new WakeWordDetector({ accessKey: 'test-key' });
+      await det.start();
+
+      const detectedSpy = jest.fn();
+      det.on('detected', detectedSpy);
+
+      mockProcess.mockReturnValueOnce(0);
+      const frame = new Int16Array(512);
+      const result = det.processFrame(frame);
+
+      expect(result).not.toBeNull();
+      expect(result!.wakeWord).toBeDefined();
+      expect(result!.confidence).toBe(1.0);
+      expect(detectedSpy).toHaveBeenCalledWith(result);
+
+      await det.stop();
+    });
+
+    it('should return null when Porcupine returns -1', async () => {
+      const det = new WakeWordDetector({ accessKey: 'test-key' });
+      await det.start();
+
+      mockProcess.mockReturnValueOnce(-1);
+      const frame = new Int16Array(512);
+      const result = det.processFrame(frame);
+
+      expect(result).toBeNull();
+
+      await det.stop();
+    });
+
+    it('should respect cooldown between detections', async () => {
+      const det = new WakeWordDetector({ accessKey: 'test-key' });
+      await det.start();
+
+      mockProcess.mockReturnValueOnce(0);
+      const frame = new Int16Array(512);
+      det.processFrame(frame);
+
+      // Second detection within cooldown should be suppressed
+      mockProcess.mockReturnValueOnce(0);
+      const result2 = det.processFrame(frame);
+      expect(result2).toBeNull();
+
+      await det.stop();
+    });
+
+    it('should accept Buffer and convert to Int16Array', async () => {
+      const det = new WakeWordDetector({ accessKey: 'test-key' });
+      await det.start();
+
+      mockProcess.mockReturnValueOnce(-1);
+      const frame = Buffer.alloc(1024); // 512 Int16 samples
+      det.processFrame(frame);
+
+      expect(mockProcess).toHaveBeenCalled();
+
+      await det.stop();
+    });
+
+    it('should use custom keywordPaths when provided', async () => {
+      const { Porcupine } = require('@picovoice/porcupine-node');
+      const det = new WakeWordDetector({
+        accessKey: 'test-key',
+        keywordPaths: ['/path/to/keyword.ppn'],
+        wakeWords: ['custom word'],
+      });
+      await det.start();
+
+      expect(Porcupine).toHaveBeenCalledWith(
+        'test-key',
+        ['/path/to/keyword.ppn'],
+        [0.5],
+      );
+
+      await det.stop();
+    });
+  });
+
+  describe('text-match fallback', () => {
+    it('should fallback to text-match without access key', async () => {
+      await detector.start();
+      expect(detector.getEngine()).toBe('text-match');
+    });
+
+    it('should use text-match when explicitly configured', async () => {
+      const det = new WakeWordDetector({
+        accessKey: 'test-key',
+        engine: 'text-match',
+      });
+      await det.start();
+
+      expect(det.getEngine()).toBe('text-match');
+
+      await det.stop();
+    });
+
+    it('should detect wake word in text', async () => {
+      await detector.start();
+
+      const detectedSpy = jest.fn();
+      detector.on('detected', detectedSpy);
+
+      const result = detector.detectWakeWordText('hey buddy, how are you?');
+      expect(result).not.toBeNull();
+      expect(result!.wakeWord).toBe('hey buddy');
+      expect(result!.confidence).toBe(0.85);
+      expect(detectedSpy).toHaveBeenCalled();
+    });
+
+    it('should return null for non-matching text', async () => {
+      await detector.start();
+
+      const result = detector.detectWakeWordText('random sentence');
+      expect(result).toBeNull();
+    });
+
+    it('should return null for audio frames in text-match mode', async () => {
+      await detector.start();
+
+      const frame = Buffer.alloc(1024);
+      const result = detector.processFrame(frame);
+      expect(result).toBeNull();
+    });
+
+    it('should respect cooldown in text-match mode', async () => {
+      await detector.start();
+
+      detector.detectWakeWordText('hey buddy');
+      const result2 = detector.detectWakeWordText('hey buddy again');
+      expect(result2).toBeNull();
+    });
+
+    it('should not detect when not running', () => {
+      const result = detector.detectWakeWordText('hey buddy');
+      expect(result).toBeNull();
+    });
+  });
+
   describe('processFrame', () => {
     it('should return null when not running', () => {
       const frame = Buffer.alloc(1024);
       const result = detector.processFrame(frame);
 
       expect(result).toBeNull();
-    });
-
-    it('should process audio frame when running', async () => {
-      await detector.start();
-
-      const frame = Buffer.alloc(1024);
-      const result = detector.processFrame(frame);
-
-      // Detection is probabilistic, so just verify no error
-      expect(result === null || typeof result === 'object').toBe(true);
-    });
-
-    it('should emit detected event on detection', async () => {
-      const detectedSpy = jest.fn();
-      detector.on('detected', detectedSpy);
-
-      await detector.start();
-
-      // Process many frames to potentially trigger detection
-      for (let i = 0; i < 1000; i++) {
-        // Create high-energy frame
-        const frame = Buffer.alloc(1024);
-        for (let j = 0; j < 512; j++) {
-          frame.writeInt16LE(Math.floor(Math.random() * 20000 - 10000), j * 2);
-        }
-        const result = detector.processFrame(frame);
-        if (result) {
-          expect(result.wakeWord).toBeDefined();
-          expect(result.confidence).toBeGreaterThan(0);
-          break;
-        }
-      }
-
-      // Detection is probabilistic, so we just verify the mechanism works
     });
   });
 
@@ -157,21 +315,6 @@ describe('WakeWordDetector', () => {
 
       detector.setSensitivity(-0.5);
       expect(detector.getConfig().sensitivity).toBe(0);
-    });
-  });
-
-  describe('buffer management', () => {
-    it('should clear buffer', async () => {
-      await detector.start();
-
-      // Add some frames
-      for (let i = 0; i < 10; i++) {
-        detector.processFrame(Buffer.alloc(1024));
-      }
-
-      detector.clearBuffer();
-
-      // No way to check buffer size directly, but should not error
     });
   });
 

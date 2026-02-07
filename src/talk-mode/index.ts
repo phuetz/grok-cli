@@ -16,6 +16,7 @@ export type {
   OpenAIVoice,
   ElevenLabsConfig,
   EdgeTTSConfig,
+  AudioReaderTTSConfig,
   Voice,
   SynthesisOptions,
   SynthesisResult,
@@ -50,4 +51,5 @@ export {
   OpenAITTSProvider,
   ElevenLabsProvider,
   EdgeTTSProvider,
+  AudioReaderTTSProvider,
 } from './providers/index.js';
