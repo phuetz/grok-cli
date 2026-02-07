@@ -8,6 +8,8 @@ import { ThemeColors, AvatarConfig } from "../../themes/theme.js";
 import { getRenderManager, isTestResultsData, isWeatherData, isCodeStructureData } from "../../renderers/index.js";
 import { ErrorBoundary } from "./ErrorBoundary.js";
 import { Divider } from "./EnhancedSpinners.js";
+import { ReasoningBlock } from "./ReasoningBlock.js";
+import { ToolStreamOutput } from "./ToolStreamOutput.js";
 import { logger } from "../../utils/logger.js";
 
 interface ChatHistoryProps {
@@ -175,6 +177,24 @@ const MemoizedChatEntry = React.memo(
           </Box>
         );
 
+      case "reasoning":
+        return (
+          <Box key={index} flexDirection="column">
+            <ReasoningBlock content={entry.content} isStreaming={entry.isStreaming} />
+          </Box>
+        );
+
+      case "plan_progress":
+        return (
+          <Box key={index} flexDirection="column" marginTop={1}>
+            <Box paddingLeft={1}>
+              <Text color={colors.info}>
+                {avatars.tool} Plan: {entry.content}
+              </Text>
+            </Box>
+          </Box>
+        );
+
       case "tool_call":
       case "tool_result":
         const getToolActionName = (toolName: string) => {
@@ -285,7 +305,13 @@ const MemoizedChatEntry = React.memo(
               </Text>
             </Box>
             <Box marginLeft={2} flexDirection="column">
-              {isExecuting ? (
+              {isExecuting && entry.isStreaming && entry.content !== 'Executing...' ? (
+                <ToolStreamOutput
+                  output={entry.content}
+                  toolName={toolName}
+                  isStreaming={true}
+                />
+              ) : isExecuting ? (
                 <Text color={colors.info}>⎿ Executing...</Text>
               ) : shouldShowFileContent ? (
                 <Box flexDirection="column">

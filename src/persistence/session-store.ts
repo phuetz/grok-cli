@@ -30,11 +30,13 @@ export interface Session {
 }
 
 export interface SessionMessage {
-  type: 'user' | 'assistant' | 'tool_result' | 'tool_call';
+  type: 'user' | 'assistant' | 'tool_result' | 'tool_call' | 'reasoning' | 'plan_progress';
   content: string;
   timestamp: string;
   toolCallName?: string;
   toolCallSuccess?: boolean;
+  /** Task state for cross-session continuity */
+  taskState?: Record<string, unknown>;
 }
 
 const SESSIONS_DIR = path.join(os.homedir(), '.codebuddy', 'sessions');
@@ -182,7 +184,7 @@ export class SessionStore {
     if (this.dbRepository) {
       const dbMessage: Omit<DBMessage, 'id' | 'created_at'> = {
         session_id: this.currentSessionId,
-        role: message.type === 'tool_result' ? 'tool' : message.type === 'tool_call' ? 'assistant' : message.type,
+        role: message.type === 'tool_result' ? 'tool' : message.type === 'tool_call' ? 'assistant' : message.type === 'reasoning' ? 'assistant' : message.type === 'plan_progress' ? 'assistant' : message.type,
         content: message.content,
         tool_calls: message.toolCallName ? [{ name: message.toolCallName }] : undefined,
         metadata: message.toolCallSuccess !== undefined ? { success: message.toolCallSuccess } : undefined,
@@ -699,6 +701,44 @@ export class SessionStore {
   async getCurrentSession(): Promise<Session | null> {
     if (!this.currentSessionId) return null;
     return this.loadSession(this.currentSessionId);
+  }
+
+  // =========================================================================
+  // Task State Persistence (Phase 4 - Cross-session continuity)
+  // =========================================================================
+
+  /**
+   * Save task state for cross-session continuity
+   */
+  async saveTaskState(taskState: Record<string, unknown>): Promise<void> {
+    const session = await this.getCurrentSession();
+    if (!session) return;
+
+    const stateMessage: SessionMessage = {
+      type: 'plan_progress',
+      content: 'Task state checkpoint',
+      timestamp: new Date().toISOString(),
+      taskState,
+    };
+
+    session.messages.push(stateMessage);
+    await this.saveSession(session);
+  }
+
+  /**
+   * Load the most recent task state from the current session
+   */
+  async loadTaskState(): Promise<Record<string, unknown> | null> {
+    const session = await this.getCurrentSession();
+    if (!session) return null;
+
+    // Find last message with taskState, scanning from end
+    for (let i = session.messages.length - 1; i >= 0; i--) {
+      if (session.messages[i].taskState) {
+        return session.messages[i].taskState!;
+      }
+    }
+    return null;
   }
 
   /**

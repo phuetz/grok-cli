@@ -163,7 +163,11 @@ export class Subagent extends EventEmitter {
     task: string,
     context?: string,
     tools?: import("../codebuddy/client.js").CodeBuddyTool[],
-    executeTool?: (toolCall: CodeBuddyToolCall) => Promise<ToolResult>
+    executeTool?: (toolCall: CodeBuddyToolCall) => Promise<ToolResult>,
+    options?: {
+      progressCallback?: (round: number, maxRounds: number) => void;
+      sharedContext?: Map<string, string>;
+    }
   ): Promise<SubagentResult> {
     this.isRunning = true;
     this.startTime = Date.now();
@@ -183,11 +187,22 @@ export class Subagent extends EventEmitter {
       );
     }
 
+    // Build context including shared context from orchestrator
+    let fullContext = context || '';
+    if (options?.sharedContext && options.sharedContext.size > 0) {
+      const sharedEntries = Array.from(options.sharedContext.entries())
+        .map(([k, v]) => `${k}: ${v}`)
+        .join('\n');
+      fullContext = fullContext
+        ? `${fullContext}\n\nShared Context:\n${sharedEntries}`
+        : `Shared Context:\n${sharedEntries}`;
+    }
+
     const messages: CodeBuddyMessage[] = [
       { role: "system", content: this.config.systemPrompt },
       {
         role: "user",
-        content: context ? `Context:\n${context}\n\nTask:\n${task}` : task,
+        content: fullContext ? `Context:\n${fullContext}\n\nTask:\n${task}` : task,
       },
     ];
 
@@ -200,6 +215,7 @@ export class Subagent extends EventEmitter {
 
         rounds++;
         this.emit("subagent:round", { round: rounds });
+        options?.progressCallback?.(rounds, this.config.maxRounds!);
 
         // Add timeout to chat call
         const response = await Promise.race([

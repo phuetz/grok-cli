@@ -18,6 +18,7 @@ import { TokenCounter } from "../../utils/token-counter.js";
 import { logger } from "../../utils/logger.js";
 import { getErrorMessage } from "../../errors/index.js";
 import type { LaneQueue } from "../../concurrency/lane-queue.js";
+import type { MiddlewarePipeline, MiddlewareContext } from "../middleware/index.js";
 
 /**
  * Dependencies injected into the AgentExecutor
@@ -39,6 +40,8 @@ export interface ExecutorDependencies {
   laneQueue?: LaneQueue;
   /** Lane ID for tool execution serialization (defaults to 'default') */
   laneId?: string;
+  /** Optional middleware pipeline for composable loop control */
+  middlewarePipeline?: MiddlewarePipeline;
 }
 
 /**
@@ -77,6 +80,32 @@ export class AgentExecutor {
     private deps: ExecutorDependencies,
     private config: ExecutorConfig
   ) {}
+
+  /**
+   * Build a MiddlewareContext from current loop state.
+   */
+  private buildMiddlewareContext(
+    toolRound: number,
+    inputTokens: number,
+    outputTokens: number,
+    history: ChatEntry[],
+    messages: CodeBuddyMessage[],
+    isStreaming: boolean,
+    abortController?: AbortController | null
+  ): MiddlewareContext {
+    return {
+      toolRound,
+      maxToolRounds: this.config.maxToolRounds,
+      sessionCost: this.config.sessionCost,
+      sessionCostLimit: this.config.sessionCostLimit,
+      inputTokens,
+      outputTokens,
+      history,
+      messages,
+      isStreaming,
+      abortController,
+    };
+  }
 
   /**
    * Execute a tool call, optionally through the LaneQueue for serialization.
@@ -319,6 +348,8 @@ export class AgentExecutor {
     let totalOutputTokens = 0;
 
     try {
+      const pipeline = this.deps.middlewarePipeline;
+
       while (toolRounds < maxToolRounds) {
         if (abortController?.signal.aborted) {
           yield { type: "content", content: "\n\n[Operation cancelled by user]" };
@@ -326,14 +357,37 @@ export class AgentExecutor {
           return;
         }
 
+        // Run before_turn middleware
+        if (pipeline) {
+          const ctx = this.buildMiddlewareContext(
+            toolRounds, inputTokens, totalOutputTokens, history, messages, true, abortController
+          );
+          const mwResult = await pipeline.runBeforeTurn(ctx);
+          if (mwResult.action === 'stop') {
+            if (mwResult.message) yield { type: "content", content: `\n\n${mwResult.message}` };
+            yield { type: "done" };
+            return;
+          }
+          if (mwResult.action === 'compact') {
+            // Trigger context compaction
+            this.deps.contextManager.prepareMessages(messages);
+          }
+          if (mwResult.action === 'warn' && mwResult.message) {
+            yield { type: "content", content: `\n${mwResult.message}\n` };
+          }
+        }
+
         const selectionResult = await this.deps.toolSelectionStrategy.selectToolsForQuery(message);
         const tools = selectionResult.tools;
         if (toolRounds === 0) this.deps.toolSelectionStrategy.cacheTools(tools);
 
         const preparedMessages = this.deps.contextManager.prepareMessages(messages);
-        const contextWarning = this.deps.contextManager.shouldWarn(preparedMessages);
-        if (contextWarning.warn) {
-          yield { type: "content", content: `\n${contextWarning.message}\n` };
+        // Context warning is now handled by middleware, but keep fallback for non-pipeline mode
+        if (!pipeline) {
+          const contextWarning = this.deps.contextManager.shouldWarn(preparedMessages);
+          if (contextWarning.warn) {
+            yield { type: "content", content: `\n${contextWarning.message}\n` };
+          }
         }
 
         const stream = this.deps.client.chatStream(
@@ -355,6 +409,10 @@ export class AgentExecutor {
           }
 
           const result = this.deps.streamingHandler.accumulateChunk(chunk as RawStreamingChunk);
+
+          if (result.reasoningContent) {
+            yield { type: "reasoning", reasoning: result.reasoningContent };
+          }
 
           if (result.hasNewToolCalls && result.toolCalls) {
             yield { type: "tool_calls", toolCalls: result.toolCalls };
@@ -401,7 +459,27 @@ export class AgentExecutor {
               return;
             }
 
-            const result = await this.executeToolViaLane(toolCall);
+            // Use streaming execution for bash tools
+            let result;
+            if (toolCall.function.name === 'bash') {
+              const gen = this.deps.toolHandler.executeToolStreaming(toolCall);
+              let genResult = await gen.next();
+              while (!genResult.done) {
+                yield {
+                  type: "tool_stream",
+                  toolStreamData: {
+                    toolCallId: toolCall.id,
+                    toolName: toolCall.function.name,
+                    delta: genResult.value,
+                  },
+                };
+                genResult = await gen.next();
+              }
+              result = genResult.value;
+            } else {
+              result = await this.executeToolViaLane(toolCall);
+            }
+
             const toolResultEntry: ChatEntry = {
               type: "tool_result",
               content: result.success ? result.output || "Success" : result.error || "Error occurred",
@@ -426,14 +504,31 @@ export class AgentExecutor {
           totalOutputTokens = currentOutputTokens;
           yield { type: "token_count", tokenCount: inputTokens + totalOutputTokens };
 
-          this.config.recordSessionCost(inputTokens, totalOutputTokens);
-          if (this.config.isSessionCostLimitReached()) {
-            yield {
-              type: "content",
-              content: `\n\n💸 Session cost limit reached ($${this.config.sessionCost.toFixed(2)} / $${this.config.sessionCostLimit.toFixed(2)}).`,
-            };
-            yield { type: "done" };
-            return;
+          // Run after_turn middleware (handles cost recording + limit)
+          if (pipeline) {
+            const ctx = this.buildMiddlewareContext(
+              toolRounds, inputTokens, totalOutputTokens, history, messages, true, abortController
+            );
+            const mwResult = await pipeline.runAfterTurn(ctx);
+            if (mwResult.action === 'stop') {
+              if (mwResult.message) yield { type: "content", content: `\n\n${mwResult.message}` };
+              yield { type: "done" };
+              return;
+            }
+            if (mwResult.action === 'warn' && mwResult.message) {
+              yield { type: "content", content: `\n${mwResult.message}\n` };
+            }
+          } else {
+            // Legacy inline cost check when no pipeline
+            this.config.recordSessionCost(inputTokens, totalOutputTokens);
+            if (this.config.isSessionCostLimitReached()) {
+              yield {
+                type: "content",
+                content: `\n\n💸 Session cost limit reached ($${this.config.sessionCost.toFixed(2)} / $${this.config.sessionCostLimit.toFixed(2)}).`,
+              };
+              yield { type: "done" };
+              return;
+            }
           }
         } else {
           break;

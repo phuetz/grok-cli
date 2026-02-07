@@ -140,6 +140,14 @@ export interface SmartSnapshotConfig {
   };
 }
 
+export interface ScreenDiff {
+  hasChanges: boolean;
+  changedRegions: Rect[];
+  newElements: UIElement[];
+  removedElements: UIElement[];
+  similarity: number;
+}
+
 const DEFAULT_CONFIG: SmartSnapshotConfig = {
   method: 'accessibility',
   defaultTtl: 5000,
@@ -345,6 +353,44 @@ export class SmartSnapshotManager extends EventEmitter {
     }
 
     return lines.join('\n');
+  }
+
+  /**
+   * Compare this snapshot to a previous one and return differences
+   */
+  compareTo(previous: Snapshot): ScreenDiff {
+    const current = this.currentSnapshot;
+    if (!current) {
+      return { hasChanges: false, changedRegions: [], newElements: [], removedElements: [], similarity: 0 };
+    }
+
+    const prevRefs = new Set(previous.elements.map(e => e.name + ':' + e.role));
+    const currRefs = new Set(current.elements.map(e => e.name + ':' + e.role));
+
+    const newElements = current.elements.filter(e => !prevRefs.has(e.name + ':' + e.role));
+    const removedElements = previous.elements.filter(e => !currRefs.has(e.name + ':' + e.role));
+
+    // Compute changed regions from moved/resized elements
+    const changedRegions: Rect[] = [];
+    for (const curr of current.elements) {
+      const prev = previous.elements.find(p => p.name === curr.name && p.role === curr.role);
+      if (prev && (prev.bounds.x !== curr.bounds.x || prev.bounds.y !== curr.bounds.y ||
+          prev.bounds.width !== curr.bounds.width || prev.bounds.height !== curr.bounds.height)) {
+        changedRegions.push(curr.bounds);
+      }
+    }
+
+    const totalUnique = new Set([...prevRefs, ...currRefs]).size;
+    const intersection = previous.elements.filter(e => currRefs.has(e.name + ':' + e.role)).length;
+    const similarity = totalUnique > 0 ? intersection / totalUnique : 1;
+
+    return {
+      hasChanges: newElements.length > 0 || removedElements.length > 0 || changedRegions.length > 0,
+      changedRegions,
+      newElements,
+      removedElements,
+      similarity,
+    };
   }
 
   /**

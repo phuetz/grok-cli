@@ -690,6 +690,60 @@ export class ChannelManager extends EventEmitter {
     }
   }
 
+  // =========================================================================
+  // Proactive Messaging (Phase 4 - Iteration 4)
+  // =========================================================================
+
+  private outgoingQueue: Array<{ type: ChannelType; message: OutboundMessage; priority: number }> = [];
+  private processingQueue: boolean = false;
+
+  /**
+   * Send a message to a user across channels with priority
+   */
+  async sendToUser(
+    channelType: ChannelType,
+    channelId: string,
+    content: string,
+    priority: 'low' | 'normal' | 'high' | 'urgent' = 'normal'
+  ): Promise<DeliveryResult> {
+    const priorityMap = { low: 0, normal: 1, high: 2, urgent: 3 };
+    const message: OutboundMessage = {
+      channelId,
+      content,
+      silent: priority === 'low',
+    };
+
+    this.outgoingQueue.push({ type: channelType, message, priority: priorityMap[priority] });
+    // Sort by priority descending
+    this.outgoingQueue.sort((a, b) => b.priority - a.priority);
+
+    return this.processQueue();
+  }
+
+  /**
+   * Process the outgoing message queue
+   */
+  private async processQueue(): Promise<DeliveryResult> {
+    if (this.processingQueue || this.outgoingQueue.length === 0) {
+      return { success: true, timestamp: new Date() };
+    }
+
+    this.processingQueue = true;
+    let lastResult: DeliveryResult = { success: true, timestamp: new Date() };
+
+    try {
+      while (this.outgoingQueue.length > 0) {
+        const item = this.outgoingQueue.shift()!;
+        lastResult = await this.send(item.type, item.message);
+        this.emit('message:sent', { type: item.type, result: lastResult });
+      }
+    } finally {
+      this.processingQueue = false;
+    }
+
+    return lastResult;
+  }
+
   /**
    * Shutdown
    */

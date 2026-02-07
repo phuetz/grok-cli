@@ -13,7 +13,7 @@ export interface ChatEntry {
    * - `tool_call`: A request to execute a tool (displayed as "Executing...")
    * - `tool_result`: The output or error from a tool execution
    */
-  type: "user" | "assistant" | "tool_result" | "tool_call";
+  type: "user" | "assistant" | "tool_result" | "tool_call" | "reasoning" | "plan_progress";
   
   /** Content of the message. For tool results, this is the output string. */
   content: string;
@@ -47,7 +47,7 @@ export interface StreamingChunk {
    * - `token_count`: Update on token usage
    * - `done`: Stream completion signal
    */
-  type: "content" | "tool_calls" | "tool_result" | "done" | "token_count";
+  type: "content" | "tool_calls" | "tool_result" | "done" | "token_count" | "reasoning" | "tool_stream" | "ask_user" | "plan_progress";
   
   /** Text content delta (for `content` type) */
   content?: string;
@@ -63,4 +63,29 @@ export interface StreamingChunk {
   
   /** Current total token count (for `token_count` type) */
   tokenCount?: number;
+
+  /** Reasoning/thinking content from extended thinking models (for `reasoning` type) */
+  reasoning?: string;
+
+  /** Tool streaming data for real-time tool output (for `tool_stream` type) */
+  toolStreamData?: {
+    toolCallId: string;
+    toolName: string;
+    delta: string;
+  };
+
+  /** Ask user question data (for `ask_user` type) */
+  askUser?: {
+    question: string;
+    options: string[];
+  };
+
+  /** Plan progress data (for `plan_progress` type) */
+  planProgress?: {
+    taskId: string;
+    status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+    total: number;
+    completed: number;
+    message?: string;
+  };
 }

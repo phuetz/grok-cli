@@ -162,6 +162,78 @@ function createApp(config: ServerConfig): Application {
     res.json({ resolved });
   });
 
+  // Daemon status endpoint
+  app.get('/api/daemon/status', async (_req, res) => {
+    try {
+      const { getDaemonManager } = await import('../daemon/index.js');
+      const manager = getDaemonManager();
+      const status = await manager.status();
+      res.json(status);
+    } catch (error) {
+      res.json({ running: false, services: [], restartCount: 0 });
+    }
+  });
+
+  // Daemon health endpoint
+  app.get('/api/daemon/health', async (_req, res) => {
+    try {
+      const { getHealthMonitor } = await import('../daemon/index.js');
+      const monitor = getHealthMonitor();
+      res.json(monitor.getHealthSummary());
+    } catch (error) {
+      res.json({ status: 'unknown', uptime: 0, memory: { percentage: 0, rss: 0 }, services: [] });
+    }
+  });
+
+  // Cron jobs endpoints
+  app.get('/api/cron/jobs', async (_req, res) => {
+    try {
+      const { getCronScheduler } = await import('../scheduler/cron-scheduler.js');
+      const scheduler = getCronScheduler();
+      const jobs = scheduler.listJobs();
+      res.json({ jobs, stats: scheduler.getStats() });
+    } catch (error) {
+      res.json({ jobs: [], stats: {} });
+    }
+  });
+
+  app.post('/api/cron/jobs/:id/trigger', async (req, res) => {
+    try {
+      const { getCronScheduler } = await import('../scheduler/cron-scheduler.js');
+      const scheduler = getCronScheduler();
+      const run = await scheduler.runJobNow(req.params.id);
+      if (run) {
+        res.json({ success: true, run });
+      } else {
+        res.status(404).json({ error: 'Job not found' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  // Notification preferences endpoints
+  app.get('/api/notifications/preferences', async (_req, res) => {
+    try {
+      const { getNotificationManager } = await import('../agent/proactive/index.js');
+      const manager = getNotificationManager();
+      res.json(manager.getPreferences());
+    } catch (error) {
+      res.json({});
+    }
+  });
+
+  app.post('/api/notifications/preferences', async (req, res) => {
+    try {
+      const { getNotificationManager } = await import('../agent/proactive/index.js');
+      const manager = getNotificationManager();
+      manager.setPreferences(req.body);
+      res.json(manager.getPreferences());
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
   // Root endpoint
   app.get('/', (_req, res) => {
     res.json({

@@ -65,6 +65,12 @@ export interface RawStreamingChunk {
       /** Content delta (text fragment) */
       content?: string;
 
+      /** Reasoning/thinking content delta (Claude thinking, Grok reasoning) */
+      reasoning_content?: string;
+
+      /** Alternative field name for reasoning (some providers) */
+      reasoning?: string;
+
       /** Tool calls delta (incremental tool call data) */
       tool_calls?: Array<{
         /** Index of the tool call in the array */
@@ -120,6 +126,9 @@ export interface ProcessedChunk {
 
   /** Whether a token count update should be emitted */
   shouldEmitTokenCount: boolean;
+
+  /** Reasoning/thinking content delta (if present in this chunk) */
+  reasoningContent?: string;
 }
 
 /**
@@ -181,6 +190,7 @@ export class StreamingHandler {
   private config: Required<StreamingConfig>;
   private accumulatedMessage: AccumulatedMessage = {};
   private accumulatedRawContent: string = '';
+  private accumulatedReasoningContent: string = '';
   private tokenCounter: TokenCounter | null = null;
   private lastTokenUpdate: number = 0;
   private toolCallsYielded: boolean = false;
@@ -219,6 +229,13 @@ export class StreamingHandler {
         hasNewToolCalls: false,
         shouldEmitTokenCount: false,
       };
+    }
+
+    // Detect reasoning/thinking content
+    const delta = chunk.choices[0].delta;
+    const reasoningDelta = delta?.reasoning_content || delta?.reasoning || '';
+    if (reasoningDelta) {
+      this.accumulatedReasoningContent += reasoningDelta;
     }
 
     // Accumulate the message using reducer
@@ -289,6 +306,7 @@ export class StreamingHandler {
       toolCalls: hasNewToolCalls ? (toolCalls as CodeBuddyToolCall[]) : undefined,
       tokenCount,
       shouldEmitTokenCount,
+      reasoningContent: reasoningDelta || undefined,
     };
   }
 
@@ -424,6 +442,7 @@ export class StreamingHandler {
   reset(): void {
     this.accumulatedMessage = {};
     this.accumulatedRawContent = '';
+    this.accumulatedReasoningContent = '';
     this.lastTokenUpdate = 0;
     this.toolCallsYielded = false;
   }

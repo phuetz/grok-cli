@@ -782,6 +782,86 @@ export class CodeBuddyAgent extends BaseAgent {
     return this.peerRoutingConfig.agentId;
   }
 
+  // =========================================================================
+  // Task Planning (Phase 4 - Iteration 2)
+  // =========================================================================
+
+  /**
+   * Check if a request is complex enough to warrant planning
+   */
+  needsPlanning(request: string): boolean {
+    const { TaskPlanner } = require('./planner/index.js');
+    const planner = new TaskPlanner();
+    return planner.needsPlanning(request);
+  }
+
+  /**
+   * Execute a complex request via task planning and DAG execution
+   */
+  async executePlan(request: string): Promise<ChatEntry[]> {
+    const { TaskPlanner, TaskGraph, DelegationEngine } = await import('./planner/index.js');
+    const { ProgressTracker } = await import('./planner/progress-tracker.js');
+
+    const planner = new TaskPlanner();
+    const decompose = async (prompt: string): Promise<string> => {
+      const entries = await this.processUserMessage(prompt);
+      return entries.filter(e => e.type === 'assistant').map(e => e.content).join('\n');
+    };
+    const plan = await planner.createPlan(request, decompose);
+
+    const graph = new TaskGraph(plan.tasks);
+    const tracker = new ProgressTracker();
+    tracker.start(plan.tasks.length);
+    const delegationEngine = new DelegationEngine();
+    const entries: ChatEntry[] = [];
+
+    const result = await graph.execute(async (task) => {
+      tracker.update(task.id, 'running');
+      const progress = tracker.getProgress();
+      this.emit('plan:progress', {
+        taskId: task.id,
+        status: 'running',
+        total: progress.total,
+        completed: progress.completed,
+      });
+
+      try {
+        delegationEngine.matchSubagent(task);
+        const agentResult = await this.processUserMessage(task.description);
+        entries.push(...agentResult);
+
+        tracker.update(task.id, 'completed');
+        return { success: true, output: agentResult.map(e => e.content).join('\n'), duration: 0 };
+      } catch (error) {
+        tracker.update(task.id, 'failed');
+        return { success: false, output: String(error), duration: 0 };
+      }
+    });
+
+    return entries;
+  }
+
+  // =========================================================================
+  // Orchestration (Phase 4 - Iteration 5)
+  // =========================================================================
+
+  /**
+   * Check if a request needs multi-agent orchestration
+   */
+  needsOrchestration(request: string): boolean {
+    const keywords = [
+      'and also', 'while also', 'in parallel',
+      'simultaneously', 'at the same time',
+      'review and fix', 'test and deploy',
+      'refactor and test', 'build and test',
+    ];
+    const lower = request.toLowerCase();
+    const matchCount = keywords.filter(k => lower.includes(k)).length;
+    // Also check for multiple distinct actions (3+ verbs)
+    const verbs = lower.match(/\b(create|fix|update|test|deploy|review|refactor|build|add|remove|delete|install|run|check)\b/g);
+    return matchCount >= 1 || (verbs ? new Set(verbs).size >= 3 : false);
+  }
+
   /**
    * Clean up all resources
    * Should be called when the agent is no longer needed

@@ -20,6 +20,10 @@ export interface BackgroundTask {
   model?: string;
   maxToolRounds?: number;
   tags?: string[];
+  /** Events to notify on */
+  notifyOn?: ('completed' | 'failed')[];
+  /** Channel to notify (e.g., "telegram:chat-123") */
+  notifyChannel?: string;
 }
 
 export interface TaskResult {
@@ -52,6 +56,37 @@ export class BackgroundTaskManager extends EventEmitter {
     this.tasksDir = path.join(os.homedir(), '.codebuddy', 'tasks');
     this.ensureTasksDir();
     this.loadTasks();
+
+    // Wire up notification delivery for task completion/failure
+    this.on('task-completed', (task: BackgroundTask) => this.notifyTaskEvent(task, 'completed'));
+    this.on('task-failed', (task: BackgroundTask) => this.notifyTaskEvent(task, 'failed'));
+  }
+
+  /**
+   * Send notification for task events via configured channel
+   */
+  private async notifyTaskEvent(task: BackgroundTask, event: 'completed' | 'failed'): Promise<void> {
+    if (!task.notifyOn?.includes(event) || !task.notifyChannel) return;
+
+    try {
+      const { getChannelManager } = await import('../channels/index.js');
+      const manager = getChannelManager();
+      const [channelType, channelId] = task.notifyChannel.includes(':')
+        ? task.notifyChannel.split(':', 2)
+        : [task.notifyChannel, 'default'];
+
+      const icon = event === 'completed' ? '✅' : '❌';
+      const content = `${icon} Task **${task.id}**: ${event}\n${task.result?.output?.slice(0, 500) || task.result?.error || ''}`;
+
+      await manager.sendToUser(
+        channelType as import('../channels/index.js').ChannelType,
+        channelId,
+        content,
+        event === 'failed' ? 'high' : 'normal'
+      );
+    } catch {
+      // Notification delivery is best-effort
+    }
   }
 
   /**

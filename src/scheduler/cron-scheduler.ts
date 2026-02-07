@@ -240,10 +240,17 @@ export class CronScheduler extends EventEmitter {
   // Lifecycle
   // ==========================================================================
 
+  /**
+   * Set the task executor (for CronAgentBridge integration)
+   */
+  setTaskExecutor(executor: (job: CronJob) => Promise<unknown>): void {
+    this.taskExecutor = executor;
+  }
+
   async start(taskExecutor?: (job: CronJob) => Promise<unknown>): Promise<void> {
     if (this.running) return;
 
-    this.taskExecutor = taskExecutor;
+    if (taskExecutor) this.taskExecutor = taskExecutor;
 
     // Ensure directories exist
     await fs.mkdir(path.dirname(this.config.persistPath), { recursive: true });

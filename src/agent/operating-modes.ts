@@ -10,6 +10,8 @@
  */
 
 import { EventEmitter } from 'events';
+import { loadAgentProfiles, mergeProfileWithMode } from './profiles/index.js';
+import type { AgentProfile } from './profiles/index.js';
 
 // ============================================================================
 // Types
@@ -212,6 +214,8 @@ export class OperatingModeManager extends EventEmitter {
   private currentMode: OperatingMode = 'balanced';
   private customConfig: Partial<ModeConfig> = {};
   private modeHistory: Array<{ mode: OperatingMode; timestamp: number; reason?: string }> = [];
+  private userProfiles: Map<string, AgentProfile> = new Map();
+  private activeProfile: AgentProfile | null = null;
 
   constructor(initialMode: OperatingMode = 'balanced') {
     super();
@@ -458,6 +462,66 @@ export class OperatingModeManager extends EventEmitter {
     } finally {
       this.currentMode = previousMode;
     }
+  }
+
+  /**
+   * Load user profiles from disk.
+   */
+  loadUserProfiles(): void {
+    const result = loadAgentProfiles();
+    this.userProfiles.clear();
+    for (const profile of result.profiles) {
+      this.userProfiles.set(profile.id, profile);
+    }
+  }
+
+  /**
+   * Get all loaded user profiles.
+   */
+  getUserProfiles(): AgentProfile[] {
+    return [...this.userProfiles.values()];
+  }
+
+  /**
+   * Activate a user profile by ID. Returns false if not found.
+   */
+  activateProfile(profileId: string): boolean {
+    const profile = this.userProfiles.get(profileId);
+    if (!profile) return false;
+
+    this.activeProfile = profile;
+
+    // If the profile extends a base mode, switch to it
+    if (profile.extends) {
+      this.setMode(profile.extends, `Activated profile: ${profile.name}`);
+    }
+
+    this.emit('profile:activated', profile);
+    return true;
+  }
+
+  /**
+   * Deactivate the current profile.
+   */
+  deactivateProfile(): void {
+    this.activeProfile = null;
+    this.emit('profile:deactivated');
+  }
+
+  /**
+   * Get the active profile.
+   */
+  getActiveProfile(): AgentProfile | null {
+    return this.activeProfile;
+  }
+
+  /**
+   * Get mode config with active profile overrides applied.
+   */
+  getEffectiveModeConfig(): ModeConfig {
+    const base = this.getModeConfig();
+    if (!this.activeProfile) return base;
+    return mergeProfileWithMode(base, this.activeProfile);
   }
 
   /**

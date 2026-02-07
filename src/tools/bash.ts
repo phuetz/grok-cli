@@ -484,6 +484,126 @@ export class BashTool implements Disposable {
   }
 
   /**
+   * Execute a command with streaming output.
+   * Yields each line of stdout/stderr as it arrives.
+   * Validates and confirms the command before execution.
+   */
+  async *executeStreaming(command: string, timeout: number = 30000): AsyncGenerator<string, ToolResult, undefined> {
+    // Validate command
+    const validation = this.validateCommand(command);
+    if (!validation.valid) {
+      return { success: false, error: `Command blocked: ${validation.reason}` };
+    }
+
+    const commandSafetyValidation = validateCommandSafety(command);
+    if (!commandSafetyValidation.valid) {
+      return { success: false, error: `Command blocked: ${commandSafetyValidation.error}` };
+    }
+
+    // Check confirmation
+    const sessionFlags = this.confirmationService.getSessionFlags();
+    if (!sessionFlags.bashCommands && !sessionFlags.allOperations) {
+      const confirmationResult = await this.confirmationService.requestConfirmation(
+        {
+          operation: 'Run bash command (streaming)',
+          filename: command,
+          showVSCodeOpen: false,
+          content: `Command: ${command}\nWorking directory: ${this.currentDirectory}`,
+        },
+        'bash'
+      );
+      if (!confirmationResult.confirmed) {
+        return { success: false, error: confirmationResult.feedback || 'Cancelled by user' };
+      }
+    }
+
+    // Spawn the process
+    const isWindows = process.platform === 'win32';
+    const filteredEnv = this.getFilteredEnv();
+    const controlledEnv: Record<string, string> = {
+      ...filteredEnv,
+      HISTFILE: '/dev/null',
+      HISTSIZE: '0',
+      CI: 'true',
+      NO_COLOR: '1',
+      TERM: 'dumb',
+      NO_TTY: '1',
+      GIT_TERMINAL_PROMPT: '0',
+      NPM_CONFIG_YES: 'true',
+      LC_ALL: 'C.UTF-8',
+      LANG: 'C.UTF-8',
+      PYTHONIOENCODING: 'utf-8',
+      DEBIAN_FRONTEND: 'noninteractive',
+    };
+
+    const proc = spawn('bash', ['-c', command], {
+      shell: false,
+      cwd: this.currentDirectory,
+      env: controlledEnv,
+      detached: !isWindows,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    this.runningProcesses.add(proc);
+    let stdout = '';
+    let stderr = '';
+    let timedOut = false;
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      try { proc.kill('SIGTERM'); } catch { /* ignore */ }
+    }, timeout);
+
+    try {
+      // Create a readable stream from stdout and stderr combined
+      const chunks: string[] = [];
+      let resolve: (() => void) | null = null;
+      let done = false;
+
+      const onData = (data: Buffer, isStderr: boolean) => {
+        const text = data.toString();
+        if (isStderr) stderr += text;
+        else stdout += text;
+        chunks.push(text);
+        if (resolve) { resolve(); resolve = null; }
+      };
+
+      proc.stdout?.on('data', (data: Buffer) => onData(data, false));
+      proc.stderr?.on('data', (data: Buffer) => onData(data, true));
+      proc.on('close', () => { done = true; if (resolve) { resolve(); resolve = null; } });
+
+      while (!done) {
+        if (chunks.length > 0) {
+          while (chunks.length > 0) {
+            yield chunks.shift()!;
+          }
+        } else {
+          await new Promise<void>(r => { resolve = r; });
+        }
+      }
+
+      // Yield remaining chunks
+      while (chunks.length > 0) {
+        yield chunks.shift()!;
+      }
+    } finally {
+      clearTimeout(timer);
+      this.runningProcesses.delete(proc);
+    }
+
+    if (timedOut) {
+      return { success: false, error: `Command timed out after ${timeout}ms` };
+    }
+
+    const exitCode = proc.exitCode ?? 0;
+    if (exitCode !== 0) {
+      return { success: false, error: stderr || `Exit code ${exitCode}`, output: stdout };
+    }
+
+    return { success: true, output: stdout };
+  }
+
+  /**
    * Execute a command using spawn with process group isolation (safer than exec)
    * Inspired by mistral-vibe's robust process handling
    */

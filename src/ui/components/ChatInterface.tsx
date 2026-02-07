@@ -6,6 +6,7 @@ import { LoadingSpinner } from "./LoadingSpinner.js";
 import { CommandSuggestions } from "./CommandSuggestions.js";
 import { ModelSelection } from "./ModelSelection.js";
 import { ChatHistory } from "./ChatHistory.js";
+import { TabbedQuestion } from "./TabbedQuestion.js";
 import { ChatInput } from "./ChatInput.js";
 import { MCPStatus } from "./McpStatus.js";
 import ConfirmationDialog from "./ConfirmationDialog.js";
@@ -49,6 +50,11 @@ function ChatInterfaceWithAgent({
   const [isStreaming, setIsStreaming] = useState(false);
   const [confirmationOptions, setConfirmationOptions] =
     useState<ConfirmationOptions | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<{
+    question: string;
+    options: string[];
+    resolve: (answer: string) => void;
+  } | null>(null);
   const [_sessionStartTime] = useState(new Date());
   const scrollRef = useRef<DOMElement>(null);
   const processingStartTime = useRef<number>(0);
@@ -210,8 +216,38 @@ function ChatInterfaceWithAgent({
           let streamingEntry: ChatEntry | null = null;
           for await (const chunk of agent.processUserMessageStream(initialMessage)) {
             switch (chunk.type) {
+              case "reasoning":
+                if (chunk.reasoning) {
+                  // Handle reasoning/thinking content
+                  setChatHistory((prev) => {
+                    const last = prev[prev.length - 1];
+                    if (last?.type === 'reasoning' && last.isStreaming) {
+                      const updated = [...prev];
+                      updated[prev.length - 1] = { ...last, content: last.content + chunk.reasoning };
+                      return updated;
+                    }
+                    return [...prev, {
+                      type: 'reasoning' as const,
+                      content: chunk.reasoning!,
+                      timestamp: new Date(),
+                      isStreaming: true,
+                    }];
+                  });
+                }
+                break;
               case "content":
                 if (chunk.content) {
+                  // Finalize any streaming reasoning entry
+                  setChatHistory((prev) => {
+                    const last = prev[prev.length - 1];
+                    if (last?.type === 'reasoning' && last.isStreaming) {
+                      const updated = [...prev];
+                      updated[prev.length - 1] = { ...last, isStreaming: false };
+                      return updated;
+                    }
+                    return prev;
+                  });
+
                   if (!streamingEntry) {
                     // First chunk - add new streaming entry
                     const newStreamingEntry = {
@@ -249,6 +285,28 @@ function ChatInterfaceWithAgent({
                   setChatHistory((prev) => [...prev, ...toolCallEntries]);
                 }
                 break;
+              case "tool_stream":
+                if (chunk.toolStreamData) {
+                  const { toolCallId, toolName, delta } = chunk.toolStreamData;
+                  // Update the tool_call entry with streaming output
+                  setChatHistory((prev) => {
+                    const idx = prev.findIndex(
+                      (e) => e.type === 'tool_call' && e.toolCall?.id === toolCallId
+                    );
+                    if (idx !== -1) {
+                      const updated = [...prev];
+                      const existing = updated[idx];
+                      updated[idx] = {
+                        ...existing,
+                        content: (existing.content === 'Executing...' ? '' : existing.content) + delta,
+                        isStreaming: true,
+                      };
+                      return updated;
+                    }
+                    return prev;
+                  });
+                }
+                break;
               case "tool_result":
                 if (chunk.toolCall && chunk.toolResult) {
                   // Finalize any streaming entry
@@ -263,6 +321,42 @@ function ChatInterfaceWithAgent({
                     toolResult: chunk.toolResult,
                   });
                   streamingEntry = null;
+                }
+                break;
+              case "plan_progress":
+                if (chunk.planProgress) {
+                  const { taskId, status, total, completed, message } = chunk.planProgress;
+                  const progressText = message || `Task ${taskId}: ${status} (${completed}/${total})`;
+                  setChatHistory((prev) => [...prev, {
+                    type: 'plan_progress' as const,
+                    content: progressText,
+                    timestamp: new Date(),
+                  }]);
+                }
+                break;
+              case "ask_user":
+                if (chunk.askUser) {
+                  // Add question entry to chat history
+                  setChatHistory((prev) => [...prev, {
+                    type: 'assistant' as const,
+                    content: chunk.askUser!.question,
+                    timestamp: new Date(),
+                  }]);
+                  // Show tabbed question UI (the streaming loop will wait for resolution)
+                  const answer = await new Promise<string>((resolve) => {
+                    setPendingQuestion({
+                      question: chunk.askUser!.question,
+                      options: chunk.askUser!.options,
+                      resolve,
+                    });
+                  });
+                  // Add user's answer to history
+                  setChatHistory((prev) => [...prev, {
+                    type: 'user' as const,
+                    content: answer,
+                    timestamp: new Date(),
+                  }]);
+                  setPendingQuestion(null);
                 }
                 break;
               case "done":
@@ -399,6 +493,17 @@ function ChatInterfaceWithAgent({
           isConfirmationActive={!!confirmationOptions}
         />
       </Box>
+
+      {/* Show tabbed question if one is pending */}
+      {pendingQuestion && (
+        <TabbedQuestion
+          question={pendingQuestion.question}
+          options={pendingQuestion.options}
+          onAnswer={(answer) => {
+            pendingQuestion.resolve(answer);
+          }}
+        />
+      )}
 
       {/* Show confirmation dialog if one is pending */}
       {confirmationOptions && (

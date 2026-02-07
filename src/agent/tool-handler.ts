@@ -44,6 +44,7 @@ import { getErrorMessage } from "../errors/index.js";
 import { logger } from "../utils/logger.js";
 import { RepairCoordinator } from "./execution/repair-coordinator.js";
 import { getPolicyManager, type PolicyDecision } from "../security/tool-policy/index.js";
+import { getTrustFolderManager } from "../security/trust-folders.js";
 import {
   getToolHooksManager,
   registerDefaultHooks,
@@ -268,6 +269,19 @@ export class ToolHandler {
           getPolicyManager().setSessionOverride(toolName, 'allow');
         }
         // If no callback, proceed (for backwards compatibility)
+      }
+
+      // Check trust folders for file/bash operations
+      const trustManager = getTrustFolderManager();
+      if (trustManager.isEnforcementEnabled()) {
+        const targetPath = args.path || args.file_path || args.target_file;
+        if (typeof targetPath === 'string' && !trustManager.isTrusted(targetPath)) {
+          logger.info(`Tool blocked by trust folder: ${toolName}`, { path: targetPath });
+          return {
+            success: false,
+            error: `Path "${targetPath}" is not in a trusted directory. Use /trust to add it.`,
+          };
+        }
       }
 
       // Execute before_tool_call hooks (can modify args)
@@ -515,6 +529,39 @@ export class ToolHandler {
     }
 
     return bashResult;
+  }
+
+  /**
+   * Execute a tool with streaming output.
+   * Currently only supports bash. Falls back to executeTool for other tools.
+   * Yields string deltas for real-time output.
+   */
+  public async *executeToolStreaming(
+    toolCall: CodeBuddyToolCall
+  ): AsyncGenerator<string, ToolResult, undefined> {
+    const toolName = toolCall.function.name;
+
+    // Only bash supports streaming currently
+    if (toolName === 'bash') {
+      try {
+        const args = JSON.parse(toolCall.function.arguments);
+        const command = args.command as string;
+        const timeout = (args.timeout as number) || 30000;
+
+        const gen = this.bash.executeStreaming(command, timeout);
+        let result = await gen.next();
+        while (!result.done) {
+          yield result.value;
+          result = await gen.next();
+        }
+        return result.value;
+      } catch (error) {
+        return { success: false, error: `Streaming execution error: ${getErrorMessage(error)}` };
+      }
+    }
+
+    // Fallback: non-streaming execution
+    return await this.executeTool(toolCall);
   }
 
   private async executeMCPTool(toolCall: CodeBuddyToolCall): Promise<ToolResult> {
