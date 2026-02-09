@@ -140,6 +140,8 @@ export interface AstNode {
 export interface Program extends AstNode {
   type: 'Program';
   statements: AstNode[];
+  /** @deprecated Use statements instead */
+  body?: AstNode[];
 }
 
 // Expressions
@@ -487,3 +489,51 @@ export const DEFAULT_FCS_CONFIG = DEFAULT_SCRIPT_CONFIG;
 
 /** @deprecated Use Program instead */
 export type ProgramNode = Program;
+
+// Backward-compatible aliases for old Buddy Script AST names
+/** @deprecated Use BlockStmt instead */
+export type BlockStatement = BlockStmt;
+/** @deprecated Use VarDeclaration instead */
+export type VariableDeclaration = VarDeclaration;
+/** @deprecated Use IfStmt instead */
+export type IfStatement = IfStmt;
+/** @deprecated Use WhileStmt instead */
+export type WhileStatement = WhileStmt;
+/** @deprecated Use ForStmt instead */
+export type ForStatement = ForStmt;
+/** @deprecated Use ForStmt instead */
+export type ForInStatement = ForStmt;
+/** @deprecated Use ReturnStmt instead */
+export type ReturnStatement = ReturnStmt;
+/** @deprecated Use TryStmt instead */
+export type TryStatement = TryStmt;
+/** @deprecated Use ThrowStmt instead */
+export type ThrowStatement = ThrowStmt;
+/** @deprecated Use ExpressionStmt instead */
+export type ExpressionStatement = ExpressionStmt;
+/** @deprecated Use LiteralExpr instead */
+export type Literal = LiteralExpr;
+/** @deprecated Use IdentifierExpr instead */
+export type Identifier = IdentifierExpr;
+/** @deprecated Use BinaryExpr instead */
+export type BinaryExpression = BinaryExpr;
+/** @deprecated Use UnaryExpr instead */
+export type UnaryExpression = UnaryExpr;
+/** @deprecated Use AssignmentExpr instead */
+export type AssignmentExpression = AssignmentExpr;
+/** @deprecated Use CallExpr instead */
+export type CallExpression = CallExpr;
+/** @deprecated Use MemberExpr instead */
+export type MemberExpression = MemberExpr;
+/** @deprecated Use ArrayExpr instead */
+export type ArrayExpression = ArrayExpr;
+/** @deprecated Use DictExpr instead */
+export type ObjectExpression = DictExpr;
+/** @deprecated Use TernaryExpr instead */
+export type ConditionalExpression = TernaryExpr;
+/** @deprecated Use LambdaExpr instead */
+export type ArrowFunction = LambdaExpr;
+/** @deprecated Use AssignmentExpr instead */
+export type LogicalExpression = AssignmentExpr;
+/** @deprecated Use AwaitExpr instead */
+export type AwaitExpression = AwaitExpr;

@@ -442,7 +442,7 @@ Provide only the completed code, no explanations.`;
         required: ['script'],
       },
       async (args) => {
-        const { executeFCS } = await import('../../fcs/index.js');
+        const { executeFCS } = await import('../../scripting/index.js');
         const result = await executeFCS(args.script as string, {
           workdir: this.options.workdir,
           dryRun: args.dryRun as boolean || false,

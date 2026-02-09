@@ -370,9 +370,9 @@ describe('FCS Parser', () => {
   let FCSTokenType: any;
 
   beforeAll(async () => {
-    const lexerModule = await import('../../src/fcs/lexer');
-    const parserModule = await import('../../src/fcs/parser');
-    const typesModule = await import('../../src/fcs/types');
+    const lexerModule = await import('../../src/scripting/lexer');
+    const parserModule = await import('../../src/scripting/parser');
+    const typesModule = await import('../../src/scripting/types');
 
     tokenizeFCS = lexerModule.tokenize;
     parseFCS = parserModule.parse;

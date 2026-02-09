@@ -120,7 +120,7 @@ export class FCSRuntime {
     let error: string | undefined;
 
     try {
-      for (const statement of program.statements) {
+      for (const statement of (program.statements || program.body || [])) {
         const result = await this.executeNode(statement, this.globalContext);
         if (result instanceof ReturnSignal) {
           returnValue = result.value;
@@ -145,6 +145,130 @@ export class FCSRuntime {
     };
   }
 
+  // Normalize old Buddy Script AST nodes to FCS format
+  private normalizeNode(node: AstNode): AstNode {
+    const n = node as any;
+    // Map old BS type names to FCS type names
+    const typeMap: Record<string, string> = {
+      'VariableDeclaration': 'VarDeclaration',
+      'BlockStatement': 'Block',
+      'IfStatement': 'If',
+      'WhileStatement': 'While',
+      'ForInStatement': 'For',
+      'ReturnStatement': 'Return',
+      'BreakStatement': 'Break',
+      'ContinueStatement': 'Continue',
+      'TryStatement': 'Try',
+      'ThrowStatement': 'Throw',
+      'ExpressionStatement': 'ExpressionStmt',
+      'BinaryExpression': 'Binary',
+      'UnaryExpression': 'Unary',
+      'LogicalExpression': 'Binary',
+      'AssignmentExpression': 'Assignment',
+      'CallExpression': 'Call',
+      'MemberExpression': 'Member',
+      'ArrayExpression': 'Array',
+      'ObjectExpression': 'Dict',
+      'ConditionalExpression': 'Ternary',
+      'ArrowFunctionExpression': 'Lambda',
+      'ArrowFunction': 'Lambda',
+      'AwaitExpression': 'Await',
+    };
+    if (n.type === 'ForStatement') {
+      // Detect C-style vs for-in
+      n.type = (n.init !== undefined || n.test !== undefined || n.update !== undefined) ? 'ForCStyle' : 'For';
+    } else if (typeMap[n.type]) {
+      n.type = typeMap[n.type];
+    }
+    // Map old BS field names to FCS field names
+    if (n.type === 'VarDeclaration' && n.init !== undefined && n.initializer === undefined) {
+      n.initializer = n.init;
+      if (n.kind) n.isConst = n.kind === 'const';
+    }
+    if (n.type === 'Block' && n.body && !n.statements) {
+      n.statements = n.body;
+    }
+    if (n.type === 'If') {
+      if (n.test && !n.condition) n.condition = n.test;
+      if (n.consequent && !n.thenBranch) n.thenBranch = n.consequent;
+      if (n.alternate !== undefined && n.elseBranch === undefined) n.elseBranch = n.alternate;
+      if (n.body && !n.thenBranch) n.thenBranch = n.body;
+    }
+    if (n.type === 'While' && n.test && !n.condition) {
+      n.condition = n.test;
+    }
+    // Map For (for-in): old BS uses left/right, FCS uses variable/iterable
+    if (n.type === 'For') {
+      if (n.left && !n.variable) n.variable = typeof n.left === 'object' ? n.left.name : n.left;
+      if (n.right && !n.iterable) n.iterable = n.right;
+    }
+    if (n.type === 'Try') {
+      if (n.block && !n.tryBlock) n.tryBlock = n.block;
+      if (n.handler && !n.catchClauses) {
+        n.catchClauses = [{
+          variable: n.handler.param || n.handler.variable,
+          body: n.handler.body || n.handler,
+        }];
+      }
+      if (n.finalizer && !n.finallyBlock) n.finallyBlock = n.finalizer;
+    }
+    if (n.type === 'Ternary') {
+      if (n.test && !n.condition) n.condition = n.test;
+    }
+    if (n.type === 'Lambda' && n.params && !n.parameters) {
+      n.parameters = n.params.map((p: any) => typeof p === 'string' ? p : p.name);
+    }
+    if (n.type === 'Return' && n.argument !== undefined && n.value === undefined) {
+      n.value = n.argument;
+    }
+    if (n.type === 'Throw' && n.argument !== undefined && n.expression === undefined) {
+      n.expression = n.argument;
+    }
+    // Map old-style operators ('+', '-', etc.) to TokenType names ('Plus', 'Minus', etc.)
+    if ((n.type === 'Binary' || n.type === 'Unary' || n.type === 'Assignment') && n.operator) {
+      const opMap: Record<string, string> = {
+        '+': 'Plus', '-': 'Minus', '*': 'Multiply', '/': 'Divide', '%': 'Modulo', '**': 'Power',
+        '==': 'Equal', '===': 'Equal', '!=': 'NotEqual', '!==': 'NotEqual', '<': 'Less', '>': 'Greater', '<=': 'LessEqual', '>=': 'GreaterEqual',
+        '&&': 'And', '||': 'Or', '!': 'Not',
+        '=': 'Assign', '+=': 'PlusAssign', '-=': 'MinusAssign', '*=': 'MultiplyAssign', '/=': 'DivideAssign',
+      };
+      if (opMap[n.operator]) n.operator = opMap[n.operator];
+    }
+    // Map Unary: old BS uses 'argument', FCS uses 'operand'
+    if (n.type === 'Unary' && n.argument && !n.operand) {
+      n.operand = n.argument;
+    }
+    // Map FunctionDeclaration: old BS uses 'params', FCS uses 'parameters'
+    if (n.type === 'FunctionDeclaration' && n.params && !n.parameters) {
+      n.parameters = n.params.map((p: any) => {
+        if (typeof p === 'string') return { name: p };
+        return { name: p.name, defaultValue: p.default || p.defaultValue };
+      });
+    }
+    // Map Assignment fields: old BS uses left/right, FCS uses target/value
+    if (n.type === 'Assignment') {
+      if (n.left && !n.target) n.target = n.left;
+      if (n.right !== undefined && n.value === undefined) n.value = n.right;
+    }
+    // Call: callee and arguments are the same in both formats
+    // Map old 'object'/'property' to FCS 'object'/'member' for MemberExpression
+    if (n.type === 'Member' && n.property !== undefined && n.member === undefined) {
+      // Old BS property can be an AstNode (e.g., {type: 'Identifier', name: 'foo'}) or a string
+      n.member = typeof n.property === 'object' ? (n.property.name || n.property.value) : n.property;
+    }
+    // Map 'elements' to 'elements' (same for arrays)
+    // Map 'properties' to 'elements' Map for objects/dicts
+    if (n.type === 'Dict' && n.properties && !(n.elements instanceof Map)) {
+      const map = new Map();
+      for (const p of n.properties) {
+        const key = typeof p.key === 'object' ? (p.key.name || p.key.value) : p.key;
+        map.set(String(key), p.value);
+      }
+      n.elements = map;
+    }
+    return n;
+  }
+
   async executeNode(
     node: AstNode,
     ctx: RuntimeContext
@@ -153,6 +277,9 @@ export class FCSRuntime {
     if (Date.now() - this.startTime > this.config.timeout) {
       throw new Error(`Script timeout after ${this.config.timeout}ms`);
     }
+
+    // Normalize old BS AST format
+    node = this.normalizeNode(node);
 
     switch (node.type) {
       // Declarations
@@ -357,7 +484,7 @@ export class FCSRuntime {
     node: BlockStmt,
     ctx: RuntimeContext
   ): Promise<CodeBuddyValue | ReturnSignal | BreakSignal | ContinueSignal> {
-    for (const stmt of node.statements) {
+    for (const stmt of (node.statements || (node as any).body || [])) {
       const result = await this.executeNode(stmt, ctx);
       if (
         result instanceof ReturnSignal ||
@@ -440,12 +567,13 @@ export class FCSRuntime {
       parent: ctx,
     };
 
-    // Execute init
+    // Execute init (normalize in case of old BS format)
     if (node.init) {
-      if (node.init.type === 'VarDeclaration') {
-        await this.executeVarDeclaration(node.init as VarDeclaration, localCtx);
+      const initNode = this.normalizeNode(node.init);
+      if (initNode.type === 'VarDeclaration') {
+        await this.executeVarDeclaration(initNode as VarDeclaration, localCtx);
       } else {
-        await this.evaluate(node.init, localCtx);
+        await this.evaluate(initNode, localCtx);
       }
     }
 
@@ -555,6 +683,7 @@ export class FCSRuntime {
   // ============================================
 
   private async evaluate(node: AstNode, ctx: RuntimeContext): Promise<CodeBuddyValue> {
+    node = this.normalizeNode(node);
     switch (node.type) {
       case 'Literal':
         return (node as LiteralExpr).value as CodeBuddyValue;
@@ -605,14 +734,17 @@ export class FCSRuntime {
   }
 
   private lookupVariable(name: string, ctx: RuntimeContext): CodeBuddyValue {
-    if (ctx.variables.has(name)) {
-      return ctx.variables.get(name)!;
+    // Walk up scope chain checking variables first
+    let current: RuntimeContext | undefined = ctx;
+    while (current) {
+      if (current.variables.has(name)) {
+        return current.variables.get(name)!;
+      }
+      current = current.parent;
     }
+    // Then check functions (builtins)
     if (ctx.functions.has(name)) {
       return ctx.functions.get(name)!;
-    }
-    if (ctx.parent) {
-      return this.lookupVariable(name, ctx.parent);
     }
     throw new Error(`Undefined variable: ${name}`);
   }

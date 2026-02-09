@@ -449,7 +449,7 @@ export class JsonRpcServer {
   private async handleFcsExecute(params: FcsExecuteParams): Promise<FcsExecuteResult> {
     // Lazy load FCS runtime
     if (!fcsRuntime) {
-      const { FCSRuntime } = await import('../../fcs/runtime.js');
+      const { FCSRuntime } = await import('../../scripting/runtime.js');
       fcsRuntime = FCSRuntime;
     }
 
@@ -457,8 +457,8 @@ export class JsonRpcServer {
       execute: (ast: unknown) => Promise<{ success: boolean; output: string[]; returnValue?: unknown; error?: string; duration: number }>;
     };
 
-    const { tokenize } = await import('../../fcs/lexer.js');
-    const { parse } = await import('../../fcs/parser.js');
+    const { tokenize } = await import('../../scripting/lexer.js');
+    const { parse } = await import('../../scripting/parser.js');
 
     const startTime = Date.now();
 
@@ -490,8 +490,8 @@ export class JsonRpcServer {
   }
 
   private async handleFcsParse(params: FcsParseParams): Promise<FcsParseResult> {
-    const { tokenize } = await import('../../fcs/lexer.js');
-    const { parse } = await import('../../fcs/parser.js');
+    const { tokenize } = await import('../../scripting/lexer.js');
+    const { parse } = await import('../../scripting/parser.js');
 
     try {
       const tokens = tokenize(params.script);
