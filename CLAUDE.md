@@ -153,6 +153,15 @@ CodeBuddyAgent
 - `src/acp/protocol.ts` - Agent Communication Protocol router
 - `src/extensions/extension-loader.ts` - Manifest-based extension system
 - `src/copilot/copilot-proxy.ts` - IDE-compatible completions proxy
+- `src/tools/apply-patch.ts` - Unified diff parser/applier (Codex-inspired, model outputs diffs instead of full files)
+- `src/agent/turn-diff-tracker.ts` - Per-turn file change tracking with rollback support
+- `src/agent/history-repair.ts` - Message history self-repair (fixes orphaned tool results, malformed sequences)
+- `src/agent/cache-trace.ts` - Prompt construction debugging (enable via `CACHE_TRACE=true`)
+- `src/config/model-tools.ts` - Per-model tool configuration (capabilities, context window, patch format)
+- `src/utils/head-tail-truncation.ts` - Head/tail output truncation (keeps start+end of large outputs)
+- `src/persistence/session-lock.ts` - PID-based session file locking (prevents concurrent writes)
+- `src/security/skill-scanner.ts` - Static analysis of skill files for dangerous patterns
+- `src/security/bash-parser.ts` - AST-based bash command parsing (tree-sitter with regex fallback)
 
 ### Tool Implementation Pattern
 
@@ -257,6 +266,12 @@ const safePath = pathResult.value;
 | `GROK_MODEL` | Default model to use | - |
 | `JWT_SECRET` | Secret for API server auth | Required in production |
 | `PICOVOICE_ACCESS_KEY` | Picovoice key for Porcupine wake word detection | Optional (text-match fallback) |
+| `BRAVE_API_KEY` | Brave Search API key for MCP web search | Optional |
+| `EXA_API_KEY` | Exa neural search API key for MCP | Optional |
+| `PERPLEXITY_API_KEY` | Perplexity AI search key (direct or via OpenRouter) | Optional |
+| `OPENROUTER_API_KEY` | OpenRouter key (alternative for Perplexity) | Optional |
+| `PERPLEXITY_MODEL` | Perplexity model to use | `perplexity/sonar-pro` |
+| `CACHE_TRACE` | Enable prompt construction debug tracing | `false` |
 
 ## HTTP Server
 

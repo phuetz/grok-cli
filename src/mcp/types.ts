@@ -16,6 +16,8 @@ export interface MCPServerConfig {
   autoReconnect?: boolean;
   /** Optional: Max reconnection attempts */
   maxRetries?: number;
+  /** Optional: Enable/disable this server (default: true) */
+  enabled?: boolean;
 }
 
 export type ServerStatus = 'connecting' | 'connected' | 'disconnected' | 'error';

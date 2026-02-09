@@ -39,13 +39,18 @@ export function resetWebSearchInstance(): void {
  */
 export class WebSearchExecuteTool implements ITool {
   readonly name = 'web_search';
-  readonly description = 'Search the web using DuckDuckGo and return relevant results';
+  readonly description = 'Search the web using Brave Search, Perplexity, Serper (Google), or DuckDuckGo. Supports region, language, and freshness filters.';
 
   async execute(input: Record<string, unknown>): Promise<ToolResult> {
     const query = input.query as string;
     const options = {
       maxResults: input.max_results as number | undefined,
       safeSearch: input.safe_search as boolean | undefined,
+      country: input.country as string | undefined,
+      search_lang: input.search_lang as string | undefined,
+      ui_lang: input.ui_lang as string | undefined,
+      freshness: input.freshness as string | undefined,
+      provider: input.provider as import('../web-search.js').SearchProvider | undefined,
     };
 
     return await getWebSearch().search(query, options);
@@ -64,12 +69,24 @@ export class WebSearchExecuteTool implements ITool {
           },
           max_results: {
             type: 'number',
-            description: 'Maximum number of results to return (default: 5)',
+            description: 'Number of results to return (1-10, default: 5)',
             default: 5,
           },
-          safe_search: {
-            type: 'boolean',
-            description: 'Enable safe search filtering',
+          country: {
+            type: 'string',
+            description: '2-letter country code for region-specific results (e.g., "DE", "US", "FR")',
+          },
+          search_lang: {
+            type: 'string',
+            description: 'ISO language code for search results (e.g., "de", "en", "fr")',
+          },
+          freshness: {
+            type: 'string',
+            description: 'Filter by discovery time (Brave only): "pd" (24h), "pw" (week), "pm" (month), "py" (year), or "YYYY-MM-DDtoYYYY-MM-DD"',
+          },
+          provider: {
+            type: 'string',
+            description: 'Force a specific provider: "brave", "perplexity", "serper", "duckduckgo". Default: auto-fallback chain.',
           },
         },
         required: ['query'],
@@ -96,7 +113,7 @@ export class WebSearchExecuteTool implements ITool {
       name: this.name,
       description: this.description,
       category: 'web' as ToolCategoryType,
-      keywords: ['search', 'web', 'internet', 'duckduckgo', 'google'],
+      keywords: ['search', 'web', 'internet', 'brave', 'perplexity', 'google', 'duckduckgo'],
       priority: 7,
       modifiesFiles: false,
       makesNetworkRequests: true,

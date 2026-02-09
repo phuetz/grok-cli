@@ -133,7 +133,6 @@ describe('WebSearchTool', () => {
       const result = await webSearchTool.search('test query');
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Web search failed');
       expect(result.error).toContain('Network error');
     });
 
@@ -143,7 +142,7 @@ describe('WebSearchTool', () => {
       const result = await webSearchTool.search('test query');
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Web search failed');
+      expect(result.error).toContain('timeout');
     });
 
     it('should decode DuckDuckGo wrapped URLs', async () => {

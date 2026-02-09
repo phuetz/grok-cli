@@ -24,18 +24,48 @@ export function createMCPCommand(): Command {
       try {
         // Check if it's a predefined server
         if (PREDEFINED_SERVERS[name]) {
-          const config = PREDEFINED_SERVERS[name];
-          addMCPServer(config);
+          const preset = { ...PREDEFINED_SERVERS[name] };
+          preset.enabled = true;
+
+          // Inject env vars from CLI --env options or prompt context
+          if (preset.transport?.env) {
+            const envOverrides: Record<string, string> = {};
+            for (const envVar of options.env || []) {
+              const [key, value] = envVar.split('=', 2);
+              if (key && value) envOverrides[key] = value;
+            }
+
+            // Merge: CLI overrides > process.env > preset defaults
+            const transportEnv = { ...preset.transport.env };
+            for (const key of Object.keys(transportEnv)) {
+              if (envOverrides[key]) {
+                transportEnv[key] = envOverrides[key];
+              } else if (process.env[key]) {
+                transportEnv[key] = process.env[key]!;
+              }
+              if (!transportEnv[key]) {
+                console.log(chalk.yellow(`⚠ ${key} is not set. Set it via environment or: buddy mcp add ${name} -e ${key}=YOUR_KEY`));
+              }
+            }
+            preset.transport = { ...preset.transport, env: transportEnv };
+          }
+
+          addMCPServer(preset);
           console.log(chalk.green(`✓ Added predefined MCP server: ${name}`));
-          
+
           // Try to connect immediately
-          const manager = getMCPManager();
-          await manager.addServer(config);
-          console.log(chalk.green(`✓ Connected to MCP server: ${name}`));
-          
-          const tools = manager.getTools().filter(t => t.serverName === name);
-          console.log(chalk.blue(`  Available tools: ${tools.length}`));
-          
+          try {
+            const manager = getMCPManager();
+            await manager.addServer(preset);
+            console.log(chalk.green(`✓ Connected to MCP server: ${name}`));
+
+            const tools = manager.getTools().filter(t => t.serverName === name);
+            console.log(chalk.blue(`  Available tools: ${tools.length}`));
+          } catch (connectError) {
+            console.log(chalk.yellow(`⚠ Server saved but connection failed: ${getErrorMessage(connectError)}`));
+            console.log(chalk.yellow('  Check your API key and try: buddy mcp test ' + name));
+          }
+
           return;
         }
 

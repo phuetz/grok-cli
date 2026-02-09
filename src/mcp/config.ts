@@ -9,6 +9,32 @@ import type { MCPServerConfig, MCPConfig } from "./types.js";
 export type { MCPConfig } from "./types.js";
 
 /**
+ * Resolve ${ENV_VAR} references in env values from process.env
+ */
+function resolveEnvVars(env: Record<string, string> | undefined): Record<string, string> | undefined {
+  if (!env) return env;
+  const resolved: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    const match = value.match(/^\$\{(\w+)\}$/);
+    resolved[key] = match ? (process.env[match[1]] || '') : value;
+  }
+  return resolved;
+}
+
+/**
+ * Resolve env vars in a server config's transport
+ */
+function resolveServerEnv(server: MCPServerConfig): MCPServerConfig {
+  if (server.transport?.env) {
+    return { ...server, transport: { ...server.transport, env: resolveEnvVars(server.transport.env) } };
+  }
+  if (server.env) {
+    return { ...server, env: resolveEnvVars(server.env) };
+  }
+  return server;
+}
+
+/**
  * Load MCP configuration from multiple sources (inspired by Claude Code)
  * Priority: Project .codebuddy/mcp.json > .codebuddy/settings.json > ~/.codebuddy/mcp.json
  */
@@ -25,7 +51,7 @@ export function loadMCPConfig(): MCPConfig {
 
       for (const [name, config] of Object.entries(mcpServers)) {
         if (!seenServers.has(name)) {
-          servers.push({ ...(config as MCPServerConfig), name });
+          servers.push(resolveServerEnv({ ...(config as MCPServerConfig), name }));
           seenServers.add(name);
         }
       }
@@ -40,7 +66,7 @@ export function loadMCPConfig(): MCPConfig {
   if (projectSettings.mcpServers) {
     for (const [name, config] of Object.entries(projectSettings.mcpServers)) {
       if (!seenServers.has(name)) {
-        servers.push(config as MCPServerConfig);
+        servers.push(resolveServerEnv(config as MCPServerConfig));
         seenServers.add(name);
       }
     }
@@ -55,7 +81,7 @@ export function loadMCPConfig(): MCPConfig {
 
       for (const [name, config] of Object.entries(mcpServers)) {
         if (!seenServers.has(name)) {
-          servers.push({ ...(config as MCPServerConfig), name });
+          servers.push(resolveServerEnv({ ...(config as MCPServerConfig), name }));
           seenServers.add(name);
         }
       }
@@ -105,8 +131,38 @@ export function getMCPServer(serverName: string): MCPServerConfig | undefined {
   return projectSettings.mcpServers?.[serverName] as MCPServerConfig | undefined;
 }
 
-// Predefined server configurations
-export const PREDEFINED_SERVERS: Record<string, MCPServerConfig> = {};
+// Predefined server configurations (disabled by default — user activates with API key)
+export const PREDEFINED_SERVERS: Record<string, MCPServerConfig> = {
+  'brave-search': {
+    name: 'brave-search',
+    transport: {
+      type: 'stdio',
+      command: 'npx',
+      args: ['-y', '@anthropics/mcp-server-brave-search'],
+      env: { BRAVE_API_KEY: process.env.BRAVE_API_KEY || '' },
+    },
+    enabled: false,
+  },
+  'playwright': {
+    name: 'playwright',
+    transport: {
+      type: 'stdio',
+      command: 'npx',
+      args: ['-y', '@anthropics/mcp-server-playwright'],
+    },
+    enabled: false,
+  },
+  'exa-search': {
+    name: 'exa-search',
+    transport: {
+      type: 'stdio',
+      command: 'npx',
+      args: ['-y', 'exa-mcp-server'],
+      env: { EXA_API_KEY: process.env.EXA_API_KEY || '' },
+    },
+    enabled: false,
+  },
+};
 
 /**
  * Save MCP configuration to project-level .codebuddy/mcp.json (committable)
@@ -154,6 +210,29 @@ export function createMCPConfigTemplate(): string {
         "name": "example-http",
         "type": "http",
         "url": "http://localhost:3000/mcp",
+        "enabled": false
+      },
+      "brave-search": {
+        "name": "brave-search",
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@anthropics/mcp-server-brave-search"],
+        "env": { "BRAVE_API_KEY": "" },
+        "enabled": false
+      },
+      "playwright": {
+        "name": "playwright",
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@anthropics/mcp-server-playwright"],
+        "enabled": false
+      },
+      "exa-search": {
+        "name": "exa-search",
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "exa-mcp-server"],
+        "env": { "EXA_API_KEY": "" },
         "enabled": false
       }
     }

@@ -2,20 +2,51 @@ import axios from 'axios';
 import { ToolResult, getErrorMessage } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 
+// ============================================================================
+// Types
+// ============================================================================
+
+export type SearchProvider = 'brave' | 'perplexity' | 'serper' | 'duckduckgo' | 'brave-mcp';
+
 export interface WebSearchOptions {
   maxResults?: number;
   safeSearch?: boolean;
+  /** 2-letter country code for region-specific results (e.g., 'DE', 'US'). */
+  country?: string;
+  /** ISO language code for search results (e.g., 'de', 'en', 'fr'). */
+  search_lang?: string;
+  /** ISO language code for UI elements. */
+  ui_lang?: string;
+  /**
+   * Filter results by discovery time (Brave only).
+   * Values: 'pd' (past 24h), 'pw' (past week), 'pm' (past month),
+   * 'py' (past year), or date range 'YYYY-MM-DDtoYYYY-MM-DD'.
+   */
+  freshness?: string;
+  /** Force a specific provider instead of auto-fallback. */
+  provider?: SearchProvider;
 }
 
 export interface SearchResult {
   title: string;
   url: string;
   snippet: string;
+  /** Hostname extracted from URL */
+  siteName?: string;
+  /** Age/published info (Brave only) */
+  published?: string;
 }
 
-/**
- * Serper API response types
- */
+export interface PerplexitySearchResult {
+  content: string;
+  citations: string[];
+  model: string;
+}
+
+// ============================================================================
+// Serper API types
+// ============================================================================
+
 interface SerperOrganicResult {
   title: string;
   link: string;
@@ -36,94 +67,398 @@ interface SerperResponse {
   };
 }
 
+// ============================================================================
+// Brave API types
+// ============================================================================
+
+interface BraveSearchResult {
+  title?: string;
+  url?: string;
+  description?: string;
+  age?: string;
+}
+
+interface BraveSearchResponse {
+  web?: {
+    results?: BraveSearchResult[];
+  };
+}
+
+// ============================================================================
+// Perplexity API types
+// ============================================================================
+
+interface PerplexityResponse {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+  citations?: string[];
+}
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const BRAVE_SEARCH_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
+const DEFAULT_PERPLEXITY_BASE_URL = 'https://openrouter.ai/api/v1';
+const PERPLEXITY_DIRECT_BASE_URL = 'https://api.perplexity.ai';
+const DEFAULT_PERPLEXITY_MODEL = 'perplexity/sonar-pro';
+const DEFAULT_SEARCH_COUNT = 5;
+const MAX_SEARCH_COUNT = 10;
+const DEFAULT_TIMEOUT_MS = 10000;
+
+const BRAVE_FRESHNESS_SHORTCUTS = new Set(['pd', 'pw', 'pm', 'py']);
+const BRAVE_FRESHNESS_RANGE = /^(\d{4}-\d{2}-\d{2})to(\d{4}-\d{2}-\d{2})$/;
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function normalizeFreshness(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return undefined;
+  if (BRAVE_FRESHNESS_SHORTCUTS.has(trimmed)) return trimmed;
+  const match = value.trim().match(BRAVE_FRESHNESS_RANGE);
+  if (match) return `${match[1]}to${match[2]}`;
+  return undefined;
+}
+
+function resolveSiteName(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return undefined;
+  }
+}
+
+function resolvePerplexityBaseUrl(apiKey?: string): string {
+  if (!apiKey) return DEFAULT_PERPLEXITY_BASE_URL;
+  if (apiKey.startsWith('pplx-')) return PERPLEXITY_DIRECT_BASE_URL;
+  return DEFAULT_PERPLEXITY_BASE_URL; // OpenRouter key or unknown
+}
+
 /**
- * Web Search Tool using Serper API (Google Search) with DuckDuckGo fallback
+ * Web Search Tool — OpenClaw-aligned provider chain
  *
- * Set SERPER_API_KEY environment variable to enable Serper
+ * Provider resolution (auto mode):
+ *   Brave MCP → Brave API → Perplexity → Serper → DuckDuckGo
+ *
+ * Supports country, search_lang, ui_lang, freshness (Brave), Perplexity AI search.
  */
 export class WebSearchTool {
   private cache: Map<string, { results: SearchResult[]; timestamp: number }> = new Map();
-  private cacheTTL = 15 * 60 * 1000; // 15 minutes cache
+  private perplexityCache: Map<string, { result: PerplexitySearchResult; timestamp: number }> = new Map();
+  private cacheTTL = 15 * 60 * 1000; // 15 minutes
+
+  // API keys resolved once at construction
   private serperApiKey: string | undefined;
+  private braveApiKey: string | undefined;
+  private perplexityApiKey: string | undefined;
 
   constructor() {
     this.serperApiKey = process.env.SERPER_API_KEY;
-    if (this.serperApiKey) {
-      logger.debug('Serper API key configured for web search');
-    }
+    this.braveApiKey = process.env.BRAVE_API_KEY;
+    this.perplexityApiKey = process.env.PERPLEXITY_API_KEY || process.env.OPENROUTER_API_KEY;
+
+    const providers: string[] = [];
+    if (this.braveApiKey) providers.push('brave');
+    if (this.perplexityApiKey) providers.push('perplexity');
+    if (this.serperApiKey) providers.push('serper');
+    providers.push('duckduckgo');
+    logger.debug('Web search providers available', { providers });
   }
 
-  /**
-   * Search the web using Serper API (Google) or DuckDuckGo fallback
-   */
+  // ============================================================================
+  // Main search entry point
+  // ============================================================================
+
   async search(query: string, options: WebSearchOptions = {}): Promise<ToolResult> {
-    const { maxResults = 5 } = options;
+    const { maxResults = DEFAULT_SEARCH_COUNT } = options;
+    const count = Math.max(1, Math.min(MAX_SEARCH_COUNT, maxResults));
 
     try {
-      // Check cache first
-      const cacheKey = `${query}-${maxResults}`;
+      // Check cache
+      const cacheKey = this.buildCacheKey(query, count, options);
       const cached = this.cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
-        return {
-          success: true,
-          output: this.formatResults(cached.results, query)
-        };
+        return { success: true, output: this.formatResults(cached.results, query) };
       }
 
-      let results: SearchResult[];
-
-      // Use Serper API if key is available
-      if (this.serperApiKey) {
-        results = await this.searchSerper(query, maxResults);
-      } else {
-        // Fallback to DuckDuckGo
-        results = await this.searchDuckDuckGo(query, maxResults);
+      // If forced provider
+      if (options.provider) {
+        return await this.searchWithProvider(options.provider, query, count, options, cacheKey);
       }
 
-      if (results.length === 0) {
-        return {
-          success: true,
-          output: `No results found for: "${query}"`
-        };
+      // Auto fallback chain: Brave MCP → Brave API → Perplexity → Serper → DuckDuckGo
+      const chain = this.buildProviderChain();
+      let lastError: string | undefined;
+
+      for (const provider of chain) {
+        try {
+          return await this.searchWithProvider(provider, query, count, options, cacheKey);
+        } catch (error) {
+          lastError = getErrorMessage(error);
+          logger.debug(`Search provider ${provider} failed, trying next`, { error: lastError });
+        }
       }
 
-      // Cache results
-      this.cache.set(cacheKey, { results, timestamp: Date.now() });
-
-      return {
-        success: true,
-        output: this.formatResults(results, query)
-      };
+      return { success: false, error: `All search providers failed. Last error: ${lastError}` };
     } catch (error) {
-      return {
-        success: false,
-        error: `Web search failed: ${getErrorMessage(error)}`
-      };
+      return { success: false, error: `Web search failed: ${getErrorMessage(error)}` };
     }
   }
 
   /**
-   * Search using Serper API (Google Search)
+   * Perplexity AI search — returns synthesized answer with citations
    */
+  async searchPerplexity(query: string, options: WebSearchOptions = {}): Promise<ToolResult> {
+    if (!this.perplexityApiKey) {
+      return {
+        success: false,
+        error: 'Perplexity search requires PERPLEXITY_API_KEY or OPENROUTER_API_KEY.',
+      };
+    }
+
+    const cacheKey = `perplexity:${query}`;
+    const cached = this.perplexityCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
+      return { success: true, output: this.formatPerplexityResult(cached.result, query) };
+    }
+
+    const result = await this.runPerplexitySearch(query, options);
+
+    this.perplexityCache.set(cacheKey, { result, timestamp: Date.now() });
+    return { success: true, output: this.formatPerplexityResult(result, query) };
+  }
+
+  // ============================================================================
+  // Provider chain
+  // ============================================================================
+
+  private buildProviderChain(): SearchProvider[] {
+    const chain: SearchProvider[] = [];
+    // Brave MCP is checked dynamically
+    chain.push('brave-mcp');
+    if (this.braveApiKey) chain.push('brave');
+    if (this.perplexityApiKey) chain.push('perplexity');
+    if (this.serperApiKey) chain.push('serper');
+    chain.push('duckduckgo');
+    return chain;
+  }
+
+  private async searchWithProvider(
+    provider: SearchProvider,
+    query: string,
+    count: number,
+    options: WebSearchOptions,
+    cacheKey: string,
+  ): Promise<ToolResult> {
+    let results: SearchResult[];
+
+    switch (provider) {
+      case 'brave-mcp':
+        if (!(await this.isBraveMCPAvailable())) {
+          throw new Error('Brave MCP not connected');
+        }
+        results = await this.searchViaBraveMCP(query, count);
+        break;
+      case 'brave':
+        results = await this.searchBraveAPI(query, count, options);
+        break;
+      case 'perplexity': {
+        const pResult = await this.runPerplexitySearch(query, options);
+        // Convert perplexity to SearchResult[] for caching/formatting uniformity
+        results = pResult.citations.map((url, i) => ({
+          title: `Citation ${i + 1}`,
+          url,
+          snippet: i === 0 ? pResult.content.slice(0, 300) : '',
+          siteName: resolveSiteName(url),
+        }));
+        if (results.length === 0) {
+          results = [{ title: 'Perplexity Answer', url: '', snippet: pResult.content }];
+        }
+        break;
+      }
+      case 'serper':
+        results = await this.searchSerper(query, count);
+        break;
+      case 'duckduckgo':
+        results = await this.searchDuckDuckGo(query, count);
+        break;
+      default:
+        throw new Error(`Unknown provider: ${provider}`);
+    }
+
+    if (results.length === 0) {
+      return { success: true, output: `No results found for: "${query}"` };
+    }
+
+    this.cache.set(cacheKey, { results, timestamp: Date.now() });
+    return { success: true, output: this.formatResults(results, query) };
+  }
+
+  private buildCacheKey(query: string, count: number, options: WebSearchOptions): string {
+    const parts = [
+      options.provider || 'auto',
+      query,
+      count,
+      options.country || 'default',
+      options.search_lang || 'default',
+      options.freshness || 'default',
+    ];
+    return parts.join(':');
+  }
+
+  // ============================================================================
+  // Brave MCP
+  // ============================================================================
+
+  private async isBraveMCPAvailable(): Promise<boolean> {
+    try {
+      const { getMCPManager } = await import('../codebuddy/tools.js');
+      const manager = getMCPManager();
+      return manager.getServers().includes('brave-search');
+    } catch {
+      return false;
+    }
+  }
+
+  private async searchViaBraveMCP(query: string, maxResults: number): Promise<SearchResult[]> {
+    const { getMCPManager } = await import('../codebuddy/tools.js');
+    const manager = getMCPManager();
+
+    const result = await manager.callTool('mcp__brave-search__brave_web_search', {
+      query,
+      count: maxResults,
+    });
+
+    const results: SearchResult[] = [];
+    if (result.content) {
+      for (const item of result.content) {
+        if (item.type === 'text' && typeof item.text === 'string') {
+          try {
+            const parsed = JSON.parse(item.text);
+            const webResults = parsed.web?.results || parsed.results || [];
+            for (const r of webResults.slice(0, maxResults)) {
+              results.push({
+                title: r.title || '',
+                url: r.url || '',
+                snippet: r.description || r.snippet || '',
+                siteName: resolveSiteName(r.url),
+              });
+            }
+          } catch {
+            results.push({ title: 'Brave Search Result', url: '', snippet: item.text });
+          }
+        }
+      }
+    }
+
+    logger.debug('Brave MCP search completed', { query, resultCount: results.length });
+    return results;
+  }
+
+  // ============================================================================
+  // Brave Direct API (OpenClaw-aligned)
+  // ============================================================================
+
+  private async searchBraveAPI(
+    query: string,
+    count: number,
+    options: WebSearchOptions,
+  ): Promise<SearchResult[]> {
+    const url = new URL(BRAVE_SEARCH_ENDPOINT);
+    url.searchParams.set('q', query);
+    url.searchParams.set('count', String(count));
+    if (options.country) url.searchParams.set('country', options.country);
+    if (options.search_lang) url.searchParams.set('search_lang', options.search_lang);
+    if (options.ui_lang) url.searchParams.set('ui_lang', options.ui_lang);
+
+    const freshness = normalizeFreshness(options.freshness);
+    if (freshness) url.searchParams.set('freshness', freshness);
+
+    const response = await axios.get<BraveSearchResponse>(url.toString(), {
+      headers: {
+        'Accept': 'application/json',
+        'X-Subscription-Token': this.braveApiKey!,
+      },
+      timeout: DEFAULT_TIMEOUT_MS,
+    });
+
+    const webResults = response.data.web?.results || [];
+    const results: SearchResult[] = webResults.map((entry) => ({
+      title: entry.title || '',
+      url: entry.url || '',
+      snippet: entry.description || '',
+      siteName: resolveSiteName(entry.url),
+      published: entry.age || undefined,
+    }));
+
+    logger.debug('Brave API search completed', { query, resultCount: results.length });
+    return results;
+  }
+
+  // ============================================================================
+  // Perplexity (OpenClaw-aligned: direct or via OpenRouter)
+  // ============================================================================
+
+  private async runPerplexitySearch(
+    query: string,
+    _options: WebSearchOptions,
+  ): Promise<PerplexitySearchResult> {
+    const apiKey = this.perplexityApiKey!;
+    const baseUrl = resolvePerplexityBaseUrl(apiKey);
+    const model = process.env.PERPLEXITY_MODEL || DEFAULT_PERPLEXITY_MODEL;
+
+    const endpoint = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
+
+    const response = await axios.post<PerplexityResponse>(
+      endpoint,
+      {
+        model,
+        messages: [{ role: 'user', content: query }],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': 'https://github.com/code-buddy',
+          'X-Title': 'Code Buddy Web Search',
+        },
+        timeout: DEFAULT_TIMEOUT_MS,
+      },
+    );
+
+    const content = response.data.choices?.[0]?.message?.content ?? 'No response';
+    const citations = response.data.citations ?? [];
+
+    logger.debug('Perplexity search completed', { query, model, citationCount: citations.length });
+    return { content, citations, model };
+  }
+
+  // ============================================================================
+  // Serper (Google Search)
+  // ============================================================================
+
   private async searchSerper(query: string, maxResults: number): Promise<SearchResult[]> {
     const response = await axios.post<SerperResponse>(
       'https://google.serper.dev/search',
-      {
-        q: query,
-        num: maxResults,
-      },
+      { q: query, num: maxResults },
       {
         headers: {
           'X-API-KEY': this.serperApiKey!,
           'Content-Type': 'application/json',
         },
-        timeout: 10000,
-      }
+        timeout: DEFAULT_TIMEOUT_MS,
+      },
     );
 
     const results: SearchResult[] = [];
 
-    // Add answer box if present
     if (response.data.answerBox?.answer) {
       results.push({
         title: response.data.answerBox.title || 'Answer',
@@ -132,7 +467,6 @@ export class WebSearchTool {
       });
     }
 
-    // Add knowledge graph if present
     if (response.data.knowledgeGraph?.description) {
       results.push({
         title: response.data.knowledgeGraph.title || 'Knowledge',
@@ -141,64 +475,25 @@ export class WebSearchTool {
       });
     }
 
-    // Add organic results
     if (response.data.organic) {
       for (const result of response.data.organic.slice(0, maxResults)) {
         results.push({
           title: result.title,
           url: result.link,
           snippet: result.snippet,
+          siteName: resolveSiteName(result.link),
         });
       }
     }
 
-    logger.debug('Serper search completed', {
-      query,
-      resultCount: results.length,
-    });
-
+    logger.debug('Serper search completed', { query, resultCount: results.length });
     return results;
   }
 
-  /**
-   * Fetch and summarize a web page
-   */
-  async fetchPage(url: string, _prompt?: string): Promise<ToolResult> {
-    try {
-      const response = await axios.get(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; CodeBuddyCLI/1.0; +https://github.com/code-buddy)',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-        timeout: 10000,
-        maxRedirects: 5
-      });
+  // ============================================================================
+  // DuckDuckGo (ultimate fallback, no API key needed)
+  // ============================================================================
 
-      const html = response.data;
-      const text = this.extractTextFromHtml(html);
-
-      // Truncate if too long
-      const maxLength = 8000;
-      const truncatedText = text.length > maxLength
-        ? text.substring(0, maxLength) + '\n\n[Content truncated...]'
-        : text;
-
-      return {
-        success: true,
-        output: `Content from ${url}:\n\n${truncatedText}`,
-        data: { url, contentLength: text.length }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Failed to fetch page: ${getErrorMessage(error)}`
-      };
-    }
-  }
-
-  /**
-   * Search using DuckDuckGo HTML
-   */
   private async searchDuckDuckGo(query: string, maxResults: number): Promise<SearchResult[]> {
     const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
 
@@ -208,14 +503,12 @@ export class WebSearchTool {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
       },
-      timeout: 10000
+      timeout: DEFAULT_TIMEOUT_MS,
     });
 
     const html = response.data;
     const results: SearchResult[] = [];
 
-    // Parse DuckDuckGo HTML results
-    // Looking for result divs with class "result"
     const resultRegex = /<div[^>]*class="[^"]*result[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/gi;
     const titleRegex = /<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/i;
     const snippetRegex = /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/i;
@@ -223,45 +516,41 @@ export class WebSearchTool {
     let match;
     while ((match = resultRegex.exec(html)) !== null && results.length < maxResults) {
       const resultHtml = match[1];
-
       const titleMatch = titleRegex.exec(resultHtml);
       const snippetMatch = snippetRegex.exec(resultHtml);
 
       if (titleMatch) {
         let url = titleMatch[1];
-        // DuckDuckGo wraps URLs, need to extract actual URL
         if (url.includes('uddg=')) {
           const uddgMatch = url.match(/uddg=([^&]+)/);
-          if (uddgMatch) {
-            url = decodeURIComponent(uddgMatch[1]);
-          }
+          if (uddgMatch) url = decodeURIComponent(uddgMatch[1]);
         }
 
         results.push({
           title: this.decodeHtmlEntities(titleMatch[2].trim()),
-          url: url,
+          url,
           snippet: snippetMatch
             ? this.decodeHtmlEntities(this.stripHtml(snippetMatch[1]).trim())
-            : ''
+            : '',
+          siteName: resolveSiteName(url),
         });
       }
     }
 
-    // Fallback: try alternative parsing if no results
+    // Fallback parsing
     if (results.length === 0) {
       const linkRegex = /<a[^>]*class="[^"]*result__url[^"]*"[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/gi;
       while ((match = linkRegex.exec(html)) !== null && results.length < maxResults) {
         let url = match[1];
         if (url.includes('uddg=')) {
           const uddgMatch = url.match(/uddg=([^&]+)/);
-          if (uddgMatch) {
-            url = decodeURIComponent(uddgMatch[1]);
-          }
+          if (uddgMatch) url = decodeURIComponent(uddgMatch[1]);
         }
         results.push({
           title: this.decodeHtmlEntities(match[2].trim()) || url,
-          url: url,
-          snippet: ''
+          url,
+          snippet: '',
+          siteName: resolveSiteName(url),
         });
       }
     }
@@ -269,18 +558,67 @@ export class WebSearchTool {
     return results;
   }
 
-  /**
-   * Detect if query is weather-related
-   */
+  // ============================================================================
+  // Fetch page
+  // ============================================================================
+
+  async fetchPage(url: string, _prompt?: string): Promise<ToolResult> {
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; CodeBuddyCLI/1.0; +https://github.com/code-buddy)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        timeout: DEFAULT_TIMEOUT_MS,
+        maxRedirects: 5,
+      });
+
+      const html = response.data;
+      const text = this.extractTextFromHtml(html);
+
+      const maxLength = 8000;
+      const truncatedText = text.length > maxLength
+        ? text.substring(0, maxLength) + '\n\n[Content truncated...]'
+        : text;
+
+      return {
+        success: true,
+        output: `Content from ${url}:\n\n${truncatedText}`,
+        data: { url, contentLength: text.length },
+      };
+    } catch (error) {
+      return { success: false, error: `Failed to fetch page: ${getErrorMessage(error)}` };
+    }
+  }
+
+  // ============================================================================
+  // Formatting
+  // ============================================================================
+
+  private formatPerplexityResult(result: PerplexitySearchResult, query: string): string {
+    const lines: string[] = [];
+    lines.push(`\nPerplexity Search: "${query}" (${result.model})`);
+    lines.push('='.repeat(50));
+    lines.push('');
+    lines.push(result.content);
+    if (result.citations.length > 0) {
+      lines.push('');
+      lines.push('Citations:');
+      result.citations.forEach((url, i) => {
+        lines.push(`  ${i + 1}. ${url}`);
+      });
+    }
+    lines.push('');
+    lines.push('-'.repeat(50));
+    return lines.join('\n');
+  }
+
   private isWeatherQuery(query: string): boolean {
     const weatherKeywords = ['météo', 'meteo', 'weather', 'température', 'temperature', 'forecast', 'prévisions'];
     const q = query.toLowerCase();
     return weatherKeywords.some(kw => q.includes(kw));
   }
 
-  /**
-   * Get weather emoji based on condition
-   */
   private getWeatherEmoji(text: string): string {
     const t = text.toLowerCase();
     if (t.includes('soleil') || t.includes('sunny') || t.includes('ensoleillé')) return '☀️';
@@ -294,35 +632,22 @@ export class WebSearchTool {
     return '🌡️';
   }
 
-  /**
-   * Format weather results nicely
-   */
   private formatWeatherResults(results: SearchResult[], query: string): string {
     const lines: string[] = [];
-
-    // Header with location
     const location = query.replace(/météo|meteo|weather/gi, '').trim();
     lines.push(`\n🌍 Météo ${location || 'actuelle'}`);
     lines.push('═'.repeat(40));
     lines.push('');
 
-    // Extract and format weather info
     for (const result of results.slice(0, 4)) {
       const emoji = this.getWeatherEmoji(result.snippet);
-
       if (!result.url && result.snippet) {
-        // Answer box (quick answer)
         lines.push(`${emoji} ${result.title}: ${result.snippet}`);
         lines.push('');
       } else if (result.url) {
-        // Regular result
         lines.push(`${emoji} **${result.title}**`);
         if (result.snippet) {
-          // Clean and format snippet
-          const cleanSnippet = result.snippet
-            .replace(/·/g, '|')
-            .replace(/\s+/g, ' ')
-            .trim();
+          const cleanSnippet = result.snippet.replace(/·/g, '|').replace(/\s+/g, ' ').trim();
           lines.push(`   ${cleanSnippet}`);
         }
         lines.push(`   🔗 ${result.url}`);
@@ -334,16 +659,11 @@ export class WebSearchTool {
     return lines.join('\n');
   }
 
-  /**
-   * Format search results for display
-   */
   private formatResults(results: SearchResult[], query: string): string {
-    // Use special formatting for weather queries
     if (this.isWeatherQuery(query)) {
       return this.formatWeatherResults(results, query);
     }
 
-    // Standard formatting for other queries
     const lines: string[] = [];
     lines.push(`\n🔍 Résultats pour: "${query}"`);
     lines.push('═'.repeat(50));
@@ -354,17 +674,13 @@ export class WebSearchTool {
       const num = `${i + 1}.`;
 
       if (!result.url && result.snippet) {
-        // Answer box
         lines.push(`📌 ${result.title}`);
         lines.push(`   ${result.snippet}`);
       } else {
         lines.push(`${num} **${result.title}**`);
-        if (result.snippet) {
-          lines.push(`   ${result.snippet}`);
-        }
-        if (result.url) {
-          lines.push(`   🔗 ${result.url}`);
-        }
+        if (result.snippet) lines.push(`   ${result.snippet}`);
+        if (result.url) lines.push(`   🔗 ${result.url}`);
+        if (result.published) lines.push(`   📅 ${result.published}`);
       }
       lines.push('');
     }
@@ -373,11 +689,11 @@ export class WebSearchTool {
     return lines.join('\n');
   }
 
-  /**
-   * Extract readable text from HTML
-   */
+  // ============================================================================
+  // HTML helpers
+  // ============================================================================
+
   private extractTextFromHtml(html: string): string {
-    // Remove script and style tags
     let text = html
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -385,7 +701,6 @@ export class WebSearchTool {
       .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
       .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '');
 
-    // Convert common elements to newlines
     text = text
       .replace(/<\/p>/gi, '\n\n')
       .replace(/<br\s*\/?>/gi, '\n')
@@ -394,64 +709,44 @@ export class WebSearchTool {
       .replace(/<\/li>/gi, '\n')
       .replace(/<li[^>]*>/gi, '• ');
 
-    // Strip remaining HTML tags
     text = this.stripHtml(text);
-
-    // Decode HTML entities
     text = this.decodeHtmlEntities(text);
-
-    // Clean up whitespace
-    text = text
-      .replace(/\n\s*\n\s*\n/g, '\n\n')
-      .replace(/[ \t]+/g, ' ')
-      .trim();
-
+    text = text.replace(/\n\s*\n\s*\n/g, '\n\n').replace(/[ \t]+/g, ' ').trim();
     return text;
   }
 
-  /**
-   * Strip HTML tags from text
-   */
   private stripHtml(html: string): string {
     return html.replace(/<[^>]*>/g, '');
   }
 
-  /**
-   * Decode HTML entities
-   */
   private decodeHtmlEntities(text: string): string {
     const entities: Record<string, string> = {
-      '&amp;': '&',
-      '&lt;': '<',
-      '&gt;': '>',
-      '&quot;': '"',
-      '&#39;': "'",
-      '&apos;': "'",
-      '&nbsp;': ' ',
-      '&ndash;': '–',
-      '&mdash;': '—',
-      '&hellip;': '…',
-      '&copy;': '©',
-      '&reg;': '®',
-      '&trade;': '™',
+      '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"',
+      '&#39;': "'", '&apos;': "'", '&nbsp;': ' ', '&ndash;': '–',
+      '&mdash;': '—', '&hellip;': '…', '&copy;': '©', '&reg;': '®', '&trade;': '™',
     };
 
     let result = text;
     for (const [entity, char] of Object.entries(entities)) {
       result = result.replace(new RegExp(entity, 'gi'), char);
     }
-
-    // Handle numeric entities
     result = result.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)));
     result = result.replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)));
-
     return result;
   }
 
-  /**
-   * Clear the cache
-   */
   clearCache(): void {
     this.cache.clear();
+    this.perplexityCache.clear();
   }
 }
+
+// ============================================================================
+// Exported helpers for testing
+// ============================================================================
+
+export const __testing = {
+  normalizeFreshness,
+  resolveSiteName,
+  resolvePerplexityBaseUrl,
+} as const;

@@ -99,6 +99,22 @@ Code Buddy incorporates advanced patterns from the [OpenClaw](https://github.com
 | **Extension System** | ✅ 100% | Manifest-based plugin loader with lifecycle hooks |
 | **Copilot Proxy** | ✅ 100% | IDE-compatible completions backend (`/v1/completions`) |
 
+### Phase 6 — Robustness & Developer Experience
+
+| Module | Status | Description |
+|:-------|:------:|:------------|
+| **Web Search 5-Provider Chain** | ✅ 100% | Brave MCP → Brave API → Perplexity → Serper → DuckDuckGo with country/freshness/lang |
+| **Apply Patch Tool** | ✅ 100% | Unified diff parser and applier with fuzz factor (Codex-inspired) |
+| **Bash Parser** | ✅ 100% | AST-based command parsing via tree-sitter-bash with state-machine fallback |
+| **Per-Model Tool Config** | ✅ 100% | Capabilities, context window, patch format per model family |
+| **Head/Tail Truncation** | ✅ 100% | Smart output truncation keeping start + end of large results |
+| **Session Locks** | ✅ 100% | PID-based file locking with stale detection |
+| **Skill Scanner** | ✅ 100% | Static analysis of SKILL.md files for dangerous patterns (24 rules) |
+| **History Repair** | ✅ 100% | 5-pass self-repair for malformed LLM message sequences |
+| **Cache Trace** | ✅ 100% | Debug prompt construction stages (`CACHE_TRACE=true`) |
+| **Turn Diff Tracker** | ✅ 100% | Per-turn file change tracking with rollback capability |
+| **MCP Predefined Servers** | ✅ 100% | Brave Search, Playwright, Exa pre-configured in MCP |
+
 ---
 
 ## Installation
@@ -107,6 +123,7 @@ Code Buddy incorporates advanced patterns from the [OpenClaw](https://github.com
 
 - **Node.js** 18.0.0 or higher
 - **ripgrep** (recommended for faster search)
+- **tree-sitter** + **tree-sitter-bash** (optional, for AST-based bash command parsing)
 
 ```bash
 # macOS
@@ -117,6 +134,9 @@ sudo apt-get install ripgrep
 
 # Windows
 choco install ripgrep
+
+# Optional: tree-sitter for enhanced bash security parsing
+npm install tree-sitter tree-sitter-bash
 ```
 
 ### Install Code Buddy
@@ -479,9 +499,35 @@ const results = await hybridSearch({
 | **Search** | `search`, `codebase_map` |
 | **System** | `bash`, `docker`, `kubernetes` |
 | **Web** | `web_search`, `web_fetch`, `browser` |
+| **Patching** | `apply_patch` (unified diff) |
 | **Planning** | `create_todo_list`, `get_todo_list`, `update_todo_list` |
 | **Media** | `screenshot`, `audio`, `video`, `ocr`, `clipboard` |
 | **Documents** | `pdf`, `document`, `archive` |
+
+### Web Search (5-Provider Fallback Chain)
+
+Code Buddy automatically cascades through available search providers:
+
+| Priority | Provider | API Key Required | Features |
+|:---------|:---------|:-----------------|:---------|
+| 1 | **Brave MCP** | `BRAVE_API_KEY` + MCP enabled | Full MCP integration, richest results |
+| 2 | **Brave API** | `BRAVE_API_KEY` | Country, language, freshness filters |
+| 3 | **Perplexity** | `PERPLEXITY_API_KEY` or `OPENROUTER_API_KEY` | AI-synthesized answers with citations |
+| 4 | **Serper** | `SERPER_API_KEY` | Google Search results |
+| 5 | **DuckDuckGo** | None | Free fallback (no API key needed) |
+
+Search parameters: `country` (ISO 3166), `search_lang`, `ui_lang`, `freshness` (`pd`/`pw`/`pm`/`py` or date range), `provider` (force specific).
+
+### MCP Predefined Servers
+
+Three MCP servers are pre-configured (disabled by default):
+
+```bash
+buddy mcp add brave-search    # Brave Web Search (needs BRAVE_API_KEY)
+buddy mcp add playwright      # Browser automation (no key needed)
+buddy mcp add exa-search      # Exa neural search (needs EXA_API_KEY)
+buddy mcp list                # Show all configured servers
+```
 
 ### RAG-Based Tool Selection
 
@@ -753,6 +799,13 @@ npm run build
 | `SERPER_API_KEY` | Web search API key | - |
 | `GROK_BASE_URL` | Custom API endpoint | - |
 | `GROK_MODEL` | Default model | - |
+| `BRAVE_API_KEY` | Brave Search API key | - |
+| `EXA_API_KEY` | Exa neural search API key | - |
+| `PERPLEXITY_API_KEY` | Perplexity AI search key (`pplx-...`) | - |
+| `OPENROUTER_API_KEY` | OpenRouter key for Perplexity (`sk-or-...`) | - |
+| `PERPLEXITY_MODEL` | Perplexity model | `perplexity/sonar-pro` |
+| `PICOVOICE_ACCESS_KEY` | Porcupine wake word detection | - |
+| `CACHE_TRACE` | Debug prompt construction stages | `false` |
 | `YOLO_MODE` | Full autonomy | `false` |
 | `MAX_COST` | Cost limit ($) | `10` |
 | `JWT_SECRET` | API server auth | Required in prod |
@@ -793,6 +846,9 @@ Create `.codebuddy/settings.json`:
 | Canvas A2UI Visual Workspace | HIGH | ✅ Done |
 | ClawHub Skills Registry | MEDIUM | ✅ Done |
 | OAuth Authentication | MEDIUM | 🔲 Planned |
+| Web Search 5-Provider Chain | HIGH | ✅ Done |
+| Apply Patch & Bash Parser | HIGH | ✅ Done |
+| Per-Model Tool Config | MEDIUM | ✅ Done |
 | Voice Wake Word Detection | MEDIUM | ✅ Done |
 | TTS Providers (OpenAI, ElevenLabs, AudioReader) | MEDIUM | ✅ Done |
 | Companion Apps (iOS, Android, macOS) | LOW | 🔲 Planned |

@@ -439,7 +439,12 @@ export class ToolExecutor {
       case "web_search":
         return await this.webSearch.search(args.query as string, {
           maxResults: args.max_results as number,
-        });
+          country: args.country as string | undefined,
+          search_lang: args.search_lang as string | undefined,
+          ui_lang: args.ui_lang as string | undefined,
+          freshness: args.freshness as string | undefined,
+          provider: args.provider as string | undefined,
+        } as import('../tools/web-search.js').WebSearchOptions);
 
       case "web_fetch":
         return await this.webSearch.fetchPage(args.url as string);

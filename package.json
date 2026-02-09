@@ -128,6 +128,8 @@
     "node-pty": "^1.0.0",
     "string-width": "^7.2.0",
     "tar": "^7.5.3",
+    "tree-sitter": "^0.22.4",
+    "tree-sitter-bash": "^0.23.3",
     "ws": "^8.18.0"
   },
   "devDependencies": {

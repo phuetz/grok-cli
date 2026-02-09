@@ -1,0 +1,37 @@
+{
+  "mcpServers": {
+    "brave-search": {
+      "name": "brave-search",
+      "transport": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@anthropics/mcp-server-brave-search"],
+        "env": {
+          "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+        }
+      },
+      "enabled": true
+    },
+    "playwright": {
+      "name": "playwright",
+      "transport": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@anthropics/mcp-server-playwright"]
+      },
+      "enabled": false
+    },
+    "exa-search": {
+      "name": "exa-search",
+      "transport": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "exa-mcp-server"],
+        "env": {
+          "EXA_API_KEY": "${EXA_API_KEY}"
+        }
+      },
+      "enabled": true
+    }
+  }
+}
