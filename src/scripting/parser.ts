@@ -124,7 +124,7 @@ export class FCSParser {
       while (this.match(TokenType.Decorator)) {
         decoratorGuard();
         // Decorators stored but not used yet
-        this.previous().value;
+        void this.previous().value;
       }
 
       if (this.matchKeyword('func', 'function') || this.matchKeyword('async')) {
