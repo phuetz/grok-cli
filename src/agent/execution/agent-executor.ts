@@ -241,7 +241,9 @@ export class AgentExecutor {
               timestamp: new Date(),
               toolCall: toolCall,
             };
+            const histIdx = history.length;
             history.push(toolCallEntry);
+            const newIdx = newEntries.length;
             newEntries.push(toolCallEntry);
 
             const result = await this.executeToolViaLane(toolCall);
@@ -253,12 +255,10 @@ export class AgentExecutor {
               content: result.success ? result.output || "Success" : result.error || "Error occurred",
               toolResult: result,
             };
-            
-            // Replace in history and newEntries
-            const histIdx = history.indexOf(toolCallEntry);
-            if (histIdx !== -1) history[histIdx] = updatedEntry;
-            const newIdx = newEntries.indexOf(toolCallEntry);
-            if (newIdx !== -1) newEntries[newIdx] = updatedEntry;
+
+            // Replace in history and newEntries using tracked indices (O(1))
+            history[histIdx] = updatedEntry;
+            newEntries[newIdx] = updatedEntry;
 
             // Add tool result to messages
             // Note: 'name' is required for Gemini API to match functionResponse with functionCall

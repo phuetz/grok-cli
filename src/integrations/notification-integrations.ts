@@ -122,6 +122,7 @@ export class NotificationManager extends EventEmitter {
   private lastNotificationTime: number = 0;
   private notificationCount: number = 0;
   private batchTimer: NodeJS.Timeout | null = null;
+  private rateLimitTimer: NodeJS.Timeout | null = null;
 
   constructor(config: NotificationConfig = {}) {
     super();
@@ -139,7 +140,7 @@ export class NotificationManager extends EventEmitter {
     };
 
     // Reset rate limit counter every minute
-    setInterval(() => {
+    this.rateLimitTimer = setInterval(() => {
       this.notificationCount = 0;
     }, 60000);
   }
@@ -460,6 +461,10 @@ export class NotificationManager extends EventEmitter {
    * Close notification manager
    */
   close(): void {
+    if (this.rateLimitTimer) {
+      clearInterval(this.rateLimitTimer);
+      this.rateLimitTimer = null;
+    }
     if (this.batchTimer) {
       clearTimeout(this.batchTimer);
       this.batchTimer = null;

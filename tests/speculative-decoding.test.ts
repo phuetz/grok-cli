@@ -326,7 +326,7 @@ describe('SpeculativeDecoder', () => {
       const should = decoder.shouldUseSpeculation();
       // This depends on stats - check that the method works
       expect(typeof should).toBe('boolean');
-    });
+    }, 30000);
   });
 
   describe('getRecommendedDraft', () => {

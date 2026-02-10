@@ -555,21 +555,25 @@ export class BrowserController extends EventEmitter {
         reject(new Error('Timeout waiting for browser to start'));
       }, this.options.timeout ?? 30000);
 
-      this.process!.stderr!.on('data', (data: Buffer) => {
+      const onData = (data: Buffer) => {
         const match = data.toString().match(/ws:\/\/[^\s]+/);
         if (match) {
           clearTimeout(timeout);
+          this.process!.stderr!.removeListener('data', onData);
           resolve(match[0]);
         }
-      });
+      };
+      this.process!.stderr!.on('data', onData);
 
-      this.process!.on('error', (err) => {
+      this.process!.once('error', (err) => {
         clearTimeout(timeout);
+        this.process!.stderr!.removeListener('data', onData);
         reject(err);
       });
 
-      this.process!.on('exit', (code) => {
+      this.process!.once('exit', (code) => {
         clearTimeout(timeout);
+        this.process!.stderr!.removeListener('data', onData);
         reject(new Error(`Browser exited with code ${code}`));
       });
     });

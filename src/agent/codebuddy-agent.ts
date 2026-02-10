@@ -868,6 +868,7 @@ export class CodeBuddyAgent extends BaseAgent {
    * Should be called when the agent is no longer needed
    */
   dispose(): void {
+    this.repairCoordinator.removeAllListeners();
     this.peerRoutingConfig = null;
     super.dispose();
   }

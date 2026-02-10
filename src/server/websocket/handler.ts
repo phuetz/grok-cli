@@ -17,6 +17,14 @@ import { enqueueMessage } from '../../channels/index.js';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AgentInstance = any;
 
+// Rate limit configuration
+const RATE_LIMITS = {
+  authAttemptsMax: 5,       // Max auth attempts per window
+  authWindowMs: 60000,      // 1 minute window for auth
+  messagesPerMinute: 60,    // Max messages per minute
+  toolExecutionsPerMinute: 20, // Max tool executions per minute
+};
+
 // Connection state
 interface ConnectionState {
   id: string;
@@ -28,6 +36,13 @@ interface ConnectionState {
   agent?: AgentInstance;
   agentInitializing?: Promise<void>;
   streaming: boolean;
+  // Rate limiting
+  authAttempts: number;
+  authWindowStart: number;
+  messageCount: number;
+  messageWindowStart: number;
+  toolCount: number;
+  toolWindowStart: number;
 }
 
 // Active connections
@@ -64,6 +79,25 @@ function send(ws: WebSocket, message: WebSocketResponse): void {
 }
 
 /**
+ * Check and increment rate limit counter. Returns true if within limit.
+ */
+function checkRateLimit(
+  state: ConnectionState,
+  counter: 'authAttempts' | 'messageCount' | 'toolCount',
+  windowField: 'authWindowStart' | 'messageWindowStart' | 'toolWindowStart',
+  maxCount: number,
+  windowMs: number
+): boolean {
+  const now = Date.now();
+  if (now - state[windowField] > windowMs) {
+    state[counter] = 0;
+    state[windowField] = now;
+  }
+  state[counter]++;
+  return state[counter] <= maxCount;
+}
+
+/**
  * Send error to client
  */
 function sendError(ws: WebSocket, code: string, message: string, id?: string): void {
@@ -79,6 +113,11 @@ function sendError(ws: WebSocket, code: string, message: string, id?: string): v
  * Handle authentication message
  */
 messageHandlers.set('authenticate', async (ws, state, payload) => {
+  if (!checkRateLimit(state, 'authAttempts', 'authWindowStart', RATE_LIMITS.authAttemptsMax, RATE_LIMITS.authWindowMs)) {
+    sendError(ws, 'RATE_LIMITED', 'Too many authentication attempts. Please wait before retrying.');
+    return;
+  }
+
   const { token, apiKey } = payload as AuthPayload;
 
   if (apiKey) {
@@ -131,6 +170,11 @@ messageHandlers.set('chat', async (ws, state, payload) => {
 
   if (!state.scopes.includes('chat') && !state.scopes.includes('admin')) {
     sendError(ws, 'FORBIDDEN', 'Chat scope required');
+    return;
+  }
+
+  if (!checkRateLimit(state, 'messageCount', 'messageWindowStart', RATE_LIMITS.messagesPerMinute, 60000)) {
+    sendError(ws, 'RATE_LIMITED', 'Message rate limit exceeded. Please slow down.');
     return;
   }
 
@@ -257,6 +301,11 @@ messageHandlers.set('execute_tool', async (ws, state, payload) => {
 
   if (!state.scopes.includes('tools:execute') && !state.scopes.includes('admin')) {
     sendError(ws, 'FORBIDDEN', 'Tool execution scope required');
+    return;
+  }
+
+  if (!checkRateLimit(state, 'toolCount', 'toolWindowStart', RATE_LIMITS.toolExecutionsPerMinute, 60000)) {
+    sendError(ws, 'RATE_LIMITED', 'Tool execution rate limit exceeded. Please slow down.');
     return;
   }
 
@@ -406,12 +455,19 @@ export async function setupWebSocket(
   });
 
   wss.on('connection', (ws: WebSocket, _req) => {
+    const now = Date.now();
     const state: ConnectionState = {
       id: generateConnectionId(),
       authenticated: !config.authEnabled, // Auto-auth if auth disabled
       scopes: config.authEnabled ? [] : ['chat', 'tools', 'sessions', 'memory'],
-      lastActivity: Date.now(),
+      lastActivity: now,
       streaming: false,
+      authAttempts: 0,
+      authWindowStart: now,
+      messageCount: 0,
+      messageWindowStart: now,
+      toolCount: 0,
+      toolWindowStart: now,
     };
 
     connections.set(ws, state);
