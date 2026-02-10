@@ -70,9 +70,14 @@ export class MCPClient extends EventEmitter {
       try {
         const content = fs.readFileSync(this.configPath, 'utf-8');
         const config = JSON.parse(content);
-        return config.servers || [];
+        if (!Array.isArray(config.servers)) {
+          logger.warn(`Invalid MCP config in ${this.configPath}: 'servers' must be an array, returning empty list`);
+          return [];
+        }
+        return config.servers;
       } catch (error) {
-        logger.error(`Failed to load MCP config: ${error instanceof Error ? error.message : String(error)}`);
+        logger.error(`Failed to load project MCP config from ${this.configPath}: ${getErrorMessage(error)}`);
+        return [];
       }
     }
 
@@ -82,9 +87,14 @@ export class MCPClient extends EventEmitter {
       try {
         const content = fs.readFileSync(userConfigPath, 'utf-8');
         const config = JSON.parse(content);
-        return config.servers || [];
+        if (!Array.isArray(config.servers)) {
+          logger.warn(`Invalid MCP config in ${userConfigPath}: 'servers' must be an array, returning empty list`);
+          return [];
+        }
+        return config.servers;
       } catch (error) {
-        logger.error(`Failed to load user MCP config: ${error instanceof Error ? error.message : String(error)}`);
+        logger.error(`Failed to load user MCP config from ${userConfigPath}: ${getErrorMessage(error)}`);
+        return [];
       }
     }
 
@@ -100,7 +110,12 @@ export class MCPClient extends EventEmitter {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    fs.writeFileSync(this.configPath, JSON.stringify({ servers }, null, 2));
+    try {
+      fs.writeFileSync(this.configPath, JSON.stringify({ servers }, null, 2));
+    } catch (error) {
+      logger.error(`Failed to save MCP config to ${this.configPath}: ${getErrorMessage(error)}`);
+      throw new Error(`Failed to save MCP configuration. Error: ${getErrorMessage(error)}`);
+    }
   }
 
   /**
@@ -287,6 +302,7 @@ class MCPServerConnection extends EventEmitter {
   private requestId = 0;
   private pendingRequests: Map<number, { resolve: (value: unknown) => void; reject: (error: unknown) => void }> = new Map();
   private buffer = '';
+  private isInitializing = false; // Add flag to track initialization state
 
   constructor(config: MCPServerConfig) {
     super();
@@ -295,11 +311,40 @@ class MCPServerConnection extends EventEmitter {
 
   async start(): Promise<void> {
     return new Promise((resolve, reject) => {
+      this.isInitializing = true;
+      let settled = false;
+
+      const settle = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        this.isInitializing = false;
+        if (error) reject(error);
+        else resolve();
+      };
+
       const env = { ...process.env, ...this.config.env };
 
       this.process = spawn(this.config.command, this.config.args || [], {
         env,
         stdio: ['pipe', 'pipe', 'pipe']
+      });
+
+      this.process.on('error', (error) => {
+        logger.error(`[MCP:${this.config.name}] Process error: ${getErrorMessage(error)}`);
+        const err = new Error(`Failed to start MCP server "${this.config.name}": ${getErrorMessage(error)}`);
+        if (this.isInitializing) {
+          settle(err);
+        } else {
+          this.emit('error', err);
+        }
+      });
+
+      this.process.on('close', (code) => {
+        logger.debug(`[MCP:${this.config.name}] Process closed with code: ${code}`);
+        if (this.isInitializing) {
+          settle(new Error(`MCP server "${this.config.name}" exited prematurely with code ${code} during startup.`));
+        }
+        this.emit('close', code);
       });
 
       this.process.stdout?.on('data', (data) => {
@@ -310,18 +355,9 @@ class MCPServerConnection extends EventEmitter {
         logger.debug(`[MCP:${this.config.name}] ${data.toString().trim()}`);
       });
 
-      this.process.on('error', (error) => {
-        reject(error);
-      });
-
-      this.process.on('close', (code) => {
-        this.emit('close', code);
-      });
-
-      // Initialize the connection
       this.initialize()
-        .then(() => resolve())
-        .catch(reject);
+        .then(() => settle())
+        .catch((error) => settle(error));
     });
   }
 
@@ -368,6 +404,11 @@ class MCPServerConnection extends EventEmitter {
   }
 
   private handleMessage(message: JSONRPCResponse): void {
+    if (message.id === undefined) {
+      logger.debug(`[MCP:${this.config.name}] Received JSON-RPC message without an ID: ${JSON.stringify(message)}`);
+      return; // Ignore notifications or malformed responses without an ID
+    }
+
     const pending = this.pendingRequests.get(message.id);
     if (pending) {
       this.pendingRequests.delete(message.id);

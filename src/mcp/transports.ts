@@ -1,7 +1,7 @@
 import { Transport, TransportSendOptions } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
-import { ChildProcess } from "child_process";
+
 import { EventEmitter } from "events";
 import axios, { AxiosInstance } from "axios";
 import { logger } from '../utils/logger.js';
@@ -25,7 +25,6 @@ export interface MCPTransport {
 
 export class StdioTransport implements MCPTransport {
   private transport?: StdioClientTransport;
-  private process?: ChildProcess;
 
   constructor(private config: TransportConfig) {
     if (!config.command) {
@@ -59,11 +58,7 @@ export class StdioTransport implements MCPTransport {
       await this.transport.close();
       this.transport = undefined;
     }
-
-    if (this.process) {
-      this.process.kill();
-      this.process = undefined;
-    }
+    // The StdioClientTransport from the SDK is expected to terminate the child process.
   }
 
   getType(): TransportType {

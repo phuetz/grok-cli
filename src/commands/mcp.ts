@@ -5,6 +5,17 @@ import { MCPServerConfig } from '../mcp/client.js';
 import { getErrorMessage } from '../types/index.js';
 import chalk from 'chalk';
 import { logger } from "../utils/logger.js";
+import readline from 'readline';
+
+export function confirmPrompt(prompt: string): Promise<boolean> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question(prompt, (answer) => {
+      rl.close();
+      resolve(answer.trim().toLowerCase() === 'y');
+    });
+  });
+}
 
 export function createMCPCommand(): Command {
   const mcpCommand = new Command('mcp');
@@ -76,6 +87,16 @@ export function createMCPCommand(): Command {
           if (!options.command) {
             logger.error(chalk.red('Error: --command is required for stdio transport'));
             process.exit(1);
+          }
+
+          console.log(chalk.yellow('\nSecurity notice: This MCP server will execute a command on your system.'));
+          console.log(chalk.yellow(`  Command: ${options.command} ${(options.args || []).join(' ')}`));
+          console.log(chalk.yellow('  Only add MCP servers from trusted sources.\n'));
+
+          const confirmed = await confirmPrompt('Do you want to proceed? (y/N): ');
+          if (!confirmed) {
+            console.log('MCP server addition cancelled.');
+            return;
           }
         } else if (transportType === 'http' || transportType === 'sse' || transportType === 'streamable_http') {
           if (!options.url) {
@@ -166,6 +187,19 @@ export function createMCPCommand(): Command {
             serverConfig.transport.type = config.transport as 'stdio' | 'http' | 'sse';
           } else if (typeof config.transport === 'object') {
             serverConfig.transport = { ...serverConfig.transport, ...config.transport };
+          }
+        }
+
+        // Security confirmation for stdio transport
+        if (serverConfig.transport?.type === 'stdio' && serverConfig.transport.command) {
+          console.log(chalk.yellow('\nSecurity notice: This MCP server will execute a command on your system.'));
+          console.log(chalk.yellow(`  Command: ${serverConfig.transport.command} ${(serverConfig.transport.args || []).join(' ')}`));
+          console.log(chalk.yellow('  Only add MCP servers from trusted sources.\n'));
+
+          const confirmed = await confirmPrompt('Do you want to proceed? (y/N): ');
+          if (!confirmed) {
+            console.log('MCP server addition cancelled.');
+            return;
           }
         }
 

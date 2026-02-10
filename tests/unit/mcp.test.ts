@@ -41,6 +41,14 @@ jest.mock('../../src/utils/logger.js', () => ({
   },
 }));
 
+// Mock readline to auto-confirm security prompts
+jest.mock('readline', () => ({
+  createInterface: () => ({
+    question: (_prompt: string, cb: (answer: string) => void) => cb('y'),
+    close: jest.fn(),
+  }),
+}));
+
 import { createMCPCommand } from '../../src/commands/mcp';
 import * as mcpConfig from '../../src/mcp/config';
 import * as tools from '../../src/codebuddy/tools';
