@@ -18,6 +18,7 @@ import {
 import { logger } from "../utils/logger.js";
 
 import { getToolRegistry } from "../tools/registry.js";
+import { applyToolFilter } from "../utils/tool-filter.js";
 import { TOOL_METADATA } from "../tools/metadata.js";
 import { getPluginMarketplace } from "../plugins/marketplace.js";
 
@@ -286,6 +287,9 @@ export async function getAllCodeBuddyTools(): Promise<CodeBuddyTool[]> {
       selector.registerMCPTool(tool); // Reusing registerMCPTool for external tools
     }
   }
+
+  // Apply CLI tool filter (--enabled-tools, --disabled-tools, --allowed-tools)
+  allTools = applyToolFilter(allTools);
 
   return allTools;
 }
