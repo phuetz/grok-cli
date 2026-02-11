@@ -10,10 +10,12 @@ import {
   getToolHooksManager,
   type ToolHookContext,
   type ToolHookResult,
+} from './tool-hooks.js';
+import {
   type LLMProvider,
   sanitizeResult,
   type ToolResultInput,
-} from './index.js';
+} from './result-sanitizer.js';
 import { logger } from '../../utils/logger.js';
 
 // Track current provider for sanitization

@@ -8,7 +8,13 @@
  */
 
 // Persistent Memory (markdown files)
-export * from "./persistent-memory.js";
+export {
+  PersistentMemoryManager,
+  getMemoryManager,
+  initializeMemory,
+  type Memory,
+  type MemoryCategory,
+} from "./persistent-memory.js";
 
 // Enhanced Memory (SQLite + embeddings)
 export {
@@ -71,4 +77,14 @@ export {
 } from "./memory-lifecycle-hooks.js";
 
 // Semantic Memory Search
-export * from "./semantic-memory-search.js";
+export {
+  SemanticMemorySearch,
+  getSemanticMemorySearch,
+  resetSemanticMemorySearch,
+  searchAndRetrieve,
+  type SearchResult,
+  type SearchOptions,
+  type RetrievalOptions,
+  type RetrievalResult,
+  type MemorySearchConfig,
+} from "./semantic-memory-search.js";

@@ -66,13 +66,75 @@ export { CodeBuddyAgent } from "./codebuddy-agent.js";
 export type * from "./types.js";
 
 // Streaming Module
-export * from "./streaming/index.js";
+export {
+  StreamingHandler,
+  reduceStreamChunk,
+  type StreamingConfig,
+  type RawStreamingChunk,
+  type ProcessedChunk,
+  type ExtractedToolCallsResult,
+  type AccumulatedMessage,
+  type ExtractedToolCall,
+} from "./streaming/index.js";
 
 // Execution Module
-export * from "./execution/index.js";
+export {
+  ToolSelectionStrategy,
+  getToolSelectionStrategy,
+  resetToolSelectionStrategy,
+  RepairCoordinator,
+  createRepairCoordinator,
+  getRepairCoordinator,
+  resetRepairCoordinator,
+  DEFAULT_REPAIR_CONFIG,
+  DEFAULT_REPAIR_PATTERNS,
+  ToolExecutionOrchestrator,
+  createToolOrchestrator,
+  getToolOrchestrator,
+  resetToolOrchestrator,
+  DEFAULT_ORCHESTRATOR_CONFIG,
+  ToolDependencyGraph,
+  createToolDependencyGraph,
+  getToolDependencyGraph,
+  resetToolDependencyGraph,
+  TOOL_METADATA,
+  type ToolSelectionConfig,
+  type SelectionResult,
+  type ToolCategory,
+  type QueryClassification,
+  type ToolSelectionResult,
+  type ToolSelectionMetrics,
+  type RepairConfig,
+  type RepairResult,
+  type RepairCoordinatorEvents,
+  type TestExecutor,
+  type CommandExecutor,
+  type FileReader,
+  type FileWriter,
+  type OrchestratorConfig,
+  type BatchExecutionResult,
+  type ExecutionMetrics,
+  type OrchestratorEvents,
+  type ResourceType,
+  type AccessMode,
+  type ResourceAccess,
+  type ToolMetadata,
+  type GraphNode,
+  type ExecutionPlan,
+} from "./execution/index.js";
 
 // Context Module
-export * from "./context/index.js";
+export {
+  MemoryContextBuilder,
+  createMemoryContextBuilder,
+  getMemoryContextBuilder,
+  resetMemoryContextBuilder,
+  DEFAULT_MEMORY_CONTEXT_CONFIG,
+  type MemoryContextConfig,
+  type ContextItem,
+  type BuiltContext,
+  type MemoryContextEvents,
+} from "./context/index.js";
 
 // Legacy imports
 import { TextEditorTool, BashTool } from '../tools/index.js';

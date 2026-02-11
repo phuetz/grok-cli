@@ -161,7 +161,6 @@ export async function handleTools(args: string[]): Promise<CommandHandlerResult>
       parsePatterns,
     } = await import('../../utils/tool-filter.js');
 
-    // Use getAllCodeBuddyTools() instead of deprecated CODEBUDDY_TOOLS array
     const allTools = await getAllCodeBuddyTools();
 
     switch (action) {

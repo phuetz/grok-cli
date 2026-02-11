@@ -10,17 +10,63 @@
  * @module Commands
  */
 
-export * from "./slash-commands.js";
-export * from "./custom-commands.js";
-export * from "./enhanced-command-handler.js";
+// Slash commands
+export {
+  SlashCommandManager,
+  getSlashCommandManager,
+  resetSlashCommandManager,
+} from "./slash-commands.js";
+export type {
+  SlashCommand,
+  SlashCommandArgument,
+  SlashCommandResult,
+} from "./slash-commands.js";
 
-// New features inspired by other CLI tools (2025)
+// Custom commands
+export {
+  CustomCommandLoader,
+  getCustomCommandLoader,
+  type CustomCommand,
+} from "./custom-commands.js";
+
+// Enhanced command handler
+export {
+  EnhancedCommandHandler,
+  getEnhancedCommandHandler,
+  resetEnhancedCommandHandler,
+  type CommandHandlerResult,
+} from "./enhanced-command-handler.js";
+
 // Gemini CLI inspired
-export * from "./compress.js";
-export * from "./shell-prefix.js";
+export {
+  compressContext,
+  createCompressedMessages,
+  formatCompressResult,
+  type CompressResult,
+} from "./compress.js";
+
+export {
+  isShellCommand,
+  extractCommand,
+  executeShellCommand,
+  executeInteractiveCommand,
+  type ShellResult,
+} from "./shell-prefix.js";
 
 // Aider inspired
-export * from "./watch-mode.js";
+export {
+  WatchModeManager,
+  extractAIComments,
+  removeAIComment,
+  type AIComment,
+  type WatchConfig,
+} from "./watch-mode.js";
 
 // GitHub Copilot CLI inspired
-export * from "./delegate.js";
+export {
+  generateBranchName,
+  isGitRepo,
+  getCurrentBranch,
+  type DelegateConfig,
+  type DelegateResult,
+} from "./delegate.js";

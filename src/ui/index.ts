@@ -2,20 +2,61 @@
  * UI module - Terminal UI components (React/Ink)
  */
 
-// Main app
-export * from "./app.js";
+// Main app (only has default export, not re-exported by barrel)
+// To use: import App from './ui/app.js'
 
 // Components
-export * from "./components/AccessibleOutput.js";
-export * from "./components/ApiKeyInput.js";
-export * from "./components/ChatHistory.js";
-export * from "./components/ChatInput.js";
-export * from "./components/ChatInterface.js";
-export * from "./components/CommandSuggestions.js";
-export * from "./components/ConfirmationDialog.js";
-export * from "./components/DiffRenderer.js";
-export * from "./components/EnhancedChatInput.js";
-export * from "./components/EnhancedConfirmationDialog.js";
+export {
+  SectionHeader,
+  StatusWithText,
+  AccessibleProgress,
+  KeyboardShortcut,
+  HelpPanel,
+  AccessibleList,
+  DefinitionList,
+  Announcement,
+  AccessibleError,
+  AccessibleSuccess,
+  AccessibleTable,
+  AccessibleCodeBlock,
+  Divider,
+} from "./components/AccessibleOutput.js";
+
+// ApiKeyInput (only has default export, not re-exported by barrel)
+// To use: import ApiKeyInput from './ui/components/ApiKeyInput.js'
+
+export { ChatHistory } from "./components/ChatHistory.js";
+
+export { ChatInput } from "./components/ChatInput.js";
+
+// ChatInterface (only has default export, not re-exported by barrel)
+// To use: import ChatInterface from './ui/components/ChatInterface.js'
+
+export {
+  MAX_SUGGESTIONS,
+  VISIBLE_SUGGESTIONS,
+  filterCommandSuggestions,
+  CommandSuggestions,
+} from "./components/CommandSuggestions.js";
+
+// ConfirmationDialog (only has default export, not re-exported by barrel)
+// To use: import ConfirmationDialog from './ui/components/ConfirmationDialog.js'
+
+export {
+  parseDiffWithLineNumbers,
+  DiffRenderer,
+} from "./components/DiffRenderer.js";
+
+export {
+  EnhancedChatInput,
+  useInputHistory,
+} from "./components/EnhancedChatInput.js";
+
+export {
+  EnhancedConfirmationDialog,
+  type OperationType,
+} from "./components/EnhancedConfirmationDialog.js";
+
 // enhanced-spinners has overlapping Divider - export selectively
 export {
   EnhancedSpinner,
@@ -29,18 +70,55 @@ export {
   Badge,
   type SpinnerStyle,
 } from "./components/EnhancedSpinners.js";
-export * from "./components/ErrorBoundary.js";
-export * from "./components/FuzzyPicker.js";
+
+export {
+  ErrorBoundary,
+  withErrorBoundary,
+  StreamingErrorBoundary,
+} from "./components/ErrorBoundary.js";
+
+export {
+  FuzzyPicker,
+  MultiSelectPicker,
+  type PickerItem,
+} from "./components/FuzzyPicker.js";
+
 // Note: help-system has some overlapping types - import directly if needed
-export * from "./components/InkTable.js";
-export * from "./components/LoadingSpinner.js";
-export * from "./components/McpStatus.js";
-export * from "./components/ModelSelection.js";
-export * from "./components/MultiStepProgress.js";
-export * from "./components/StructuredOutput.js";
+export {
+  InkTable,
+  MarkdownTable,
+  type ScalarValue,
+  type ScalarDict,
+  type TableProps,
+  type MarkdownTableData,
+} from "./components/InkTable.js";
+
+export { LoadingSpinner } from "./components/LoadingSpinner.js";
+
+export { MCPStatus } from "./components/McpStatus.js";
+
+export { ModelSelection } from "./components/ModelSelection.js";
+
+export {
+  MultiStepProgress,
+  useStepProgress,
+  type StepStatus,
+  type ProgressStep,
+} from "./components/MultiStepProgress.js";
+
+export {
+  StructuredOutput,
+  useRenderManager,
+  TestResults,
+  Weather,
+  CodeStructure,
+} from "./components/StructuredOutput.js";
 
 // HTTP Server
-export * from "./http-server/server.js";
+export {
+  HttpServer,
+  type HttpServerOptions,
+} from "./http-server/server.js";
 
 // Utils
-export * from "./utils/colors.js";
+export { Colors } from "./utils/colors.js";

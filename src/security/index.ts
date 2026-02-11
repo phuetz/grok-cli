@@ -10,11 +10,35 @@
  * - Command validation and sanitization
  */
 
-// Tool Policy System (new)
-export * from './tool-policy/index.js';
+// Tool Policy System
+export type {
+  ToolGroup, PolicyProfile, PolicyAction, PolicyRule, PolicyCondition,
+  ProfileDefinition, PolicyDecision, PolicyContext, PolicySource,
+  PolicyConfig, PolicyEvents,
+} from './tool-policy/index.js';
+export {
+  ALL_TOOL_GROUPS, DEFAULT_POLICY_CONFIG, getParentGroup, isChildGroup,
+  TOOL_GROUPS, getToolGroups, getToolsInGroup, isToolInGroup,
+  registerToolGroups, unregisterToolGroups, getAllRegisteredTools, getGroupStats,
+  PROFILES, getProfile, getProfileNames, getProfileRules, formatProfile, getProfileComparison,
+  PolicyResolver, resolveMultiple, filterByPolicy, getAllowedTools,
+  PolicyManager, getPolicyManager, resetPolicyManager,
+  isToolAllowed, toolRequiresConfirmation, isToolDenied,
+} from './tool-policy/index.js';
 
-// Bash Allowlist System (new)
-export * from './bash-allowlist/index.js';
+// Bash Allowlist System
+export type {
+  PatternType, ApprovalDecision, ApprovalPattern, PatternSource,
+  AllowlistCheckResult, ApprovalPromptOptions, ApprovalPromptResult,
+  AllowlistConfig, AllowlistEvents,
+} from './bash-allowlist/index.js';
+export {
+  DEFAULT_ALLOWLIST_CONFIG, DEFAULT_SAFE_PATTERNS, DEFAULT_DENY_PATTERNS,
+  matchPattern, matchApprovalPattern, findBestMatch, validatePattern,
+  suggestPattern, extractBaseCommand, isPatternDangerous,
+  AllowlistStore, getAllowlistStore, resetAllowlistStore,
+  ApprovalFlowManager, getApprovalFlowManager, resetApprovalFlowManager,
+} from './bash-allowlist/index.js';
 
 // Export specific items from approval-modes to avoid conflicts
 export {
@@ -31,7 +55,14 @@ export type {
   ApprovalModeConfig
 } from './approval-modes.js';
 
-export * from './sandbox.js';
+// Sandbox
+export {
+  SandboxManager,
+  getSandboxManager,
+  resetSandboxManager,
+  type SandboxConfig,
+  type SandboxResult,
+} from './sandbox.js';
 
 // Credential management
 export {
@@ -50,8 +81,29 @@ export type {
 export { getSecurityModeManager, SecurityModeManager } from './security-modes.js';
 export type { SecurityMode } from './security-modes.js';
 
-export * from './permission-config.js';
-export * from './data-redaction.js';
+// Permission config
+export {
+  PermissionManager,
+  getPermissionManager,
+  resetPermissionManager,
+  type PermissionConfig,
+  type PermissionCheckResult,
+} from './permission-config.js';
+
+// Data redaction
+export {
+  DataRedactionEngine,
+  getDataRedactionEngine,
+  resetDataRedactionEngine,
+  redactSecrets,
+  containsSecrets,
+  type RedactionPattern,
+  type RedactionCategory,
+  type RedactionResult,
+  type RedactionMatch,
+  type RedactionStats,
+  type RedactionConfig,
+} from './data-redaction.js';
 
 // Security Audit (OpenClaw-inspired)
 export type {

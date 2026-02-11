@@ -157,7 +157,7 @@ jest.mock('../../src/utils/tool-filter', () => ({
 
 // Mock tools
 jest.mock('../../src/codebuddy/tools', () => ({
-  CODEBUDDY_TOOLS: [
+  CORE_TOOLS: [
     { function: { name: 'bash' } },
     { function: { name: 'search' } },
     { function: { name: 'file_viewer' } },

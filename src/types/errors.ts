@@ -5,14 +5,21 @@
  * This re-export exists only for backward compatibility and will be removed in a future version.
  */
 
-// Log deprecation warning (only once per process)
-const warned = new Set<string>();
-if (!warned.has('types/errors')) {
-  warned.add('types/errors');
-  console.warn(
-    '[DEPRECATED] Importing from "types/errors" is deprecated. ' +
-    'Please update your imports to use "errors/index.js" instead.'
-  );
-}
-
-export * from '../errors/index.js';
+// Re-export all errors explicitly for backward compatibility
+export {
+  CodeBuddyError,
+  ContextLimitExceededError,
+  SandboxViolationError,
+  ConfirmationDeniedError,
+  ToolExecutionError,
+  ToolValidationError,
+  ToolNotFoundError,
+  ApiError,
+  RateLimitError,
+  AuthenticationError,
+  getErrorMessage,
+  isCodeBuddyError,
+  isOperationalError,
+  wrapError,
+  createApiError,
+} from '../errors/index.js';

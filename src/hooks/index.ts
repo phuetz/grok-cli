@@ -8,16 +8,30 @@
  * - React hooks for input handling
  */
 
-export * from "./hook-manager.js";
+export {
+  HookManager,
+  getHookManager,
+  type HookEvent,
+  type Hook,
+} from "./hook-manager.js";
 export {
   HookSystem,
   getHookSystem,
   resetHookSystem,
   type HookType,
 } from "./hook-system.js";
-export * from "./use-enhanced-input.js";
-export * from "./use-input-handler.js";
-export * from "./use-input-history.js";
+export {
+  useEnhancedInput,
+  type Key,
+  type EnhancedInputHook,
+} from "./use-enhanced-input.js";
+
+export { useInputHandler } from "./use-input-handler.js";
+
+export {
+  useInputHistory,
+  type InputHistoryHook,
+} from "./use-input-history.js";
 
 // Lifecycle hooks (pre/post operation hooks)
 export {

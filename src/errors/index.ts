@@ -1,7 +1,26 @@
-export * from './base-error.js';
-export * from './agent-error.js';
-export * from './tool-error.js';
-export * from './provider-error.js';
+// Base error
+export { CodeBuddyError } from './base-error.js';
+
+// Agent errors
+export {
+  ContextLimitExceededError,
+  SandboxViolationError,
+  ConfirmationDeniedError,
+} from './agent-error.js';
+
+// Tool errors
+export {
+  ToolExecutionError,
+  ToolValidationError,
+  ToolNotFoundError,
+} from './tool-error.js';
+
+// Provider errors
+export {
+  ApiError,
+  RateLimitError,
+  AuthenticationError,
+} from './provider-error.js';
 
 import { CodeBuddyError } from './base-error.js';
 import { ApiError, RateLimitError, AuthenticationError } from './provider-error.js';

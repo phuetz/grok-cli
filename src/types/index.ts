@@ -120,7 +120,31 @@ export interface ConfirmationState {
 }
 
 // Cache types
-export * from './cache-types.js';
+export type {
+  BaseCacheEntry,
+  TimedCacheEntry,
+  LRUCacheEntry,
+  FullCacheEntry,
+  BaseCacheStats,
+  DetailedCacheStats,
+  CategorizedCacheStats,
+  BaseCacheConfig,
+  LRUCacheConfig,
+  SemanticCacheConfig,
+  CacheLookupResult,
+  CacheEvent,
+  ICache,
+  IAsyncCache,
+} from './cache-types.js';
+export {
+  isCacheEntry,
+  isExpired,
+  calculateHitRate,
+  createCacheEntry,
+  createTimedCacheEntry,
+  createLRUCacheEntry,
+  createCacheStats,
+} from './cache-types.js';
 
 // API types
 export type { ChatMessage, MessageContent, MessageContentPart, ToolCall } from './api.js';

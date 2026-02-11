@@ -73,7 +73,11 @@ jest.mock('../../src/utils/logger', () => ({
 }));
 
 import {
-  CODEBUDDY_TOOLS,
+  CORE_TOOLS,
+  SEARCH_TOOLS,
+  TODO_TOOLS,
+  WEB_TOOLS,
+  ADVANCED_TOOLS,
   getMCPManager,
   initializeMCPServers,
   convertMCPToolToCodeBuddyTool,
@@ -83,11 +87,14 @@ import {
   classifyQuery,
   getToolSelector,
 } from '../../src/codebuddy/tools';
+
+// Combined array matching the old CODEBUDDY_TOOLS behavior
+const ALL_TOOLS = [...CORE_TOOLS, ...SEARCH_TOOLS, ...TODO_TOOLS, ...WEB_TOOLS, ...ADVANCED_TOOLS];
 import { MCPManager, MCPTool } from '../../src/mcp/client';
 import { loadMCPConfig } from '../../src/mcp/config';
 import { CodeBuddyTool } from '../../src/codebuddy/client';
 
-describe('CODEBUDDY_TOOLS', () => {
+describe('ALL_TOOLS', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete process.env.MORPH_API_KEY;
@@ -95,12 +102,12 @@ describe('CODEBUDDY_TOOLS', () => {
 
   describe('Tool Array', () => {
     it('should export an array of tools', () => {
-      expect(Array.isArray(CODEBUDDY_TOOLS)).toBe(true);
-      expect(CODEBUDDY_TOOLS.length).toBeGreaterThan(0);
+      expect(Array.isArray(ALL_TOOLS)).toBe(true);
+      expect(ALL_TOOLS.length).toBeGreaterThan(0);
     });
 
     it('should include core tools', () => {
-      const toolNames = CODEBUDDY_TOOLS.map(t => t.function.name);
+      const toolNames = ALL_TOOLS.map(t => t.function.name);
 
       expect(toolNames).toContain('view_file');
       expect(toolNames).toContain('create_file');
@@ -109,27 +116,27 @@ describe('CODEBUDDY_TOOLS', () => {
     });
 
     it('should include search tools', () => {
-      const toolNames = CODEBUDDY_TOOLS.map(t => t.function.name);
+      const toolNames = ALL_TOOLS.map(t => t.function.name);
 
       expect(toolNames).toContain('search');
     });
 
     it('should include todo tools', () => {
-      const toolNames = CODEBUDDY_TOOLS.map(t => t.function.name);
+      const toolNames = ALL_TOOLS.map(t => t.function.name);
 
       expect(toolNames).toContain('create_todo_list');
       expect(toolNames).toContain('update_todo_list');
     });
 
     it('should include web tools', () => {
-      const toolNames = CODEBUDDY_TOOLS.map(t => t.function.name);
+      const toolNames = ALL_TOOLS.map(t => t.function.name);
 
       expect(toolNames).toContain('web_search');
       expect(toolNames).toContain('web_fetch');
     });
 
     it('should have valid tool structures', () => {
-      for (const tool of CODEBUDDY_TOOLS) {
+      for (const tool of ALL_TOOLS) {
         expect(tool.type).toBe('function');
         expect(tool.function).toBeDefined();
         expect(tool.function.name).toBeDefined();
@@ -144,7 +151,7 @@ describe('CODEBUDDY_TOOLS', () => {
     });
 
     it('should have unique tool names', () => {
-      const toolNames = CODEBUDDY_TOOLS.map(t => t.function.name);
+      const toolNames = ALL_TOOLS.map(t => t.function.name);
       const uniqueNames = new Set(toolNames);
 
       expect(uniqueNames.size).toBe(toolNames.length);
@@ -153,7 +160,7 @@ describe('CODEBUDDY_TOOLS', () => {
 
   describe('Tool Parameters', () => {
     it('view_file should have path parameter', () => {
-      const viewFile = CODEBUDDY_TOOLS.find(t => t.function.name === 'view_file');
+      const viewFile = ALL_TOOLS.find(t => t.function.name === 'view_file');
 
       expect(viewFile).toBeDefined();
       expect(viewFile!.function.parameters.properties.path).toBeDefined();
@@ -161,7 +168,7 @@ describe('CODEBUDDY_TOOLS', () => {
     });
 
     it('create_file should have path and content parameters', () => {
-      const createFile = CODEBUDDY_TOOLS.find(t => t.function.name === 'create_file');
+      const createFile = ALL_TOOLS.find(t => t.function.name === 'create_file');
 
       expect(createFile).toBeDefined();
       expect(createFile!.function.parameters.properties.path).toBeDefined();
@@ -171,7 +178,7 @@ describe('CODEBUDDY_TOOLS', () => {
     });
 
     it('str_replace_editor should have path, old_str, and new_str parameters', () => {
-      const strReplace = CODEBUDDY_TOOLS.find(t => t.function.name === 'str_replace_editor');
+      const strReplace = ALL_TOOLS.find(t => t.function.name === 'str_replace_editor');
 
       expect(strReplace).toBeDefined();
       expect(strReplace!.function.parameters.properties.path).toBeDefined();
@@ -183,7 +190,7 @@ describe('CODEBUDDY_TOOLS', () => {
     });
 
     it('bash should have command parameter', () => {
-      const bash = CODEBUDDY_TOOLS.find(t => t.function.name === 'bash');
+      const bash = ALL_TOOLS.find(t => t.function.name === 'bash');
 
       expect(bash).toBeDefined();
       expect(bash!.function.parameters.properties.command).toBeDefined();
@@ -191,7 +198,7 @@ describe('CODEBUDDY_TOOLS', () => {
     });
 
     it('search should have query parameter', () => {
-      const search = CODEBUDDY_TOOLS.find(t => t.function.name === 'search');
+      const search = ALL_TOOLS.find(t => t.function.name === 'search');
 
       expect(search).toBeDefined();
       expect(search!.function.parameters.properties.query).toBeDefined();
@@ -500,7 +507,7 @@ describe('Morph Integration', () => {
   it('should not include edit_file when MORPH_API_KEY is not set', () => {
     delete process.env.MORPH_API_KEY;
 
-    const toolNames = CODEBUDDY_TOOLS.map(t => t.function.name);
+    const toolNames = ALL_TOOLS.map(t => t.function.name);
 
     expect(toolNames.length).toBeGreaterThan(0);
   });
@@ -508,13 +515,13 @@ describe('Morph Integration', () => {
 
 describe('Tool Description Quality', () => {
   it('should have meaningful descriptions for all tools', () => {
-    for (const tool of CODEBUDDY_TOOLS) {
+    for (const tool of ALL_TOOLS) {
       expect(tool.function.description.length).toBeGreaterThan(10);
     }
   });
 
   it('should have parameter descriptions where needed', () => {
-    for (const tool of CODEBUDDY_TOOLS) {
+    for (const tool of ALL_TOOLS) {
       const params = tool.function.parameters.properties;
 
       for (const [name, prop] of Object.entries(params)) {

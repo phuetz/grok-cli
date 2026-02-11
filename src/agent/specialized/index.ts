@@ -10,11 +10,49 @@
  * - CodeGuardianAgent: Code analysis, review, and improvement (CodeBuddynette)
  */
 
-export * from './types.js';
-export * from './pdf-agent.js';
-export * from './excel-agent.js';
-export * from './data-analysis-agent.js';
-export * from './sql-agent.js';
-export * from './archive-agent.js';
-export * from './code-guardian-agent.js';
-export * from './agent-registry.js';
+// Types
+export {
+  SpecializedAgent,
+  type AgentCapability,
+  type SpecializedAgentConfig,
+  type AgentTask,
+  type AgentResult,
+} from './types.js';
+
+// PDF Agent
+export { PDFAgent, getPDFAgent, createPDFAgent } from './pdf-agent.js';
+
+// Excel Agent
+export { ExcelAgent, getExcelAgent, createExcelAgent } from './excel-agent.js';
+
+// Data Analysis Agent
+export { DataAnalysisAgent, getDataAnalysisAgent, createDataAnalysisAgent } from './data-analysis-agent.js';
+
+// SQL Agent
+export { SQLAgent, getSQLAgent, createSQLAgent } from './sql-agent.js';
+
+// Archive Agent
+export { ArchiveAgent, getArchiveAgent, createArchiveAgent } from './archive-agent.js';
+
+// Code Guardian Agent (re-exports from code-guardian/ subdirectory)
+export {
+  CodeGuardianAgent, getCodeGuardianAgent, resetCodeGuardianAgent,
+  CODE_GUARDIAN_CONFIG, ACTION_HELP, SUPPORTED_ACTIONS,
+  formatSize, getSeverityIcon, groupIssuesBySeverity,
+  formatFileAnalysis, formatCodeAnalysis, formatRefactorSuggestions,
+  formatPatchPlan, formatPatchDiffs, formatIssuesList, formatDependencyGraph,
+} from './code-guardian-agent.js';
+export type {
+  CodeGuardianMode, IssueSeverity, IssueType, CodeIssue,
+  FileDependency, FileAnalysis, CodeAnalysis,
+  RefactorSuggestion, PatchStep, PatchPlan, PatchDiff,
+} from './code-guardian-agent.js';
+
+// Agent Registry
+export {
+  AgentRegistry,
+  getAgentRegistry,
+  initializeAgentRegistry,
+  type AgentRegistryConfig,
+  type AgentMatch,
+} from './agent-registry.js';

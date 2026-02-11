@@ -971,7 +971,6 @@ program
         });
         setToolFilter(filter);
 
-        // Use getAllCodeBuddyTools() instead of deprecated CODEBUDDY_TOOLS array
         const allTools = await getAllCodeBuddyTools();
         const result = filterTools(allTools, filter);
         console.log(formatFilterResult(result));

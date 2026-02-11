@@ -45,40 +45,19 @@ export interface PluginToolDefinition {
   };
 }
 
-// Re-export types and individual tools for backwards compatibility
+// Re-export types for backwards compatibility
 export type { CodeBuddyTool, JsonSchemaProperty };
-export * from "./tool-definitions/index.js";
+
+// Explicit re-exports from tool-definitions (no blanket export *)
+export {
+  CORE_TOOLS, MORPH_EDIT_TOOL, isMorphEnabled,
+  SEARCH_TOOLS, TODO_TOOLS, WEB_TOOLS, ADVANCED_TOOLS, MULTIMODAL_TOOLS,
+  COMPUTER_CONTROL_TOOLS, BROWSER_TOOLS, CANVAS_TOOLS,
+} from "./tool-definitions/index.js";
 
 // ============================================================================
 // Tool Registry Initialization
 // ============================================================================
-
-/**
- * Internal tools array for backward compatibility
- * @internal
- */
-const _CODEBUDDY_TOOLS_INTERNAL: CodeBuddyTool[] = [];
-
-// Track if deprecation warning has been shown
-let _codebuddyToolsDeprecationWarned = false;
-
-/**
- * Export dynamic tools array (lazy-initialized)
- * @deprecated Use getAllCodeBuddyTools() or ToolRegistry directly.
- * This export will be removed in a future version.
- */
-export const CODEBUDDY_TOOLS: CodeBuddyTool[] = new Proxy(_CODEBUDDY_TOOLS_INTERNAL, {
-  get(target, prop, receiver) {
-    if (!_codebuddyToolsDeprecationWarned && typeof prop === 'string' && prop !== 'length') {
-      _codebuddyToolsDeprecationWarned = true;
-      console.warn(
-        '[DEPRECATED] CODEBUDDY_TOOLS is deprecated. ' +
-        'Use getAllCodeBuddyTools() or ToolRegistry directly instead.'
-      );
-    }
-    return Reflect.get(target, prop, receiver);
-  }
-});
 
 let isRegistryInitialized = false;
 
@@ -102,11 +81,6 @@ export function initializeToolRegistry(): void {
         description: tool.function.description || ''
       };
       registry.registerTool(tool, metadata, isEnabled);
-
-      // Also add to the legacy array for compatibility (use internal array to avoid deprecation warning)
-      if (!_CODEBUDDY_TOOLS_INTERNAL.some(t => t.function.name === name)) {
-        _CODEBUDDY_TOOLS_INTERNAL.push(tool);
-      }
     }
   };
 
@@ -122,9 +96,6 @@ export function initializeToolRegistry(): void {
     description: 'High-speed file editing with Morph'
   };
   registry.registerTool(MORPH_EDIT_TOOL, morphMetadata, isMorphEnabled);
-  if (!_CODEBUDDY_TOOLS_INTERNAL.some(t => t.function.name === 'edit_file')) {
-    _CODEBUDDY_TOOLS_INTERNAL.push(MORPH_EDIT_TOOL);
-  }
 
   registerGroup(SEARCH_TOOLS);
   registerGroup(TODO_TOOLS);
