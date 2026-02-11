@@ -54,7 +54,7 @@ describe('WebSearchTool', () => {
         expect.stringContaining('html.duckduckgo.com'),
         expect.objectContaining({
           headers: expect.any(Object),
-          timeout: 10000,
+          timeout: 20000,
         })
       );
     });

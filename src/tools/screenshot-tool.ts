@@ -49,7 +49,14 @@ export class ScreenshotTool {
       if (platform === 'darwin') {
         result = await this.captureMacOS(outputPath, options);
       } else if (platform === 'linux') {
-        result = await this.captureLinux(outputPath, options);
+        // On WSL2, scrot captures a black X11 root window.
+        // Try scrot first; if the result is a tiny/black image, fall back to
+        // PowerShell via WSL interop for a real Windows desktop capture.
+        if (this.isWSL()) {
+          result = await this.captureWSL(outputPath, options);
+        } else {
+          result = await this.captureLinux(outputPath, options);
+        }
       } else if (platform === 'win32') {
         result = await this.captureWindows(outputPath, options);
       } else {
@@ -232,6 +239,110 @@ $bitmap.Dispose()
 
       powershell.on('error', (err) => {
         reject(err);
+      });
+    });
+  }
+
+  /**
+   * Detect if running inside WSL2
+   */
+  private isWSL(): boolean {
+    try {
+      const release = execSync('uname -r', { encoding: 'utf-8' });
+      return /microsoft|wsl/i.test(release);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Capture screenshot on WSL2 via PowerShell interop (real Windows desktop)
+   * Falls back to scrot if powershell.exe is not available.
+   */
+  private async captureWSL(outputPath: string, options: ScreenshotOptions): Promise<ScreenshotResult> {
+    try {
+      execSync('which powershell.exe', { stdio: 'ignore' });
+    } catch {
+      // No powershell.exe — fall back to native Linux capture
+      return this.captureLinux(outputPath, options);
+    }
+
+    return new Promise((resolve, reject) => {
+      // GDI+ can't save directly to WSL UNC paths — use a Windows temp file
+      // then copy it back into WSL via /mnt/c/
+      const winTempFile = 'C:\\\\Temp\\\\codebuddy_screenshot.png';
+      const wslTempFile = '/mnt/c/Temp/codebuddy_screenshot.png';
+
+      let regionClip = '';
+      if (options.region) {
+        const { x, y, width, height } = options.region;
+        regionClip = `
+$bitmap = $bitmap.Clone((New-Object System.Drawing.Rectangle(${x}, ${y}, ${width}, ${height})), $bitmap.PixelFormat)`;
+      }
+
+      const script = `
+if (-not (Test-Path 'C:\\Temp')) { New-Item -ItemType Directory -Path 'C:\\Temp' | Out-Null }
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+$screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+$bitmap = New-Object System.Drawing.Bitmap($screen.Width, $screen.Height)
+$graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+$graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
+$graphics.Dispose()${regionClip}
+$bitmap.Save('${winTempFile}')
+$bitmap.Dispose()
+Write-Output 'ok'
+`;
+
+      // Ensure C:\Temp exists
+      try {
+        execSync('mkdir -p /mnt/c/Temp', { stdio: 'ignore' });
+      } catch { /* ignore */ }
+
+      const ps = spawn('powershell.exe', ['-NoProfile', '-Command', script]);
+
+      let stderr = '';
+      ps.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
+
+      ps.on('close', async (code) => {
+        try {
+          // Copy from Windows temp to target path
+          const { existsSync, copyFileSync } = await import('fs');
+          if (existsSync(wslTempFile)) {
+            copyFileSync(wslTempFile, outputPath);
+          }
+        } catch { /* ignore copy errors */ }
+
+        if (code === 0 && await this.vfs.exists(outputPath)) {
+          const stats = await this.vfs.stat(outputPath);
+          // Only accept if file is > 10KB (scrot black captures are ~63KB but
+          // PowerShell real captures are typically > 500KB)
+          if (stats.size > 10240) {
+            resolve({
+              path: outputPath,
+              size: this.formatSize(stats.size),
+              timestamp: new Date().toISOString()
+            });
+            return;
+          }
+        }
+
+        // Fall back to scrot if PowerShell failed or produced empty image
+        try {
+          const linuxResult = await this.captureLinux(outputPath, options);
+          resolve(linuxResult);
+        } catch (err) {
+          reject(new Error(`WSL screenshot failed (PowerShell: ${stderr.trim()}, scrot fallback also failed)`));
+        }
+      });
+
+      ps.on('error', async () => {
+        try {
+          const linuxResult = await this.captureLinux(outputPath, options);
+          resolve(linuxResult);
+        } catch (err) {
+          reject(new Error('WSL screenshot failed: powershell.exe not available and scrot failed'));
+        }
       });
     });
   }
