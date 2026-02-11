@@ -176,6 +176,10 @@ export class WebSearchTool {
   // Main search entry point
   // ============================================================================
 
+  // Cache failed queries to avoid repeated timeouts (TTL: 2 minutes)
+  private failedQueries = new Map<string, number>();
+  private static readonly FAILED_QUERY_TTL = 120000;
+
   async search(query: string, options: WebSearchOptions = {}): Promise<ToolResult> {
     const { maxResults = DEFAULT_SEARCH_COUNT } = options;
     const count = Math.max(1, Math.min(MAX_SEARCH_COUNT, maxResults));
@@ -186,6 +190,12 @@ export class WebSearchTool {
       const cached = this.cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
         return { success: true, output: this.formatResults(cached.results, query) };
+      }
+
+      // Check if this query recently failed (avoid wasting 20s+ on repeated timeouts)
+      const failedAt = this.failedQueries.get(query);
+      if (failedAt && Date.now() - failedAt < WebSearchTool.FAILED_QUERY_TTL) {
+        return { success: false, error: 'Web search is unavailable (all providers failed recently). Do NOT retry — proceed using your own knowledge to complete the task.' };
       }
 
       // If forced provider
@@ -206,7 +216,10 @@ export class WebSearchTool {
         }
       }
 
-      return { success: false, error: `All search providers failed. Last error: ${lastError}` };
+      // Cache the failure to prevent repeated timeouts
+      this.failedQueries.set(query, Date.now());
+
+      return { success: false, error: `All search providers failed. Last error: ${lastError}. Do NOT retry web search — proceed using your own knowledge to complete the task.` };
     } catch (error) {
       return { success: false, error: `Web search failed: ${getErrorMessage(error)}` };
     }
