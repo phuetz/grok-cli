@@ -57,6 +57,12 @@ export {
 // Providers
 export { NutJsProvider } from './nutjs-provider.js';
 
+// Platform-Native Providers (OpenClaw-inspired)
+export { BaseNativeProvider } from './base-native-provider.js';
+export { LinuxNativeProvider } from './linux-native-provider.js';
+export { WindowsNativeProvider } from './windows-native-provider.js';
+export { MacOSNativeProvider } from './macos-native-provider.js';
+
 // Permission Manager (OpenClaw-inspired)
 export type {
   PermissionType,

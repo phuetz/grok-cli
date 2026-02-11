@@ -248,7 +248,7 @@ export interface ClipboardContent {
 // Provider Types
 // ============================================================================
 
-export type AutomationProvider = 'robotjs' | 'nutjs' | 'pyautogui' | 'mock';
+export type AutomationProvider = 'robotjs' | 'nutjs' | 'pyautogui' | 'native' | 'mock';
 
 export interface ProviderCapabilities {
   /** Supports mouse control */
@@ -314,8 +314,8 @@ export interface DesktopAutomationConfig {
 }
 
 export const DEFAULT_AUTOMATION_CONFIG: DesktopAutomationConfig = {
-  provider: 'mock',
-  fallbackProviders: ['robotjs', 'nutjs'],
+  provider: 'native',
+  fallbackProviders: ['nutjs', 'mock'],
   defaultDelays: {
     mouseMove: 100,
     keyPress: 50,

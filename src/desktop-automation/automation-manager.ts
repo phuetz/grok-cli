@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { execSync } from 'child_process';
 import { logger } from '../utils/logger.js';
 import type {
   ModifierKey,
@@ -451,6 +452,14 @@ export class DesktopAutomationManager extends EventEmitter {
       this.registerProvider(new MockAutomationProvider());
     }
 
+    // Auto-create native provider if requested but not yet registered
+    if (this.config.provider === 'native' && !this.providers.has('native')) {
+      const nativeProvider = await this.createNativeProvider();
+      if (nativeProvider) {
+        this.registerProvider(nativeProvider);
+      }
+    }
+
     // Try preferred provider first
     const preferred = this.providers.get(this.config.provider);
     if (preferred && await preferred.isAvailable()) {
@@ -851,6 +860,51 @@ export class DesktopAutomationManager extends EventEmitter {
    */
   getProvider(): IAutomationProvider | null {
     return this.provider;
+  }
+
+  /**
+   * Create the appropriate native provider for the current platform
+   */
+  private async createNativeProvider(): Promise<IAutomationProvider | null> {
+    try {
+      if (this.isWSL()) {
+        const { WindowsNativeProvider } = await import('./windows-native-provider.js');
+        return new WindowsNativeProvider({ wsl: true });
+      }
+
+      switch (process.platform) {
+        case 'darwin': {
+          const { MacOSNativeProvider } = await import('./macos-native-provider.js');
+          return new MacOSNativeProvider();
+        }
+        case 'win32': {
+          const { WindowsNativeProvider } = await import('./windows-native-provider.js');
+          return new WindowsNativeProvider({ wsl: false });
+        }
+        case 'linux': {
+          const { LinuxNativeProvider } = await import('./linux-native-provider.js');
+          return new LinuxNativeProvider();
+        }
+        default:
+          logger.debug(`No native provider for platform: ${process.platform}`);
+          return null;
+      }
+    } catch (err) {
+      logger.debug('Failed to create native provider', { error: err instanceof Error ? err.message : String(err) });
+      return null;
+    }
+  }
+
+  /**
+   * Detect if running inside WSL2
+   */
+  private isWSL(): boolean {
+    try {
+      const release = execSync('uname -r', { encoding: 'utf-8' });
+      return /microsoft|wsl/i.test(release);
+    } catch {
+      return false;
+    }
   }
 }
 
