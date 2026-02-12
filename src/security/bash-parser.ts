@@ -150,8 +150,10 @@ function fallbackParse(input: string, depth: number = 0): ParseResult {
     if (!seg.text) continue;
 
     // Handle command substitution $(...) recursively
-    const subCmdMatch = seg.text.match(/\$\((.+)\)/);
-    if (subCmdMatch) {
+    // Extract all $(...) command substitutions (non-greedy to handle multiple)
+    const subCmdRegex = /\$\((.+?)\)/g;
+    let subCmdMatch;
+    while ((subCmdMatch = subCmdRegex.exec(seg.text)) !== null) {
       const innerResult = fallbackParse(subCmdMatch[1], depth + 1);
       commands.push(...innerResult.commands.map(c => ({ ...c, isSubshell: true })));
     }

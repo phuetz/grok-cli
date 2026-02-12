@@ -242,7 +242,8 @@ function applyFilePatch(
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
         }
-        fs.writeFileSync(filePath, newContent.join('\n'));
+        const content = newContent.join('\n') + (newContent.length > 0 ? '\n' : '');
+        fs.writeFileSync(filePath, content);
       }
       result.applied = true;
       result.hunksApplied = patch.hunks.length;
@@ -271,13 +272,14 @@ function applyFilePatch(
       }
     }
 
-    if (result.hunksApplied > 0 && !options.dryRun) {
+    result.applied = result.hunksApplied === result.hunksTotal;
+
+    if (result.applied && !options.dryRun) {
       fs.writeFileSync(filePath, contentLines.join('\n'));
     }
 
-    result.applied = result.hunksApplied === result.hunksTotal;
     if (!result.applied && result.hunksApplied > 0) {
-      result.error = `Partial apply: ${result.hunksApplied}/${result.hunksTotal} hunks`;
+      result.error = `Partial apply: ${result.hunksApplied}/${result.hunksTotal} hunks — file NOT modified`;
     } else if (result.hunksApplied === 0) {
       result.error = 'No hunks could be applied (content mismatch)';
     }

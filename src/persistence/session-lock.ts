@@ -6,6 +6,7 @@
  */
 
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { logger } from '../utils/logger.js';
 
@@ -88,7 +89,7 @@ export class SessionLock {
       const info: LockInfo = {
         pid: process.pid,
         timestamp: Date.now(),
-        hostname: require('os').hostname(),
+        hostname: os.hostname(),
       };
 
       // Use wx flag for atomic create — fails if file already exists

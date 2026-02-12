@@ -272,7 +272,7 @@ export function handleStreamError(
     category = 'parse';
     isRetryable = false;
   } else if (errorMessage.includes('abort') || errorMessage.includes('cancel') ||
-             error instanceof DOMException) {
+             (typeof DOMException !== 'undefined' && error instanceof DOMException)) {
     category = 'abort';
     isRetryable = false;
   }
