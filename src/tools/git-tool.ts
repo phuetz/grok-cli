@@ -128,8 +128,10 @@ export class GitTool {
   }
 
   async getLog(count: number = 5): Promise<string> {
+    // Clamp count to safe range
+    const safeCount = Math.max(1, Math.min(Math.floor(count) || 5, 1000));
     const { stdout } = await this.execGit(
-      ['log', '--oneline', `-${count}`, '--format=%h %s']
+      ['log', '--oneline', `-${safeCount}`, '--format=%h %s']
     );
     return stdout;
   }

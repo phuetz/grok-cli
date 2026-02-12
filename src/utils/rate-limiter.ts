@@ -118,7 +118,7 @@ export class RateLimiter extends EventEmitter {
    * Calculate retry delay with exponential backoff
    */
   private calculateRetryDelay(retryCount: number): number {
-    const delay = this.config.baseRetryDelay * Math.pow(2, retryCount);
+    const delay = this.config.baseRetryDelay * Math.pow(2, Math.min(retryCount, 30));
     // Add jitter (0-25% of delay)
     const jitter = delay * 0.25 * Math.random();
     return Math.min(delay + jitter, this.config.maxRetryDelay);

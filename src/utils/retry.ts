@@ -88,7 +88,7 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
     signal?.addEventListener('abort', () => {
       clearTimeout(timeoutId);
       reject(new Error('Operation aborted'));
-    });
+    }, { once: true });
   });
 }
 
