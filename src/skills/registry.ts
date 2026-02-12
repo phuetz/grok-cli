@@ -279,10 +279,21 @@ export class SkillRegistry extends EventEmitter {
     const matchedTags: string[] = [];
     const reasons: string[] = [];
 
-    // Check name
-    if (skill.metadata.name.toLowerCase().includes(query)) {
-      score += 0.5;
+    // Filter out stop words and short words for partial matching
+    const significantWords = queryWords.filter(w => w.length >= 3);
+
+    // Check name — exact substring match in name
+    const nameLower = skill.metadata.name.toLowerCase();
+    if (nameLower.includes(query)) {
+      score += 0.6;
       reasons.push('name match');
+    } else {
+      // Check if significant query words appear in the skill name
+      const nameWordMatches = significantWords.filter(w => nameLower.includes(w)).length;
+      if (nameWordMatches > 0) {
+        score += 0.3 * (nameWordMatches / Math.max(significantWords.length, 1));
+        reasons.push('name word match');
+      }
     }
 
     // Check description
@@ -290,35 +301,48 @@ export class SkillRegistry extends EventEmitter {
     if (descLower.includes(query)) {
       score += 0.3;
       reasons.push('description match');
-    } else {
-      // Partial word matches
-      const wordMatches = queryWords.filter(w => descLower.includes(w)).length;
+    } else if (significantWords.length > 0) {
+      // Partial word matches (only significant words)
+      const wordMatches = significantWords.filter(w => descLower.includes(w)).length;
       if (wordMatches > 0) {
-        score += 0.1 * (wordMatches / queryWords.length);
+        score += 0.15 * (wordMatches / significantWords.length);
         reasons.push('partial description match');
       }
     }
 
-    // Check tags
+    // Check tags — require exact tag match or significant word match
     if (skill.metadata.tags) {
+      let tagScore = 0;
       for (const tag of skill.metadata.tags) {
-        if (queryWords.some(w => tag.toLowerCase().includes(w))) {
-          score += 0.15;
+        const tagLower = tag.toLowerCase().trim();
+        // Exact tag match with a significant query word
+        if (significantWords.some(w => tagLower === w || tagLower.includes(w) && w.length >= 4)) {
+          tagScore += 0.1;
           matchedTags.push(tag);
         }
       }
+      // Cap tag score to avoid skills with many tags winning
+      score += Math.min(tagScore, 0.2);
       if (matchedTags.length > 0) {
         reasons.push('tag match');
       }
     }
 
-    // Check triggers (OpenClaw metadata)
+    // Check triggers (OpenClaw metadata) — query must contain trigger, not reverse
     if (skill.metadata.openclaw?.triggers) {
       for (const trigger of skill.metadata.openclaw.triggers) {
         const triggerLower = trigger.toLowerCase();
-        if (query.includes(triggerLower) || triggerLower.includes(query)) {
+        if (query.includes(triggerLower)) {
           score += 0.4;
           matchedTriggers.push(trigger);
+        } else {
+          // Check word overlap for multi-word triggers
+          const triggerWords = triggerLower.split(/\s+/).filter(w => w.length >= 3);
+          const overlap = triggerWords.filter(tw => significantWords.includes(tw)).length;
+          if (triggerWords.length > 0 && overlap >= Math.ceil(triggerWords.length * 0.6)) {
+            score += 0.25 * (overlap / triggerWords.length);
+            matchedTriggers.push(trigger);
+          }
         }
       }
       if (matchedTriggers.length > 0) {
@@ -326,13 +350,21 @@ export class SkillRegistry extends EventEmitter {
       }
     }
 
-    // Check examples
+    // Check examples — query must contain example or high word overlap
     if (skill.content.examples) {
       for (const example of skill.content.examples) {
         const exampleLower = example.request.toLowerCase();
-        if (exampleLower.includes(query) || query.includes(exampleLower)) {
+        if (query.includes(exampleLower) || exampleLower.includes(query)) {
           score += 0.35;
           reasons.push('example match');
+          break;
+        }
+        // Word overlap with examples
+        const exampleWords = exampleLower.split(/\s+/).filter(w => w.length >= 3);
+        const overlap = exampleWords.filter(ew => significantWords.includes(ew)).length;
+        if (exampleWords.length > 0 && overlap >= Math.ceil(exampleWords.length * 0.5)) {
+          score += 0.2 * (overlap / exampleWords.length);
+          reasons.push('example word match');
           break;
         }
       }
@@ -362,7 +394,7 @@ export class SkillRegistry extends EventEmitter {
     const matches = this.search({
       query: request,
       limit: 1,
-      minConfidence: 0.2,
+      minConfidence: 0.15,
     });
 
     return matches.length > 0 ? matches[0] : null;

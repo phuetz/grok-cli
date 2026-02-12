@@ -20,6 +20,7 @@ export interface ACPAgent {
   name: string;
   capabilities: string[];
   status: 'ready' | 'busy' | 'offline';
+  handler?: (msg: ACPMessage) => Promise<ACPMessage | null>;
 }
 
 export class ACPRouter extends EventEmitter {
@@ -93,11 +94,13 @@ export class ACPRouter extends EventEmitter {
   private async route(msg: ACPMessage): Promise<ACPMessage | null> {
     this.emit('message', msg);
 
+    // Handle incoming responses — resolve pending requests
     if (msg.type === 'response' && msg.correlationId) {
       this.resolveRequest(msg.correlationId, msg);
       return null;
     }
 
+    // Broadcast messages
     if (msg.to === '*') {
       this.emit('broadcast', msg);
       const handler = this.handlers.get(msg.action);
@@ -107,11 +110,37 @@ export class ACPRouter extends EventEmitter {
       return null;
     }
 
+    // Dispatch to the target agent's handler first
+    const targetAgent = this.agents.get(msg.to);
+    if (targetAgent?.handler) {
+      const response = await targetAgent.handler(msg);
+      // If it was a request, auto-send response back to resolve the pending promise
+      if (response && msg.type === 'request' && msg.correlationId) {
+        await this.send({
+          type: 'response',
+          from: msg.to,
+          to: msg.from,
+          action: msg.action,
+          payload: response.payload ?? response,
+          correlationId: msg.correlationId,
+        });
+      }
+      return response;
+    }
+
+    // Fall back to global action handlers
     const handler = this.handlers.get(msg.action);
     if (handler) {
       const response = await handler(msg);
-      if (response && msg.type === 'request') {
-        return response;
+      if (response && msg.type === 'request' && msg.correlationId) {
+        await this.send({
+          type: 'response',
+          from: msg.to,
+          to: msg.from,
+          action: msg.action,
+          payload: response.payload ?? response,
+          correlationId: msg.correlationId,
+        });
       }
       return response;
     }
@@ -119,7 +148,7 @@ export class ACPRouter extends EventEmitter {
     return null;
   }
 
-  private resolveRequest(correlationId: string, response: ACPMessage): void {
+  resolveRequest(correlationId: string, response: ACPMessage): void {
     const pending = this.pendingRequests.get(correlationId);
     if (pending) {
       clearTimeout(pending.timer);

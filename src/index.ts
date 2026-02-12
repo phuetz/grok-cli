@@ -515,7 +515,8 @@ async function processPromptHeadless(
   baseURL?: string,
   model?: string,
   maxToolRounds?: number,
-  selfHealEnabled: boolean = true
+  selfHealEnabled: boolean = true,
+  outputFormat: string = 'json'
 ): Promise<void> {
   try {
     const CodeBuddyAgent = await lazyImport.CodeBuddyAgent();
@@ -579,19 +580,42 @@ async function processPromptHeadless(
       }
     }
 
-    // Output each message as a separate JSON object
-    for (const message of messages) {
-      console.log(JSON.stringify(message));
+    // Output in the requested format
+    const format = outputFormat.toLowerCase();
+    if (format === 'text' || format === 'markdown') {
+      // Text/markdown: only output the final assistant response
+      const assistantMessages = messages.filter(
+        m => m.role === 'assistant' && m.content && !('tool_calls' in m && (m as unknown as Record<string, unknown>).tool_calls)
+      );
+      const lastResponse = assistantMessages[assistantMessages.length - 1];
+      if (lastResponse?.content) {
+        console.log(lastResponse.content);
+      }
+    } else if (format === 'stream-json' || format === 'streaming') {
+      // Stream JSON: each message on its own line (NDJSON)
+      for (const message of messages) {
+        process.stdout.write(JSON.stringify(message) + '\n');
+      }
+    } else {
+      // Default: json - each message as a separate JSON object
+      for (const message of messages) {
+        console.log(JSON.stringify(message));
+      }
     }
   } catch (error: unknown) {
-    // Output error in OpenAI compatible format
+    // Output error in appropriate format
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.log(
-      JSON.stringify({
-        role: "assistant",
-        content: `Error: ${errorMessage}`,
-      })
-    );
+    const format = outputFormat.toLowerCase();
+    if (format === 'text' || format === 'markdown') {
+      console.error(`Error: ${errorMessage}`);
+    } else {
+      console.log(
+        JSON.stringify({
+          role: "assistant",
+          content: `Error: ${errorMessage}`,
+        })
+      );
+    }
     process.exit(1);
   }
 }
@@ -1016,7 +1040,8 @@ program
           baseURL,
           model,
           maxToolRounds,
-          options.selfHeal !== false
+          options.selfHeal !== false,
+          options.output || options.outputFormat || 'json'
         );
         process.exit(0);
       }
@@ -1098,7 +1123,7 @@ program
         console.log("🔍 Dry-run mode: ENABLED (changes will be previewed, not applied)");
       }
 
-      // Load context files if specified
+      // Load context files if specified and inject into agent
       if (options.context) {
         const { ContextLoader, getContextLoader } = await lazyImport.contextLoader();
         const { include, exclude } = ContextLoader.parsePatternString(options.context);
@@ -1110,6 +1135,9 @@ program
         const files = await contextLoader.loadFiles();
         if (files.length > 0) {
           console.log(contextLoader.getSummary(files));
+          // Inject context into agent's message history as a system message
+          const contextContent = contextLoader.formatForPrompt(files);
+          agent.addSystemContext(contextContent);
         }
       }
 

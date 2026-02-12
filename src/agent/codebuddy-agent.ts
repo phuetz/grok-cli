@@ -613,6 +613,19 @@ export class CodeBuddyAgent extends BaseAgent {
   }
 
   /**
+   * Add context files content to the agent's message history.
+   * Inserted as a system message after the main system prompt.
+   */
+  addSystemContext(contextContent: string): void {
+    const systemIdx = this.messages.findIndex(m => m.role === 'system');
+    const insertAt = systemIdx >= 0 ? systemIdx + 1 : 0;
+    this.messages.splice(insertAt, 0, {
+      role: 'system',
+      content: contextContent,
+    });
+  }
+
+  /**
    * Check if self-healing is enabled for bash commands
    */
   isSelfHealingEnabled(): boolean {
