@@ -40,9 +40,10 @@ function addEntry(msg) {
   const div = document.createElement('div');
   div.className = 'entry';
   const time = new Date(msg.timestamp).toLocaleTimeString();
-  div.innerHTML = (msg.title ? '<div class="title">' + msg.title + '</div>' : '') +
-    '<div>' + msg.content + '</div>' +
-    '<div class="time">' + time + '</div>';
+  function esc(s) { const d = document.createElement('span'); d.textContent = s; return d.innerHTML; }
+  div.innerHTML = (msg.title ? '<div class="title">' + esc(msg.title) + '</div>' : '') +
+    '<div>' + esc(msg.content) + '</div>' +
+    '<div class="time">' + esc(time) + '</div>';
   canvas.prepend(div);
 }
 </script></body></html>`;

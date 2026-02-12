@@ -68,7 +68,9 @@ function findChanges(oldLines: string[], newLines: string[]): DiffChange[] {
       let newEnd = j;
 
       // Find the end of this change block
-      while (oldEnd < oldLines.length || newEnd < newLines.length) {
+      const maxIter = oldLines.length + newLines.length + 10;
+      let iter = 0;
+      while ((oldEnd < oldLines.length || newEnd < newLines.length) && ++iter < maxIter) {
         let matchFound = false;
         let matchLength = 0;
 

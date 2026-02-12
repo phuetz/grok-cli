@@ -270,7 +270,8 @@ router.get(
   requireScope('sessions'),
   asyncHandler(async (req: Request, res: Response) => {
     const id = getStringParam(req.params.id);
-    const { limit = 100, offset = 0 } = req.query;
+    const limitNum = Math.min(Math.max(parseInt(String(req.query.limit ?? '100'), 10) || 100, 1), 500);
+    const offsetNum = Math.max(parseInt(String(req.query.offset ?? '0'), 10) || 0, 0);
     const store = await getSessionStore();
 
     const session = await store.loadSession(id);
@@ -280,16 +281,13 @@ router.get(
 
     const messages = session.messages || [];
     const total = messages.length;
-    const paginatedMessages = messages.slice(
-      Number(offset),
-      Number(offset) + Number(limit)
-    );
+    const paginatedMessages = messages.slice(offsetNum, offsetNum + limitNum);
 
     res.json({
       messages: paginatedMessages,
       total,
-      limit: Number(limit),
-      offset: Number(offset),
+      limit: limitNum,
+      offset: offsetNum,
     });
   })
 );

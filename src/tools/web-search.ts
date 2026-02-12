@@ -519,7 +519,10 @@ export class WebSearchTool {
       timeout: DEFAULT_TIMEOUT_MS,
     });
 
-    const html = response.data;
+    // Cap HTML size to prevent regex backtracking on very large pages
+    const html = typeof response.data === 'string' && response.data.length > 2_000_000
+      ? response.data.slice(0, 2_000_000)
+      : response.data;
     const results: SearchResult[] = [];
 
     const resultRegex = /<div[^>]*class="[^"]*result[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/gi;

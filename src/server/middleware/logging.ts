@@ -107,11 +107,18 @@ export function createLoggingMiddleware(config: ServerConfig) {
       requestStats.total++;
       requestStats.totalLatency += responseTime;
 
-      const endpoint = `${req.method} ${req.route?.path || req.path}`;
+      // Use route pattern (e.g. "/:id/messages") to avoid unbounded cardinality from dynamic paths
+      const routePath = req.route?.path || req.baseUrl || '/unknown';
+      const endpoint = `${req.method} ${routePath}`;
       requestStats.byEndpoint.set(
         endpoint,
         (requestStats.byEndpoint.get(endpoint) || 0) + 1
       );
+      // Cap endpoint cardinality to prevent memory growth from unmatched routes
+      if (requestStats.byEndpoint.size > 200) {
+        const oldest = requestStats.byEndpoint.keys().next().value;
+        if (oldest) requestStats.byEndpoint.delete(oldest);
+      }
       requestStats.byStatus.set(
         res.statusCode,
         (requestStats.byStatus.get(res.statusCode) || 0) + 1

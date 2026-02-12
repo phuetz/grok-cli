@@ -95,6 +95,10 @@ export class ExtensionLoader extends EventEmitter {
   }
 
   load(name: string): ExtensionInstance | { error: string } {
+    // Validate extension name to prevent path traversal
+    if (!/^[a-zA-Z0-9_@][a-zA-Z0-9_\-./]*$/.test(name) || name.includes('..')) {
+      return { error: `Invalid extension name: "${name}"` };
+    }
     for (const searchPath of this.searchPaths) {
       const dir = join(searchPath, name);
       const manifest = ExtensionLoader.parseManifest(dir);

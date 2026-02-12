@@ -120,6 +120,10 @@ export class SkillRegistry {
    * Install a skill from content string into the managed directory.
    */
   install(name: string, content: string): SkillMetadata {
+    // Validate skill name to prevent path traversal
+    if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+      throw new Error(`Invalid skill name: ${name}. Only alphanumeric, dash, and underscore allowed.`);
+    }
     const dir = join(this.dirs.managed, name);
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });

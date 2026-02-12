@@ -276,8 +276,9 @@ export class DMPairingManager extends EventEmitter {
         this.allowlist.set(allowlistKey, sender);
         this.pending.delete(key);
 
-        // Remove from blocked if applicable
-        this.blocked.delete(request.senderId);
+        // Remove from blocked if applicable (use channel-prefixed key to match set())
+        const blockKey = `${channelType}:${request.senderId}`;
+        this.blocked.delete(blockKey);
 
         this.emit('pairing:approved', sender);
         this.persistAllowlist().catch(() => {});
@@ -308,7 +309,9 @@ export class DMPairingManager extends EventEmitter {
 
     const key = this.makeAllowlistKey(channelType, senderId);
     this.allowlist.set(key, sender);
-    this.blocked.delete(senderId);
+    // Use channel-prefixed key to match how blocks are set
+    const blockKey = `${channelType}:${senderId}`;
+    this.blocked.delete(blockKey);
 
     this.emit('pairing:approved', sender);
     this.persistAllowlist().catch(() => {});

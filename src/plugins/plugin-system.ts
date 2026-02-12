@@ -178,8 +178,11 @@ export class PluginManager extends EventEmitter {
         throw new Error('Plugin already loaded');
       }
 
-      // Load the plugin module
-      const mainPath = path.join(pluginDir, manifest.main);
+      // Load the plugin module (validate path stays inside plugin directory)
+      const mainPath = path.resolve(pluginDir, manifest.main);
+      if (!mainPath.startsWith(path.resolve(pluginDir))) {
+        throw new Error(`Plugin main path traversal blocked: ${manifest.main}`);
+      }
       const pluginModule = await import(mainPath);
       const instance: SystemPlugin = pluginModule.default || pluginModule;
 
