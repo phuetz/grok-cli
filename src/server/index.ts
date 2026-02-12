@@ -120,9 +120,10 @@ function createApp(config: ServerConfig): Application {
 
   // CORS
   if (config.cors) {
+    const isWildcard = config.corsOrigins?.includes('*');
     app.use(cors({
-      origin: config.corsOrigins?.includes('*') ? true : config.corsOrigins,
-      credentials: true,
+      origin: isWildcard ? true : config.corsOrigins,
+      credentials: !isWildcard,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Request-ID'],
     }));

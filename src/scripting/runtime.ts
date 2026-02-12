@@ -965,8 +965,9 @@ export class FCSRuntime {
     node: DictExpr,
     ctx: RuntimeContext
   ): Promise<Record<string, CodeBuddyValue>> {
-    const dict: Record<string, CodeBuddyValue> = {};
+    const dict: Record<string, CodeBuddyValue> = Object.create(null);
     for (const [key, valueNode] of node.elements) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
       dict[key] = await this.evaluate(valueNode, ctx);
     }
     return dict;

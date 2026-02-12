@@ -112,7 +112,7 @@ export function createAuthMiddleware(config: ServerConfig) {
 
     req.auth = {
       keyId: payload.type === 'api_key' ? payload.sub : undefined,
-      userId: payload.type === 'user' ? payload.sub : (payload.userId || payload.sub),
+      userId: payload.sub,
       scopes: payload.scopes || ['chat'],
       type: payload.type || 'user',
     };
@@ -178,7 +178,7 @@ export function optionalAuth(config: ServerConfig) {
     if (payload) {
       req.auth = {
         keyId: payload.type === 'api_key' ? payload.sub : undefined,
-        userId: payload.type === 'user' ? payload.sub : (payload.userId || payload.sub),
+        userId: payload.sub,
         scopes: payload.scopes || ['chat'],
         type: payload.type || 'user',
       };

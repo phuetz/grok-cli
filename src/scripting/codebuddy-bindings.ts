@@ -13,7 +13,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
+import { execSync, execFileSync, spawnSync } from 'child_process';
 import { CodeBuddyScriptConfig, CodeBuddyValue, CodeBuddyFunction } from './types.js';
 import { getErrorMessage } from '../types/index.js';
 
@@ -222,11 +222,11 @@ export function createGrokBindings(
 
   tool.glob = (pattern: string): string[] => {
     try {
-      const result = execSync(
-        `find ${config.workdir} -type f -name "${pattern}" 2>/dev/null | head -100`,
-        { encoding: 'utf-8' }
+      const result = execFileSync(
+        'find', [config.workdir, '-type', 'f', '-name', pattern],
+        { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
       );
-      return result.trim().split('\n').filter(Boolean).map(f =>
+      return result.trim().split('\n').filter(Boolean).slice(0, 100).map(f =>
         path.relative(config.workdir, f)
       );
     } catch {
@@ -236,13 +236,15 @@ export function createGrokBindings(
 
   tool.grep = (pattern: string, filePattern?: string): Array<{ file: string; line: number; content: string }> => {
     try {
-      const globPart = filePattern ? `--include="${filePattern}"` : '';
-      const result = execSync(
-        `grep -rn ${globPart} "${pattern}" ${config.workdir} 2>/dev/null | head -100`,
-        { encoding: 'utf-8' }
-      );
+      const args = ['-rn'];
+      if (filePattern) args.push(`--include=${filePattern}`);
+      args.push(pattern, config.workdir);
+      const result = execFileSync('grep', args, {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
 
-      return result.trim().split('\n').filter(Boolean).map(line => {
+      return result.trim().split('\n').filter(Boolean).slice(0, 100).map(line => {
         const match = line.match(/^(.+?):(\d+):(.*)$/);
         if (match) {
           return {
@@ -260,13 +262,15 @@ export function createGrokBindings(
 
   tool.rg = (pattern: string, filePattern?: string): Array<{ file: string; line: number; content: string }> => {
     try {
-      const globPart = filePattern ? `-g "${filePattern}"` : '';
-      const result = execSync(
-        `rg -n ${globPart} "${pattern}" ${config.workdir} 2>/dev/null | head -100`,
-        { encoding: 'utf-8' }
-      );
+      const args = ['-n'];
+      if (filePattern) args.push('-g', filePattern);
+      args.push(pattern, config.workdir);
+      const result = execFileSync('rg', args, {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
 
-      return result.trim().split('\n').filter(Boolean).map(line => {
+      return result.trim().split('\n').filter(Boolean).slice(0, 100).map(line => {
         const match = line.match(/^(.+?):(\d+):(.*)$/);
         if (match) {
           return {
@@ -482,8 +486,9 @@ Think through the problem and execute the necessary steps.`;
 
   git.diff = (file?: string): string => {
     try {
-      const cmd = file ? `git diff ${file}` : 'git diff';
-      return execSync(cmd, { cwd: config.workdir, encoding: 'utf-8' });
+      const args = ['diff'];
+      if (file) args.push('--', file);
+      return execFileSync('git', args, { cwd: config.workdir, encoding: 'utf-8' });
     } catch {
       return '';
     }
@@ -496,7 +501,7 @@ Think through the problem and execute the necessary steps.`;
     }
 
     try {
-      execSync(`git add ${pattern}`, { cwd: config.workdir });
+      execFileSync('git', ['add', '--', pattern], { cwd: config.workdir });
       return true;
     } catch {
       return false;
@@ -510,7 +515,7 @@ Think through the problem and execute the necessary steps.`;
     }
 
     try {
-      execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, { cwd: config.workdir });
+      execFileSync('git', ['commit', '-m', message], { cwd: config.workdir });
       return true;
     } catch {
       return false;
@@ -519,7 +524,8 @@ Think through the problem and execute the necessary steps.`;
 
   git.log = (count = 10): string => {
     try {
-      return execSync(`git log --oneline -${count}`, { cwd: config.workdir, encoding: 'utf-8' });
+      const safeCount = Math.max(1, Math.min(Math.floor(count) || 10, 1000));
+      return execFileSync('git', ['log', '--oneline', `-${safeCount}`], { cwd: config.workdir, encoding: 'utf-8' });
     } catch {
       return '';
     }

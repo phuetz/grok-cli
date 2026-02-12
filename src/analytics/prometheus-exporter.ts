@@ -543,8 +543,9 @@ export function createMetricsCollector(exporter: PrometheusExporter) {
     },
 
     onToolCall: (tool: string, success: boolean, durationSeconds: number) => {
-      exporter.inc('tool_calls_total', 1, { tool, status: success ? 'success' : 'failure' });
-      exporter.observe('tool_duration_seconds', durationSeconds, { tool });
+      const safeTool = tool.replace(/[\n\r\\]/g, '_').slice(0, 64);
+      exporter.inc('tool_calls_total', 1, { tool: safeTool, status: success ? 'success' : 'failure' });
+      exporter.observe('tool_duration_seconds', durationSeconds, { tool: safeTool });
     },
 
     onCost: (amount: number) => {
