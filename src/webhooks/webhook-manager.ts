@@ -104,6 +104,10 @@ export class WebhookManager {
         if (current === null || current === undefined || typeof current !== 'object') {
           return `{{body.${path}}}`;
         }
+        // Block prototype pollution paths
+        if (part === '__proto__' || part === 'constructor' || part === 'prototype') {
+          return `{{body.${path}}}`;
+        }
         current = (current as Record<string, unknown>)[part];
       }
       if (current === null || current === undefined) {

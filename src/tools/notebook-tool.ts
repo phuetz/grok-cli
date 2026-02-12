@@ -356,7 +356,15 @@ export class NotebookTool {
    */
   private async loadNotebook(filePath: string): Promise<Notebook> {
     const content = await this.vfs.readFile(filePath, 'utf-8');
-    return JSON.parse(content) as Notebook;
+    try {
+      const notebook = JSON.parse(content) as Notebook;
+      if (!notebook.cells || !Array.isArray(notebook.cells)) {
+        throw new Error('Invalid notebook format: missing cells array');
+      }
+      return notebook;
+    } catch (error) {
+      throw new Error(`Failed to parse notebook ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**

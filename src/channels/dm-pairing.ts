@@ -184,8 +184,8 @@ export class DMPairingManager extends EventEmitter {
       return { approved: true, senderId, channelType };
     }
 
-    // Check if blocked
-    if (this.isBlocked(senderId)) {
+    // Check if blocked (per-channel)
+    if (this.isBlocked(`${channelType}:${senderId}`)) {
       return { approved: false, senderId, channelType };
     }
 
@@ -220,7 +220,7 @@ export class DMPairingManager extends EventEmitter {
 
     // Block if too many attempts
     if (request.attempts > this.config.maxAttempts) {
-      this.blocked.set(senderId, Date.now() + this.config.blockDurationMs);
+      this.blocked.set(pairingKey, Date.now() + this.config.blockDurationMs);
       this.pending.delete(pairingKey);
       this.emit('pairing:blocked', senderId, channelType);
     }
@@ -347,11 +347,11 @@ export class DMPairingManager extends EventEmitter {
   /**
    * Check if a sender is blocked
    */
-  isBlocked(senderId: string): boolean {
-    const unblockAt = this.blocked.get(senderId);
+  isBlocked(key: string): boolean {
+    const unblockAt = this.blocked.get(key);
     if (!unblockAt) return false;
     if (Date.now() >= unblockAt) {
-      this.blocked.delete(senderId);
+      this.blocked.delete(key);
       return false;
     }
     return true;

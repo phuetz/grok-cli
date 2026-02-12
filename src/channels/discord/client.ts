@@ -228,7 +228,10 @@ export class DiscordChannel extends BaseChannel {
    * Handle HELLO (start heartbeat and identify)
    */
   private async handleHello(data: { heartbeat_interval: number }): Promise<void> {
-    // Start heartbeat
+    // Clear any existing heartbeat before starting new one
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
     this.heartbeatInterval = setInterval(() => {
       this.sendHeartbeat();
     }, data.heartbeat_interval);

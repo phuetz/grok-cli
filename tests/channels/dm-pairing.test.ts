@@ -274,7 +274,7 @@ describe('DMPairingManager', () => {
         await shortManager.checkSender(message);
       }
 
-      expect(shortManager.isBlocked('user-42')).toBe(true);
+      expect(shortManager.isBlocked('telegram:user-42')).toBe(true);
 
       shortManager.dispose();
     });

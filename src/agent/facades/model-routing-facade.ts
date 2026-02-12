@@ -122,9 +122,9 @@ export class ModelRoutingFacade {
 
     if (stats.lastDecision) {
       lines.push(`|- Last Model: ${stats.lastDecision.recommendedModel}`);
-      lines.push(`\\- Reason: ${stats.lastDecision.reason}`);
+      lines.push(`|- Reason: ${stats.lastDecision.reason}`);
     } else {
-      lines.push('\\- No routing decisions yet');
+      lines.push('|- No routing decisions yet');
     }
 
     return lines.join('\n');
