@@ -256,7 +256,9 @@ function applyFilePatch(
       return result;
     }
 
-    let contentLines = fs.readFileSync(filePath, 'utf-8').split('\n');
+    const originalContent = fs.readFileSync(filePath, 'utf-8');
+    const hadTrailingNewline = originalContent.endsWith('\n');
+    let contentLines = originalContent.split('\n');
 
     for (const hunk of patch.hunks) {
       const { lines, applied } = applyHunk(contentLines, hunk, fuzz);
@@ -275,7 +277,8 @@ function applyFilePatch(
     result.applied = result.hunksApplied === result.hunksTotal;
 
     if (result.applied && !options.dryRun) {
-      fs.writeFileSync(filePath, contentLines.join('\n'));
+      const output = contentLines.join('\n');
+      fs.writeFileSync(filePath, hadTrailingNewline && !output.endsWith('\n') ? output + '\n' : output);
     }
 
     if (!result.applied && result.hunksApplied > 0) {

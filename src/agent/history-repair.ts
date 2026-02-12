@@ -6,6 +6,7 @@
  * and other common issues that cause API errors.
  */
 
+import { randomUUID } from 'crypto';
 import { logger } from '../utils/logger.js';
 
 export interface LLMMessage {
@@ -72,7 +73,7 @@ export function repairMessageHistory(messages: LLMMessage[]): RepairResult {
 
       if (!hasParent) {
         // Insert a synthetic assistant message with the tool call
-        const toolCallId = msg.tool_call_id || `synthetic_${Date.now()}_${i}`;
+        const toolCallId = msg.tool_call_id || `synthetic_${randomUUID()}`;
         msg.tool_call_id = toolCallId;
 
         fixed.push({
