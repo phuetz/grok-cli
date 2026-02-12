@@ -75,10 +75,11 @@ export async function* withStreamTimeout<T>(
 
   try {
     while (true) {
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
       const result = await Promise.race([
-        iterator.next(),
+        iterator.next().then(r => { if (timeoutId) clearTimeout(timeoutId); return r; }),
         new Promise<never>((_, reject) => {
-          setTimeout(() => {
+          timeoutId = setTimeout(() => {
             reject(new TimeoutError(errorMessage, timeoutMs));
           }, timeoutMs);
         }),

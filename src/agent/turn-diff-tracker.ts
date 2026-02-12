@@ -75,6 +75,8 @@ export class TurnDiffTracker {
     try {
       if (fs.existsSync(absPath)) {
         const stat = fs.statSync(absPath);
+        // Skip files larger than 1MB to prevent excessive memory usage
+        if (stat.size > 1_000_000) return;
         this.currentTurn.snapshots.push({
           path: absPath,
           content: fs.readFileSync(absPath, 'utf-8'),
