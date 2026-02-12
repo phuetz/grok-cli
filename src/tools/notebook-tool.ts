@@ -104,13 +104,16 @@ export class NotebookTool {
         case 'read':
           return this.readNotebook(filePath);
         case 'read_cell':
-          return this.readCell(filePath, params.cellIndex!);
+          if (params.cellIndex == null) return { success: false, error: 'cellIndex is required for read_cell' };
+          return this.readCell(filePath, params.cellIndex);
         case 'add_cell':
           return this.addCell(filePath, params.cellType || 'code', params.content || '');
         case 'update_cell':
-          return this.updateCell(filePath, params.cellIndex!, params.content || '');
+          if (params.cellIndex == null) return { success: false, error: 'cellIndex is required for update_cell' };
+          return this.updateCell(filePath, params.cellIndex, params.content || '');
         case 'delete_cell':
-          return this.deleteCell(filePath, params.cellIndex!);
+          if (params.cellIndex == null) return { success: false, error: 'cellIndex is required for delete_cell' };
+          return this.deleteCell(filePath, params.cellIndex);
         case 'extract_code':
           return this.extractCode(filePath);
         case 'summarize':
@@ -357,11 +360,11 @@ export class NotebookTool {
   private async loadNotebook(filePath: string): Promise<Notebook> {
     const content = await this.vfs.readFile(filePath, 'utf-8');
     try {
-      const notebook = JSON.parse(content) as Notebook;
-      if (!notebook.cells || !Array.isArray(notebook.cells)) {
-        throw new Error('Invalid notebook format: missing cells array');
+      const notebook = JSON.parse(content);
+      if (!notebook || typeof notebook !== 'object' || !Array.isArray(notebook.cells)) {
+        throw new Error('Invalid notebook format: expected object with cells array');
       }
-      return notebook;
+      return notebook as Notebook;
     } catch (error) {
       throw new Error(`Failed to parse notebook ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
     }

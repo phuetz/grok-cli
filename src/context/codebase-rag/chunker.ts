@@ -431,9 +431,9 @@ export class CodeChunker {
           {}
         ));
 
-        // Start new chunk with overlap
+        // Start new chunk with overlap (overlap is in tokens, estimate ~10 tokens/line)
         const overlapLines = Math.min(
-          Math.floor(overlap / 10),
+          Math.max(1, Math.floor(overlap / 10)),
           currentChunk.length
         );
         currentChunk = currentChunk.slice(-overlapLines);

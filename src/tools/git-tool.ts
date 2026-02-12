@@ -201,8 +201,8 @@ export class GitTool {
         output: stdout.trim() || stderr.trim() || "Push successful",
       };
     } catch (error: unknown) {
-      // Check if we need to set upstream
-      if (getErrorMessage(error).includes("no upstream branch")) {
+      // Auto-set upstream on first attempt only (prevent infinite recursion)
+      if (!setUpstream && getErrorMessage(error).includes("no upstream branch")) {
         return this.push(true);
       }
       return {
