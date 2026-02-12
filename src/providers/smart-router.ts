@@ -250,6 +250,9 @@ export class SmartModelRouter extends EventEmitter {
     };
 
     this.routeHistory.push(result);
+    if (this.routeHistory.length > 500) {
+      this.routeHistory = this.routeHistory.slice(-250);
+    }
     this.emit('route:selected', result);
 
     return result;

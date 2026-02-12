@@ -411,10 +411,16 @@ export class CodeBuddyClient {
             parts.push({ text: assistantMsg.content });
           }
           for (const tc of assistantMsg.tool_calls) {
+            let args: unknown;
+            try {
+              args = JSON.parse(tc.function.arguments);
+            } catch {
+              args = {};
+            }
             parts.push({
               functionCall: {
                 name: tc.function.name,
-                args: JSON.parse(tc.function.arguments),
+                args,
               },
             });
           }

@@ -785,8 +785,9 @@ This will install the browser binaries needed for automation.`;
         await this.page!.click(`${selector} [type="submit"], ${selector} button`);
       } else {
         // Evaluate form.submit()
+        const safeSelector = JSON.stringify(selector);
         await this.page!.evaluate(
-          new Function(`document.querySelector('${selector}').submit()`) as () => void
+          new Function(`document.querySelector(${safeSelector}).submit()`) as () => void
         );
       }
 
@@ -854,8 +855,9 @@ This will install the browser binaries needed for automation.`;
       const y = options?.y ?? 500;
       const behavior = options?.behavior ?? 'auto';
 
+      const safeBehavior = ['auto', 'smooth', 'instant'].includes(behavior) ? behavior : 'auto';
       await this.page!.evaluate(
-        new Function(`window.scrollTo({ left: ${x}, top: ${y}, behavior: '${behavior}' })`) as () => void
+        new Function(`window.scrollTo({ left: ${Number(x)}, top: ${Number(y)}, behavior: '${safeBehavior}' })`) as () => void
       );
 
       return { success: true, output: `Scrolled to x:${x}, y:${y}` };
