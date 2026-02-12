@@ -264,7 +264,7 @@ export class PeerRouter extends EventEmitter {
 
     // Keep only last 1000 routing decisions
     if (this.routingHistory.length > 1000) {
-      this.routingHistory = this.routingHistory.slice(-500);
+      this.routingHistory = this.routingHistory.slice(-1000);
     }
 
     if (result) {

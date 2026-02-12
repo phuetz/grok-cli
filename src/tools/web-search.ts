@@ -751,6 +751,7 @@ export class WebSearchTool {
   clearCache(): void {
     this.cache.clear();
     this.perplexityCache.clear();
+    this.failedQueries.clear();
   }
 }
 

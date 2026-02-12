@@ -594,6 +594,10 @@ export class SlackChannel extends BaseChannel {
         channel: SlackConversation;
       }>('conversations.info', { channel: channelId });
 
+      if (this.channelCache.size >= 5000) {
+        const oldest = this.channelCache.keys().next().value;
+        if (oldest) this.channelCache.delete(oldest);
+      }
       this.channelCache.set(channelId, result.channel);
       return result.channel;
     } catch {
@@ -615,6 +619,10 @@ export class SlackChannel extends BaseChannel {
         user: SlackUser;
       }>('users.info', { user: userId });
 
+      if (this.userCache.size >= 5000) {
+        const oldest = this.userCache.keys().next().value;
+        if (oldest) this.userCache.delete(oldest);
+      }
       this.userCache.set(userId, result.user);
       return result.user;
     } catch {
