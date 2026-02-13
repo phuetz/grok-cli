@@ -246,6 +246,7 @@ jest.mock("../../src/utils/cost-tracker.js", () => ({
     recordUsage: mockRecordUsage,
     getTotalCost: jest.fn().mockReturnValue(0.05),
     formatCostSummary: jest.fn().mockReturnValue("Total: $0.05"),
+    getReport: jest.fn().mockReturnValue({ recentUsage: [], totalCost: 0, totalTokens: 0 }),
   }),
   CostTracker: jest.fn(),
 }));

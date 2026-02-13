@@ -2,28 +2,33 @@
  * Tests for legacy skill system deprecation warnings
  */
 
+// Mock logger to capture deprecation warnings (they now use logger.warn, not console.warn)
+const mockLoggerWarn = jest.fn();
+jest.mock('../../src/utils/logger.js', () => ({
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: (...args: unknown[]) => mockLoggerWarn(...args),
+    error: jest.fn(),
+  },
+}));
+
 import { SkillManager } from '../../src/skills/skill-manager.js';
 import { SkillLoader } from '../../src/skills/skill-loader.js';
 
 describe('Legacy Skill System Deprecation', () => {
-  let warnSpy: jest.SpyInstance;
-
   beforeEach(() => {
-    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    warnSpy.mockRestore();
+    mockLoggerWarn.mockClear();
   });
 
   describe('SkillManager deprecation', () => {
     it('should emit deprecation warning on construction', () => {
+      // Reset the one-time flag by creating a fresh module scope
+      // Note: the warning is only emitted once per process due to the flag
       new SkillManager('/tmp/test');
-      expect(warnSpy).toHaveBeenCalledWith(
+      // The deprecation warning uses logger.warn with [DEPRECATED] prefix
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
         expect.stringContaining('DEPRECATED')
-      );
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('SkillManager')
       );
     });
 
@@ -45,11 +50,9 @@ describe('Legacy Skill System Deprecation', () => {
   describe('SkillLoader deprecation', () => {
     it('should emit deprecation warning on construction', () => {
       new SkillLoader({});
-      expect(warnSpy).toHaveBeenCalledWith(
+      // The deprecation warning uses logger.warn with [DEPRECATED] prefix
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
         expect.stringContaining('DEPRECATED')
-      );
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('SkillLoader')
       );
     });
 

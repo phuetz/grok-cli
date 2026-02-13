@@ -182,7 +182,9 @@ describe('handleSearch', () => {
   });
 
   it('should report no matches for non-existent pattern', async () => {
-    const result = await handleSearch(['xyzNonExistentPatternQwertyuiop12345']);
+    // Use a pattern that won't appear anywhere (even in this file) by building it dynamically
+    const pattern = ['zzz', 'NEVER', 'MATCH', Date.now().toString(36)].join('_');
+    const result = await handleSearch([pattern]);
     expect(result.handled).toBe(true);
     expect(result.entry?.content).toContain('No matches');
   });

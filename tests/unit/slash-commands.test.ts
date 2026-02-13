@@ -196,21 +196,20 @@ describe('SlashCommandManager', () => {
     });
 
     describe('diff command', () => {
-      test('should return __DIFF_CHECKPOINTS__ prompt', () => {
+      test('should return __DIFF__ prompt', () => {
         const result = manager.execute('/diff');
 
         expect(result.success).toBe(true);
-        expect(result.prompt).toBe('__DIFF_CHECKPOINTS__');
+        expect(result.prompt).toBe('__DIFF__');
       });
     });
 
     describe('review command', () => {
-      test('should return prompt with git diff instructions', () => {
+      test('should return __REVIEW__ prompt', () => {
         const result = manager.execute('/review');
 
         expect(result.success).toBe(true);
-        expect(result.prompt).toContain('git diff');
-        expect(result.prompt).toContain('code reviewer');
+        expect(result.prompt).toBe('__REVIEW__');
       });
     });
 
@@ -225,12 +224,11 @@ describe('SlashCommandManager', () => {
     });
 
     describe('test command', () => {
-      test('should return prompt with test instructions', () => {
+      test('should return __TEST__ prompt', () => {
         const result = manager.execute('/test');
 
         expect(result.success).toBe(true);
-        expect(result.prompt).toContain('test suite');
-        expect(result.prompt).toContain('framework');
+        expect(result.prompt).toBe('__TEST__');
       });
     });
 

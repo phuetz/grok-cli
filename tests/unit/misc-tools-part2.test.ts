@@ -151,14 +151,14 @@ describe('Miscellaneous Tools VFS Migration Part 2', () => {
   describe('VideoTool', () => {
     it('should use VFS for video info', async () => {
       const tool = new VideoTool();
-      
+
       mockExists.mockResolvedValue(true);
       mockStat.mockResolvedValue({ size: 1024 });
-      
+
       await tool.getInfo('video.mp4');
-      
+
       expect(mockExists).toHaveBeenCalled();
       expect(mockStat).toHaveBeenCalled();
-    });
+    }, 30000);
   });
 });

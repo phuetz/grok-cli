@@ -351,12 +351,11 @@ describe('StepManager', () => {
         action: 'log',
       };
 
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      // The log action now uses logger.info instead of console.log
       const result = await stepManager.executeStep(step, context);
 
       expect(result.success).toBe(true);
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      expect(result.output).toBe('Test message');
     });
 
     it('should execute delay action', async () => {

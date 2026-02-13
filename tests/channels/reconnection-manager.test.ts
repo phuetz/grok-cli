@@ -257,7 +257,7 @@ describe('ReconnectionManager', () => {
       const error = new Error('Connection failed');
       m.scheduleReconnect(jest.fn().mockRejectedValue(error));
 
-      jest.advanceTimersByTime(100);
+      await jest.advanceTimersByTimeAsync(100);
       await Promise.resolve();
       await Promise.resolve();
 
@@ -300,7 +300,7 @@ describe('ReconnectionManager', () => {
 
       m.scheduleReconnect(jest.fn().mockRejectedValue('string error'));
 
-      jest.advanceTimersByTime(100);
+      await jest.advanceTimersByTimeAsync(100);
       await Promise.resolve();
       await Promise.resolve();
 
@@ -643,10 +643,13 @@ describe('ReconnectionManager', () => {
         maxRetries: 5,
       });
 
+      // Add error handler to prevent unhandled rejection
+      m.on('error', () => {});
+
       const fn1 = jest.fn().mockRejectedValue(new Error('fail'));
       m.scheduleReconnect(fn1);
 
-      jest.advanceTimersByTime(100);
+      await jest.advanceTimersByTimeAsync(100);
       await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();

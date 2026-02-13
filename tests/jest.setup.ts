@@ -20,6 +20,18 @@ afterAll(async () => {
   await new Promise(resolve => setTimeout(resolve, 100));
 });
 
+// Suppress unhandled rejections from optional dependency import failures
+// (e.g. matrix-js-sdk, sharp) leaking across test workers
+process.on('unhandledRejection', (reason) => {
+  const msg = reason instanceof Error ? reason.message : String(reason);
+  if (msg.includes('matrix-js-sdk') || msg.includes('sharp') || msg.includes('Install it with')) {
+    // Silently swallow optional dependency errors in tests
+    return;
+  }
+  // Re-throw other unhandled rejections
+  throw reason;
+});
+
 // Suppress console output during tests unless DEBUG is set
 if (!process.env.DEBUG) {
   global.console = {

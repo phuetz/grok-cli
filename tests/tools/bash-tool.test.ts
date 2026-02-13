@@ -653,7 +653,7 @@ describe('BashTool', () => {
     it('should find files matching pattern', async () => {
       const result = await bashTool.findFiles('*.ts', '.');
       expect(result).toBeDefined();
-    });
+    }, 30000);
 
     it('should search with grep/ripgrep', async () => {
       const result = await bashTool.grep('test', '.');

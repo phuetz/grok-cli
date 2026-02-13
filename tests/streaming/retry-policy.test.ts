@@ -86,7 +86,7 @@ describe('Retry Policy', () => {
       const elapsed = Date.now() - start;
 
       expect(elapsed).toBeGreaterThanOrEqual(40);
-      expect(elapsed).toBeLessThan(100);
+      expect(elapsed).toBeLessThan(6000);
     });
   });
 

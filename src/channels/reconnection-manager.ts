@@ -124,23 +124,31 @@ export class ReconnectionManager extends EventEmitter {
     logger.debug(`${this.name}: scheduling reconnect attempt ${this.retryCount}/${this.config.maxRetries} in ${delay}ms`);
     this.emit('reconnecting', this.retryCount, delay);
 
-    this.pendingTimer = setTimeout(async () => {
+    this.pendingTimer = setTimeout(() => {
       this.pendingTimer = null;
-      try {
-        await connectFn();
-        // If connectFn succeeds without throwing, emit reconnected
-        this.emit('reconnected', this.retryCount);
-        // Note: caller should call onConnected() to reset the state
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err));
-        logger.debug(`${this.name}: reconnect attempt ${this.retryCount} failed`, {
-          error: error.message,
-        });
-        this.emit('error', error, this.retryCount);
-      } finally {
-        this.active = false;
-      }
+      // Wrap in a void promise to prevent unhandled rejections from leaking
+      void (async () => {
+        try {
+          await connectFn();
+          // If connectFn succeeds without throwing, emit reconnected
+          this.emit('reconnected', this.retryCount);
+          // Note: caller should call onConnected() to reset the state
+        } catch (err) {
+          const error = err instanceof Error ? err : new Error(String(err));
+          logger.debug(`${this.name}: reconnect attempt ${this.retryCount} failed`, {
+            error: error.message,
+          });
+          // Only emit error if there are listeners, otherwise EventEmitter throws
+          if (this.listenerCount('error') > 0) {
+            this.emit('error', error, this.retryCount);
+          }
+        } finally {
+          this.active = false;
+        }
+      })();
     }, delay);
+    // Allow process to exit even if timer is pending
+    this.pendingTimer.unref();
   }
 
   /**

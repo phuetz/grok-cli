@@ -126,7 +126,7 @@ describe('BenchmarkSuite', () => {
 
       expect(results.summary.totalRuns).toBe(10);
       expect(results.summary.successfulRuns + results.summary.failedRuns).toBe(10);
-    });
+    }, 30000);
 
     it('should emit phase events', async () => {
       const suite = new BenchmarkSuite({

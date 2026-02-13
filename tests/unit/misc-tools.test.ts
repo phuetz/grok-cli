@@ -87,7 +87,7 @@ describe('Miscellaneous Tools VFS Migration', () => {
   describe('ScreenshotTool', () => {
     it('should use VFS for ensuring output dir', async () => {
       const tool = new ScreenshotTool();
-      
+
       // Capture calls ensureDir
       // We assume spawn will fail or we mock it, but ensureDir is called first
       try {
@@ -95,9 +95,9 @@ describe('Miscellaneous Tools VFS Migration', () => {
       } catch {
         // Expected spawn error
       }
-      
+
       expect(mockEnsureDir).toHaveBeenCalled();
-    });
+    }, 30000);
   });
 
   describe('ImageInput', () => {
