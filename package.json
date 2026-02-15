@@ -103,7 +103,6 @@
     "fast-glob": "^3.3.3",
     "form-data": "^4.0.5",
     "fs-extra": "^11.3.2",
-    "glob": "^10.4.5",
     "ignore": "^5.3.2",
     "ink": "^4.4.1",
     "marked": "^15.0.12",
@@ -134,10 +133,10 @@
     "node-pty": "^1.0.0",
     "pdf-parse": "^2.4.5",
     "playwright": "^1.58.0",
-    "sharp": "^0.32.6",
+    "sharp": "^0.33.5",
     "string-width": "^7.2.0",
     "tar": "^7.5.3",
-    "tree-sitter": "^0.22.4",
+    "tree-sitter": "^0.21.1",
     "tree-sitter-bash": "^0.23.3",
     "usearch": "^2.21.4",
     "ws": "^8.18.0",
@@ -151,7 +150,6 @@
     "@types/diff-match-patch": "^1.0.36",
     "@types/express": "^5.0.6",
     "@types/fs-extra": "^11.0.4",
-    "@types/glob": "^8.1.0",
     "@types/jest": "^29.5.14",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.19.26",
@@ -177,7 +175,6 @@
   "overrides": {
     "hono": "^4.11.4",
     "jimp": "1.6.0",
-    "phin": "^3.7.1",
     "qs": "^6.13.0"
   }
 }
