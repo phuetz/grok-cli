@@ -50,6 +50,12 @@ export interface OSSandboxConfig {
     /** Max file size in bytes */
     maxFileSize?: number;
   };
+  /** Domain allowlist when network is enabled */
+  allowedDomains: string[];
+  /** Commands that bypass the sandbox */
+  excludedCommands: string[];
+  /** Allow running unsandboxed as fallback (default: true) */
+  allowUnsandboxed: boolean;
 }
 
 export interface OSSandboxResult {
@@ -74,6 +80,12 @@ export interface SandboxCapabilities {
 // Default Configuration
 // ============================================================================
 
+export interface OSSandboxStats {
+  commandsRun: number;
+  commandsSandboxed: number;
+  commandsBypassed: number;
+}
+
 const DEFAULT_CONFIG: OSSandboxConfig = {
   workDir: process.cwd(),
   readOnlyPaths: ['/usr', '/lib', '/lib64', '/bin', '/sbin', '/etc'],
@@ -88,6 +100,9 @@ const DEFAULT_CONFIG: OSSandboxConfig = {
     maxProcesses: 100,
     maxFileSize: 100 * 1024 * 1024, // 100MB
   },
+  allowedDomains: [],
+  excludedCommands: [],
+  allowUnsandboxed: true,
 };
 
 // ============================================================================
@@ -670,6 +685,11 @@ export class OSSandbox extends EventEmitter {
   private config: OSSandboxConfig;
   private backend: SandboxBackend = 'none';
   private initialized = false;
+  private stats: OSSandboxStats = {
+    commandsRun: 0,
+    commandsSandboxed: 0,
+    commandsBypassed: 0,
+  };
 
   constructor(config: Partial<OSSandboxConfig> = {}) {
     super();
@@ -801,6 +821,73 @@ export class OSSandbox extends EventEmitter {
    */
   getConfig(): OSSandboxConfig {
     return { ...this.config };
+  }
+
+  /**
+   * Check if a domain should be allowed through the network filter
+   */
+  shouldAllowDomain(domain: string): boolean {
+    if (!this.config.allowNetwork) {
+      return false;
+    }
+
+    if (this.config.allowedDomains.length === 0) {
+      // No allowlist means allow all when network is enabled
+      return true;
+    }
+
+    const normalizedDomain = domain.toLowerCase();
+    return this.config.allowedDomains.some((allowed) => {
+      const normalizedAllowed = allowed.toLowerCase();
+      return (
+        normalizedDomain === normalizedAllowed ||
+        normalizedDomain.endsWith('.' + normalizedAllowed)
+      );
+    });
+  }
+
+  /**
+   * Check if a command should bypass the sandbox
+   */
+  isCommandExcluded(command: string): boolean {
+    const trimmed = command.trim();
+    const baseCommand = trimmed.split(/\s+/)[0];
+    const binaryName = baseCommand.split('/').pop() || baseCommand;
+
+    return this.config.excludedCommands.some((excluded) => {
+      return binaryName === excluded || baseCommand === excluded;
+    });
+  }
+
+  /**
+   * Get execution statistics
+   */
+  getStats(): OSSandboxStats {
+    return { ...this.stats };
+  }
+
+  /**
+   * Execute a shell command with exclusion and stats tracking
+   */
+  async execShellTracked(shellCommand: string): Promise<OSSandboxResult> {
+    this.stats.commandsRun++;
+
+    if (this.isCommandExcluded(shellCommand)) {
+      this.stats.commandsBypassed++;
+      const shell = os.platform() === 'win32' ? 'cmd' : 'sh';
+      const shellArg = os.platform() === 'win32' ? '/c' : '-c';
+      return execUnsandboxed(shell, [shellArg, shellCommand], this.config.timeout);
+    }
+
+    if (!this.isAvailable() && this.config.allowUnsandboxed) {
+      this.stats.commandsBypassed++;
+      const shell = os.platform() === 'win32' ? 'cmd' : 'sh';
+      const shellArg = os.platform() === 'win32' ? '/c' : '-c';
+      return execUnsandboxed(shell, [shellArg, shellCommand], this.config.timeout);
+    }
+
+    this.stats.commandsSandboxed++;
+    return this.execShell(shellCommand);
   }
 }
 
