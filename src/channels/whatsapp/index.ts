@@ -123,7 +123,6 @@ export class WhatsAppChannel extends BaseChannel {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let baileys: any;
     try {
-      // @ts-expect-error -- optional dependency, loaded dynamically
       baileys = await import('@whiskeysockets/baileys');
     } catch {
       throw new Error(
