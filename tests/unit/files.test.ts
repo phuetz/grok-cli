@@ -1053,7 +1053,7 @@ describe('Context Files', () => {
     it('should load project context files', async () => {
       // context-files uses fs-extra (pathExists, readFile) directly, not VFS
       mockFsExtra.pathExists.mockImplementation(async (p: string) => {
-        return p.includes('GROK.md');
+        return p.includes('CODEBUDDY.md');
       });
       mockFsExtra.readFile.mockResolvedValue('# Project Context');
 
@@ -1083,7 +1083,7 @@ describe('Context Files', () => {
   describe('loadContext', () => {
     it('should combine context files', async () => {
       mockFsExtra.pathExists.mockImplementation(async (p: string) => {
-        return p.includes('GROK.md');
+        return p.includes('CODEBUDDY.md');
       });
       mockFsExtra.readFile.mockResolvedValue('# Context');
 
@@ -1155,7 +1155,7 @@ describe('Context Files', () => {
     it('should return true when context files exist', async () => {
       // hasContextFiles calls loadProjectContextFiles which uses fs-extra
       mockFsExtra.pathExists.mockImplementation(async (p: string) => {
-        return p.includes('GROK.md');
+        return p.includes('CODEBUDDY.md');
       });
       mockFsExtra.readFile.mockResolvedValue('content');
 
@@ -1176,7 +1176,7 @@ describe('Context Files', () => {
     it('should format summary with file info', () => {
       const context = {
         files: [
-          { path: '/test/GROK.md', content: 'x'.repeat(2048), source: 'project' as const, priority: 1 },
+          { path: '/test/CODEBUDDY.md', content: 'x'.repeat(2048), source: 'project' as const, priority: 1 },
         ],
         combinedContent: 'x'.repeat(2048),
         totalSize: 2048,
@@ -1184,7 +1184,7 @@ describe('Context Files', () => {
 
       const summary = formatContextSummary(context);
       expect(summary).toContain('Context files loaded');
-      expect(summary).toContain('GROK.md');
+      expect(summary).toContain('CODEBUDDY.md');
       expect(summary).toContain('KB');
     });
 

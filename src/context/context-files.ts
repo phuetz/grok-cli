@@ -3,7 +3,7 @@
  *
  * Automatically loads context from special files:
  * - .codebuddy/CONTEXT.md - Project-specific context
- * - GROK.md - Alternative location (project root)
+ * - CODEBUDDY.md - Alternative location (project root)
  * - ~/.codebuddy/CONTEXT.md - Global user context
  *
  * These files are read at startup and injected into the system prompt.
@@ -31,7 +31,7 @@ export interface LoadedContext {
  */
 const CONTEXT_FILE_LOCATIONS = [
   { pattern: '.codebuddy/CONTEXT.md', source: 'project' as const, priority: 1 },
-  { pattern: 'GROK.md', source: 'project' as const, priority: 2 },
+  { pattern: 'CODEBUDDY.md', source: 'project' as const, priority: 2 },
   { pattern: '.codebuddy/context.md', source: 'project' as const, priority: 3 },
   { pattern: 'CLAUDE.md', source: 'project' as const, priority: 4 }, // Compatibility
 ];

@@ -4,7 +4,11 @@ import { logger } from './logger.js';
 
 export function loadCustomInstructions(workingDirectory: string = process.cwd()): string | null {
   try {
-    const instructionsPath = path.join(workingDirectory, '.codebuddy', 'GROK.md');
+    // Try CODEBUDDY.md first, fall back to GROK.md for backwards compatibility
+    const codebuddyPath = path.join(workingDirectory, '.codebuddy', 'CODEBUDDY.md');
+    const legacyPath = path.join(workingDirectory, '.codebuddy', 'GROK.md');
+
+    const instructionsPath = fs.existsSync(codebuddyPath) ? codebuddyPath : legacyPath;
 
     if (!fs.existsSync(instructionsPath)) {
       return null;

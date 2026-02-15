@@ -18,7 +18,7 @@ export interface InitResult {
 }
 
 /**
- * Initialize .grok directory with templates and configurations
+ * Initialize .codebuddy directory with templates and configurations
  * Similar to Claude Code's project initialization
  */
 export function initCodeBuddyProject(
@@ -34,16 +34,16 @@ export function initCodeBuddyProject(
 
   const codebuddyDir = path.join(workingDirectory, '.codebuddy');
 
-  // Create .grok directory
+  // Create .codebuddy directory
   if (!fs.existsSync(codebuddyDir)) {
     fs.mkdirSync(codebuddyDir, { recursive: true });
     result.created.push('.codebuddy/');
   }
 
-  // Create GROK.md (custom instructions)
-  const codebuddyMdPath = path.join(codebuddyDir, 'GROK.md');
+  // Create CODEBUDDY.md (custom instructions)
+  const codebuddyMdPath = path.join(codebuddyDir, 'CODEBUDDY.md');
   if (!fs.existsSync(codebuddyMdPath) || options.force) {
-    const codebuddyMdContent = `# Custom Instructions for Grok CLI
+    const codebuddyMdContent = `# Custom Instructions for Code Buddy
 
 ## About This Project
 <!-- Describe your project here -->
@@ -75,15 +75,15 @@ This project is...
 - ...
 
 ## Forbidden Actions
-<!-- List things Grok should never do -->
+<!-- List things Code Buddy should never do -->
 - Never commit .env files
 - Never expose API keys
 - Never delete production data
 `;
     fs.writeFileSync(codebuddyMdPath, codebuddyMdContent);
-    result.created.push('.codebuddy/GROK.md');
+    result.created.push('.codebuddy/CODEBUDDY.md');
   } else {
-    result.skipped.push('.codebuddy/GROK.md (already exists)');
+    result.skipped.push('.codebuddy/CODEBUDDY.md (already exists)');
   }
 
   // Create hooks.json
@@ -259,7 +259,7 @@ Safety checks:
   if (options.includeGitignore !== false) {
     const gitignorePath = path.join(workingDirectory, '.gitignore');
     const codebuddyIgnoreEntries = `
-# Grok CLI
+# Code Buddy
 .codebuddy/sessions/
 .codebuddy/history/
 .codebuddy/user-settings.json
@@ -267,11 +267,11 @@ Safety checks:
 
     if (fs.existsSync(gitignorePath)) {
       const currentContent = fs.readFileSync(gitignorePath, 'utf-8');
-      if (!currentContent.includes('# Grok CLI')) {
+      if (!currentContent.includes('# Code Buddy') && !currentContent.includes('# Grok CLI')) {
         fs.appendFileSync(gitignorePath, codebuddyIgnoreEntries);
-        result.created.push('.gitignore (updated with Grok entries)');
+        result.created.push('.gitignore (updated with Code Buddy entries)');
       } else {
-        result.skipped.push('.gitignore (already has Grok entries)');
+        result.skipped.push('.gitignore (already has Code Buddy entries)');
       }
     } else {
       fs.writeFileSync(gitignorePath, codebuddyIgnoreEntries.trim());
@@ -279,16 +279,16 @@ Safety checks:
     }
   }
 
-  // Create README for .grok directory
+  // Create README for .codebuddy directory
   const readmePath = path.join(codebuddyDir, 'README.md');
   if (!fs.existsSync(readmePath) || options.force) {
-    const readmeContent = `# .grok Directory
+    const readmeContent = `# .codebuddy Directory
 
-This directory contains configuration and customization files for [Grok CLI](https://github.com/phuetz/code-buddy).
+This directory contains configuration and customization files for [Code Buddy](https://github.com/phuetz/code-buddy).
 
 ## Files
 
-- **GROK.md** - Custom instructions that Grok follows when working in this project
+- **CODEBUDDY.md** - Custom instructions that Code Buddy follows when working in this project
 - **settings.json** - Project-specific settings
 - **hooks.json** - Automated hooks (pre-commit, post-edit, etc.)
 - **mcp.json** - MCP server configurations (committable, shared with team)
@@ -321,7 +321,7 @@ Configure automated actions in \`hooks.json\`:
 
 ## MCP Servers
 
-Configure MCP servers in \`mcp.json\` to extend Grok's capabilities.
+Configure MCP servers in \`mcp.json\` to extend Code Buddy's capabilities.
 This file can be committed to share servers with your team.
 
 ## Security
@@ -333,7 +333,7 @@ Configure security modes in \`security.json\`:
 
 ## More Information
 
-See the [Grok CLI documentation](https://github.com/phuetz/code-buddy) for more details.
+See the [Code Buddy documentation](https://github.com/phuetz/code-buddy) for more details.
 `;
     fs.writeFileSync(readmePath, readmeContent);
     result.created.push('.codebuddy/README.md');
@@ -346,7 +346,7 @@ See the [Grok CLI documentation](https://github.com/phuetz/code-buddy) for more 
  * Format init result for display
  */
 export function formatInitResult(result: InitResult): string {
-  let output = '🚀 Grok Project Initialization\n' + '═'.repeat(50) + '\n\n';
+  let output = '🚀 Code Buddy Project Initialization\n' + '═'.repeat(50) + '\n\n';
 
   if (result.created.length > 0) {
     output += '✅ Created:\n';
@@ -373,7 +373,7 @@ export function formatInitResult(result: InitResult): string {
   }
 
   output += '─'.repeat(50) + '\n';
-  output += '💡 Edit .codebuddy/GROK.md to customize Grok for this project\n';
+  output += '💡 Edit .codebuddy/CODEBUDDY.md to customize Code Buddy for this project\n';
   output += '📚 See .codebuddy/README.md for documentation';
 
   return output;

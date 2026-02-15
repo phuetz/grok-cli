@@ -45,7 +45,7 @@ const coreCommands: SlashCommand[] = [
   },
   {
     name: 'init',
-    description: 'Initialize .grok directory with templates',
+    description: 'Initialize .codebuddy directory with templates',
     prompt: '__INIT_GROK__',
     filePath: '',
     isBuiltin: true
