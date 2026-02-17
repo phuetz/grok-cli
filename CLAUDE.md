@@ -256,7 +256,10 @@ const safePath = pathResult.value;
 
 ### Special Modes
 
-- **YOLO Mode** (`YOLO_MODE=true`) - 400 tool rounds, higher cost limit, full autonomy
+- **YOLO Mode** (`YOLO_MODE=true` + `/yolo on`) - 400 tool rounds, $100 cost limit, auto-approve edits/commands with guardrails
+  - Key files: `src/utils/autonomy-manager.ts` (YOLOConfig, allow/deny lists, session tracking), `src/commands/handlers/core-handlers.ts` (/yolo handler)
+  - Commands: `/yolo on|off|safe|status|allow|deny`, `/autonomy suggest|confirm|auto|full|yolo`
+  - Guardrails: blocked paths (`.env`, `.git`, `*.pem`), blocked commands (`rm -rf /`, `sudo`, `DROP DATABASE`), per-session limits
 - **Security Modes** - Three tiers: `suggest` (confirm all), `auto-edit` (auto-approve safe), `full-auto`
 - **Agent Modes** - `plan`, `code`, `ask`, `architect` - each restricts available tools
 

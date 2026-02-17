@@ -600,6 +600,53 @@ const bashPolicy = new BashAllowlist({
 /mode full-auto  # Full autonomy
 ```
 
+### YOLO Mode (Autonomous Execution)
+
+Full autonomy mode with built-in guardrails for safe unattended operation:
+
+```bash
+# Enable via CLI
+/yolo on           # Enable (50 auto-edits, 100 auto-commands)
+/yolo safe         # Restricted mode (20 edits, 30 commands, limited paths)
+/yolo off          # Disable
+/yolo status       # Show limits, counters, allow/deny lists
+
+# Or via environment
+YOLO_MODE=true buddy   # Still requires /yolo on confirmation in chat
+```
+
+**What changes in YOLO mode:**
+
+| Setting | Normal | YOLO |
+|:--------|:-------|:-----|
+| Tool rounds | 50 | 400 |
+| Cost limit | $10 | $100 (cap $1,000) |
+| File edits | Confirm each | Auto-approve (up to limit) |
+| Bash commands | Confirm each | Auto-execute safe commands |
+
+**Autonomy levels** (fine-grained control):
+
+```bash
+/autonomy suggest   # Confirm everything
+/autonomy confirm   # Confirm important ops (default)
+/autonomy auto      # Auto-approve safe ops, confirm dangerous
+/autonomy full      # Auto-approve all except critical
+/autonomy yolo      # Full auto with guardrails
+```
+
+**Customize allow/deny lists:**
+
+```bash
+/yolo allow "npm run dev"      # Add to auto-execute list
+/yolo deny "docker rm -f"      # Block a command pattern
+```
+
+**Built-in guardrails (always active, even in YOLO):**
+- Blocked paths: `.env`, `.git`, `node_modules`, `*.pem`, `*.key`, `credentials`
+- Blocked commands: `rm -rf /`, `sudo`, `git push --force origin main`, `DROP DATABASE`
+- Per-session limits on edits and commands
+- Hard cost cap ($1,000 max even with `MAX_COST` override)
+
 ### Sandbox Isolation
 
 Docker-based execution environment:
