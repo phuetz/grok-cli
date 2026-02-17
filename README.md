@@ -541,15 +541,79 @@ Code Buddy supports multiple messaging channels:
 | **Microsoft Teams** | 🟡 Base | Bot Framework (OAuth2, adaptive cards) |
 | **Matrix** | 🟡 Base | matrix-js-sdk (E2EE, threads, media) |
 
-### Channel Configuration
+### Telegram Setup
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) on Telegram (`/newbot`)
+2. Copy the bot token and configure:
+
+```bash
+export TELEGRAM_BOT_TOKEN=123456:ABC-DEF...
+```
+
+Or in `.codebuddy/settings.json`:
+
+```json
+{
+  "channels": {
+    "telegram": {
+      "type": "telegram",
+      "token": "123456:ABC-DEF...",
+      "adminUsers": ["your_telegram_user_id"],
+      "defaultParseMode": "Markdown"
+    }
+  }
+}
+```
+
+3. Start Code Buddy with Telegram:
+
+```bash
+buddy --channel telegram        # Interactive with Telegram
+buddy daemon start              # 24/7 background mode
+```
+
+4. Message your bot on Telegram — it responds with full agent capabilities (file editing, bash commands, code analysis).
+
+**Deployment modes:**
+
+| Mode | Config | Best for |
+|:-----|:-------|:---------|
+| **Polling** (default) | No extra config | Development, behind NAT |
+| **Webhook** | `"webhookUrl": "https://your-domain.com/telegram"` | Production, lower latency |
+
+**Supported message types:** text, images, audio, video, documents, stickers, locations, contacts, inline buttons, reply threads, typing indicators.
+
+### DM Pairing (Access Control)
+
+Prevents unauthorized users from consuming API credits (OpenClaw-inspired):
+
+1. Unknown user messages the bot → receives a **6-character pairing code** (expires in 15 min)
+2. Bot owner approves: `/pairing approve telegram ABC123`
+3. User is added to the persistent allowlist (`~/.codebuddy/credentials/telegram-allowFrom.json`)
+
+Security features: rate limiting (5 failed attempts → 1h block), per-channel allowlists, admin bypass.
+
+### Other Channels
 
 ```typescript
-// Enable Discord channel
+// Discord
 const discord = new DiscordChannel({
   token: process.env.DISCORD_TOKEN,
   allowedGuilds: ['guild-id'],
 });
 await discord.connect();
+
+// WhatsApp (Baileys, QR pairing)
+const whatsapp = new WhatsAppChannel({ dataPath: '~/.codebuddy/whatsapp' });
+await whatsapp.connect(); // Scan QR code
+
+// Signal (signal-cli REST API)
+const signal = new SignalChannel({ apiUrl: 'http://localhost:8080', phoneNumber: '+1234567890' });
+await signal.connect();
+
+// Matrix (E2EE, threads)
+const matrix = new MatrixChannel({ homeserverUrl: 'https://matrix.org', accessToken: '...' });
+await matrix.connect();
 ```
 
 ---
@@ -1118,6 +1182,9 @@ npm run build
 | `YOLO_MODE` | Full autonomy | `false` |
 | `MAX_COST` | Cost limit ($) | `10` |
 | `JWT_SECRET` | API server auth | Required in prod |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token (from @BotFather) | - |
+| `DISCORD_TOKEN` | Discord bot token | - |
+| `SLACK_BOT_TOKEN` | Slack bot token | - |
 
 **Optional Rust tools (install via `cargo install`):**
 
