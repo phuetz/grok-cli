@@ -1010,6 +1010,50 @@ export class BrowserManager extends EventEmitter {
     await locator.setInputFiles(options.files);
   }
 
+  /**
+   * Drag element to another element
+   */
+  async drag(options: { sourceRef: number; targetRef: number }): Promise<void> {
+    const page = this.getCurrentPage();
+    const source = this.getElement(options.sourceRef);
+    const target = this.getElement(options.targetRef);
+
+    if (!source) throw new Error(`Source element [${options.sourceRef}] not found.`);
+    if (!target) throw new Error(`Target element [${options.targetRef}] not found.`);
+
+    const sourceLocator = page.locator(`[aria-label="${source.name}"]`).first();
+    const targetLocator = page.locator(`[aria-label="${target.name}"]`).first();
+    await sourceLocator.dragTo(targetLocator);
+  }
+
+  /**
+   * Wait for navigation to complete
+   */
+  async waitForNavigation(options?: { timeout?: number }): Promise<void> {
+    const page = this.getCurrentPage();
+    await page.waitForURL('**', { timeout: options?.timeout ?? 30000 });
+  }
+
+  /**
+   * Download a file by clicking a link or triggering a download
+   */
+  async downloadFile(options: { ref?: number; timeout?: number }): Promise<{ path: string; suggestedFilename: string }> {
+    const page = this.getCurrentPage();
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: options?.timeout ?? 30000 }),
+      options?.ref !== undefined
+        ? this.click(options.ref)
+        : Promise.resolve(),
+    ]);
+
+    const filePath = await download.path();
+    return {
+      path: filePath || '',
+      suggestedFilename: download.suggestedFilename(),
+    };
+  }
+
   // ============================================================================
   // Helpers
   // ============================================================================

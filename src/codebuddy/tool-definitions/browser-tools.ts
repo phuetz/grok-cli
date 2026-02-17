@@ -77,7 +77,34 @@ JavaScript:
 - evaluate: Execute JavaScript in page context
 - get_content: Get page HTML content
 - get_url: Get current URL
-- get_title: Get page title`,
+- get_title: Get page title
+
+Drag & Drop:
+- drag: Drag element to another element (sourceRef → targetRef)
+
+File Upload:
+- upload_files: Upload files to file input (ref + files array)
+
+Wait:
+- wait_for_navigation: Wait for page navigation to complete
+
+Storage:
+- get_local_storage: Get all localStorage entries
+- set_local_storage: Set localStorage entries (storageData object)
+- get_session_storage: Get all sessionStorage entries
+- set_session_storage: Set sessionStorage entries (storageData object)
+
+Route Interception:
+- add_route_rule: Add network route rule (rulePattern, ruleAction: block/mock/redirect)
+- remove_route_rule: Remove route rule by ID
+- clear_route_rules: Clear all route rules
+
+Timezone & Locale:
+- set_timezone: Set browser timezone (timezone string)
+- set_locale: Set browser locale (locale string)
+
+Download:
+- download: Download file by clicking element (ref) or waiting for download`,
     parameters: {
       type: 'object',
       properties: {
@@ -93,6 +120,11 @@ JavaScript:
             'get_cookies', 'set_cookie', 'clear_cookies', 'set_headers', 'set_offline',
             'emulate_device', 'set_geolocation',
             'evaluate', 'get_content', 'get_url', 'get_title',
+            'drag', 'upload_files', 'wait_for_navigation',
+            'get_local_storage', 'set_local_storage', 'get_session_storage', 'set_session_storage',
+            'add_route_rule', 'remove_route_rule', 'clear_route_rules',
+            'set_timezone', 'set_locale',
+            'download',
           ],
           description: 'The browser action to perform',
         },
@@ -272,6 +304,57 @@ JavaScript:
         timeout: {
           type: 'number',
           description: 'Timeout in milliseconds',
+        },
+        // Drag
+        sourceRef: {
+          type: 'number',
+          description: 'Source element ref for drag operation',
+        },
+        targetRef: {
+          type: 'number',
+          description: 'Target element ref for drag operation',
+        },
+        // Upload
+        files: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'File paths to upload',
+        },
+        // Storage
+        storageData: {
+          type: 'object',
+          description: 'Key-value pairs for localStorage/sessionStorage',
+        },
+        // Route Rules
+        ruleId: {
+          type: 'string',
+          description: 'Route rule ID',
+        },
+        rulePattern: {
+          type: 'string',
+          description: 'URL pattern to match for route rule',
+        },
+        ruleAction: {
+          type: 'string',
+          enum: ['block', 'mock', 'redirect'],
+          description: 'Action for route rule',
+        },
+        ruleResponse: {
+          type: 'object',
+          description: 'Mock response for route rule (status, body, contentType)',
+        },
+        ruleRedirectUrl: {
+          type: 'string',
+          description: 'Redirect URL for route rule',
+        },
+        // Timezone/Locale
+        timezone: {
+          type: 'string',
+          description: 'Timezone ID (e.g., America/New_York)',
+        },
+        locale: {
+          type: 'string',
+          description: 'Locale string (e.g., en-US)',
         },
       },
       required: ['action'],

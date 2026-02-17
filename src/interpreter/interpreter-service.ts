@@ -32,6 +32,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as yaml from 'yaml';
+import { logger } from '../utils/logger.js';
 
 import type {
   SafeMode,
@@ -680,15 +681,97 @@ export class InterpreterService extends EventEmitter {
     fs.writeFileSync(usagePath, JSON.stringify(data, null, 2), 'utf-8');
   }
 
-  private async processMessage(_message: string): Promise<ChatResult> {
-    // TODO: Integrate with actual LLM client
-    // This is a placeholder implementation
-    return {
-      content: 'Processing message...',
-      tokens: { input: 100, output: 50, total: 150 },
-      cost: 0.001,
-      autoApproved: this.state.autoRun,
-    };
+  private llmClient: import('../codebuddy/client.js').CodeBuddyClient | null = null;
+
+  private async getLLMClient(): Promise<import('../codebuddy/client.js').CodeBuddyClient> {
+    if (this.llmClient) return this.llmClient;
+
+    const apiKey = process.env.GROK_API_KEY;
+    if (!apiKey) {
+      throw new Error('GROK_API_KEY environment variable is required for LLM calls. Set it with: export GROK_API_KEY=your-key');
+    }
+
+    const { CodeBuddyClient } = await import('../codebuddy/client.js');
+    this.llmClient = new CodeBuddyClient(apiKey);
+    return this.llmClient;
+  }
+
+  private async processMessage(message: string): Promise<ChatResult> {
+    try {
+      const client = await this.getLLMClient();
+
+      // Build messages array from conversation history
+      const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
+
+      // Add system prompt from active profile
+      const systemPrompt = this.state.activeProfile.customInstructions ||
+        'You are a helpful coding assistant. Execute tasks as requested.';
+      messages.push({ role: 'system', content: systemPrompt });
+
+      // Add custom instructions if set (and different from profile instructions)
+      if (this.state.customInstructions && this.state.customInstructions !== this.state.activeProfile.customInstructions) {
+        messages.push({ role: 'system', content: this.state.customInstructions });
+      }
+
+      // Add conversation history (last 20 messages to stay within context)
+      const historySlice = this.conversationHistory.slice(-20);
+      for (const msg of historySlice) {
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          messages.push({ role: msg.role, content: msg.content });
+        }
+      }
+
+      // Add current message
+      messages.push({ role: 'user', content: message });
+
+      // Call the LLM
+      const model = this.state.activeProfile.model;
+      const response = await client.chat(messages, [], {
+        model,
+        temperature: this.state.activeProfile.temperature,
+      });
+
+      const choice = response.choices[0];
+      const content = choice?.message?.content || '';
+
+      // Extract usage from response
+      const usage = response.usage;
+      const tokens = {
+        input: usage?.prompt_tokens || 0,
+        output: usage?.completion_tokens || 0,
+        total: usage?.total_tokens || 0,
+      };
+
+      // Calculate cost using existing method
+      const cost = this.calculateCost(model || 'grok-3-mini', tokens);
+
+      // Extract tool calls if present
+      const toolCalls = choice?.message?.tool_calls?.map(tc => ({
+        id: tc.id,
+        name: tc.function.name,
+        arguments: typeof tc.function.arguments === 'string'
+          ? JSON.parse(tc.function.arguments) as Record<string, unknown>
+          : tc.function.arguments as Record<string, unknown>,
+      }));
+
+      return {
+        content,
+        tokens,
+        cost,
+        autoApproved: this.state.autoRun,
+        toolCalls,
+      };
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      logger.error('InterpreterService: LLM call failed', { error: errMsg });
+
+      return {
+        content: `Error: ${errMsg}`,
+        tokens: { input: 0, output: 0, total: 0 },
+        cost: 0,
+        autoApproved: false,
+      };
+    }
   }
 }
 

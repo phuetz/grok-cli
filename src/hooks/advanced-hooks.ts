@@ -195,19 +195,86 @@ export class AdvancedHookRunner {
     });
   }
 
-  private async runPromptHook(hook: AdvancedHook, _context: HookContext): Promise<HookDecision> {
-    // Stub: returns allow with the prompt text stored as additional context
-    logger.debug(`Prompt hook "${hook.name}" evaluated (stub)`, { source: 'AdvancedHookRunner' });
-    return {
-      action: 'allow',
-      additionalContext: hook.prompt || undefined,
-    };
+  private async runPromptHook(hook: AdvancedHook, context: HookContext): Promise<HookDecision> {
+    if (!hook.prompt) {
+      logger.debug(`Prompt hook "${hook.name}" has no prompt, allowing`, { source: 'AdvancedHookRunner' });
+      return { action: 'allow', additionalContext: undefined };
+    }
+
+    try {
+      const { CodeBuddyClient } = await import('../codebuddy/client.js');
+      const apiKey = process.env.GROK_API_KEY;
+      if (!apiKey) {
+        logger.warn(`Prompt hook "${hook.name}": no GROK_API_KEY, allowing`, { source: 'AdvancedHookRunner' });
+        return { action: 'allow', additionalContext: hook.prompt };
+      }
+
+      const client = new CodeBuddyClient(apiKey);
+      const prompt = `${hook.prompt}\n\nContext:\n${JSON.stringify(context, null, 2)}\n\nRespond with exactly one of: ALLOW, DENY, or ASK. Then explain your reasoning.`;
+
+      const response = await client.chat([{ role: 'user', content: prompt }], []);
+      const content = response.choices[0]?.message?.content || '';
+      const upper = content.toUpperCase();
+
+      let action: 'allow' | 'deny' | 'ask' = 'allow';
+      if (upper.includes('DENY')) action = 'deny';
+      else if (upper.includes('ASK')) action = 'ask';
+
+      return { action, additionalContext: content };
+    } catch (error) {
+      logger.warn(`Prompt hook "${hook.name}" LLM call failed, allowing`, {
+        source: 'AdvancedHookRunner',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { action: 'allow', additionalContext: hook.prompt };
+    }
   }
 
-  private async runAgentHook(hook: AdvancedHook, _context: HookContext): Promise<HookDecision> {
-    // Stub: returns allow
-    logger.debug(`Agent hook "${hook.name}" evaluated (stub)`, { source: 'AdvancedHookRunner' });
-    return { action: 'allow' };
+  private async runAgentHook(hook: AdvancedHook, context: HookContext): Promise<HookDecision> {
+    try {
+      const { CodeBuddyClient } = await import('../codebuddy/client.js');
+      const apiKey = process.env.GROK_API_KEY;
+      if (!apiKey) {
+        logger.warn(`Agent hook "${hook.name}": no GROK_API_KEY, allowing`, { source: 'AdvancedHookRunner' });
+        return { action: 'allow' };
+      }
+
+      const client = new CodeBuddyClient(apiKey);
+      const systemPrompt = hook.prompt || `You are a security evaluation agent for hook "${hook.name}".`;
+      const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Evaluate this action:\n${JSON.stringify(context, null, 2)}\n\nRespond with ALLOW, DENY, or ASK followed by your reasoning.` },
+      ];
+
+      const maxTurns = 3;
+      let lastContent = '';
+
+      for (let turn = 0; turn < maxTurns; turn++) {
+        const response = await client.chat(messages, []);
+        const choice = response.choices[0];
+        lastContent = choice?.message?.content || '';
+
+        if (!choice?.message?.tool_calls || choice.message.tool_calls.length === 0) {
+          break;
+        }
+
+        messages.push({ role: 'assistant', content: lastContent });
+        messages.push({ role: 'user', content: 'Continue your evaluation.' });
+      }
+
+      const upper = lastContent.toUpperCase();
+      let action: 'allow' | 'deny' | 'ask' = 'allow';
+      if (upper.includes('DENY')) action = 'deny';
+      else if (upper.includes('ASK')) action = 'ask';
+
+      return { action, additionalContext: lastContent };
+    } catch (error) {
+      logger.warn(`Agent hook "${hook.name}" LLM call failed, allowing`, {
+        source: 'AdvancedHookRunner',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { action: 'allow' };
+    }
   }
 }
 

@@ -380,16 +380,13 @@ export class CodeBuddyClient {
   }
 
   /**
-   * Gemini-specific chat implementation
+   * Build Gemini request body (shared between streaming and non-streaming)
    */
-  private async geminiChat(
+  private buildGeminiBody(
     messages: CodeBuddyMessage[],
     tools?: CodeBuddyTool[],
     opts?: ChatOptions
-  ): Promise<CodeBuddyResponse> {
-    const model = opts?.model || this.currentModel;
-    const url = `${this.baseURL}/models/${model}:generateContent`;
-
+  ): Record<string, unknown> {
     // Convert messages to Gemini format
     const contents: Array<{
       role: string;
@@ -546,13 +543,36 @@ export class CodeBuddyClient {
     }
 
     // Log request for debugging
-    logger.debug('Gemini request', {
+    logger.debug('Gemini request body built', {
       source: 'CodeBuddyClient',
-      model: opts?.model || this.currentModel,
-      contentsCount: contents.length,
+      contentsCount: merged.length,
       hasTools: !!(tools && tools.length > 0),
       toolCount: tools?.length || 0,
       toolNames: tools?.slice(0, 10).map(t => t.function.name).join(', ') || 'none',
+    });
+
+    return body;
+  }
+
+  /**
+   * Gemini-specific chat implementation
+   */
+  private async geminiChat(
+    messages: CodeBuddyMessage[],
+    tools?: CodeBuddyTool[],
+    opts?: ChatOptions
+  ): Promise<CodeBuddyResponse> {
+    const model = opts?.model || this.currentModel;
+    const url = `${this.baseURL}/models/${model}:generateContent`;
+
+    const body = this.buildGeminiBody(messages, tools, opts);
+
+    // Log request for debugging
+    logger.debug('Gemini request', {
+      source: 'CodeBuddyClient',
+      model,
+      hasTools: !!(tools && tools.length > 0),
+      toolCount: tools?.length || 0,
     });
 
     // Make request with retry
@@ -930,20 +950,203 @@ export class CodeBuddyClient {
   }
 
   /**
-   * Gemini-specific streaming (falls back to non-streaming for simplicity)
+   * Parse Gemini SSE stream into individual JSON chunks
+   */
+  private async *parseGeminiSSE(
+    reader: ReadableStreamDefaultReader<Uint8Array>
+  ): AsyncGenerator<Record<string, unknown>, void, unknown> {
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Split on SSE boundaries
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('data: ')) {
+          const jsonStr = trimmed.slice(6);
+          if (jsonStr === '[DONE]') return;
+          try {
+            yield JSON.parse(jsonStr);
+          } catch {
+            // Skip malformed JSON lines
+          }
+        }
+      }
+    }
+
+    // Process remaining buffer
+    if (buffer.trim().startsWith('data: ')) {
+      const jsonStr = buffer.trim().slice(6);
+      if (jsonStr !== '[DONE]') {
+        try {
+          yield JSON.parse(jsonStr);
+        } catch {
+          // Skip malformed JSON
+        }
+      }
+    }
+  }
+
+  /**
+   * Gemini-specific streaming using streamGenerateContent SSE API
    */
   private async *geminiChatStream(
     messages: CodeBuddyMessage[],
     tools?: CodeBuddyTool[],
     opts?: ChatOptions
   ): AsyncGenerator<ChatCompletionChunk, void, unknown> {
-    // For Gemini, use non-streaming and emit as single chunk
-    // TODO: Implement proper streaming with streamGenerateContent API
-    const response = await this.geminiChat(messages, tools, opts);
+    const model = opts?.model || this.currentModel;
+    const streamUrl = `${this.baseURL}/models/${model}:streamGenerateContent?alt=sse`;
 
+    try {
+      // Build the same request body as geminiChat
+      const body = this.buildGeminiBody(messages, tools, opts);
+
+      const res = await fetch(streamUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': this.apiKey,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        // Fallback to non-streaming on error
+        logger.warn('Gemini streaming failed, falling back to non-streaming', {
+          source: 'CodeBuddyClient',
+          status: res.status,
+        });
+        yield* this.geminiChatStreamFallback(messages, tools, opts);
+        return;
+      }
+
+      if (!res.body) {
+        yield* this.geminiChatStreamFallback(messages, tools, opts);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      let chunkIndex = 0;
+
+      for await (const chunk of this.parseGeminiSSE(reader)) {
+        const candidates = (chunk as Record<string, unknown>).candidates as Array<Record<string, unknown>> | undefined;
+        if (!candidates || candidates.length === 0) continue;
+
+        const candidate = candidates[0];
+        const content = candidate.content as { parts?: Array<Record<string, unknown>> } | undefined;
+        const parts = content?.parts;
+        if (!parts) continue;
+
+        for (const part of parts) {
+          if (part.text) {
+            yield {
+              id: `chatcmpl-gemini-${Date.now()}-${chunkIndex++}`,
+              object: 'chat.completion.chunk' as const,
+              created: Math.floor(Date.now() / 1000),
+              model,
+              choices: [{
+                index: 0,
+                delta: {
+                  role: 'assistant' as const,
+                  content: part.text as string,
+                },
+                finish_reason: null,
+              }],
+            };
+          }
+
+          if (part.functionCall) {
+            const fc = part.functionCall as { name: string; args?: Record<string, unknown> };
+            yield {
+              id: `chatcmpl-gemini-${Date.now()}-${chunkIndex++}`,
+              object: 'chat.completion.chunk' as const,
+              created: Math.floor(Date.now() / 1000),
+              model,
+              choices: [{
+                index: 0,
+                delta: {
+                  tool_calls: [{
+                    index: 0,
+                    id: `call_${Date.now()}_${chunkIndex}`,
+                    type: 'function' as const,
+                    function: {
+                      name: fc.name,
+                      arguments: JSON.stringify(fc.args || {}),
+                    },
+                  }],
+                },
+                finish_reason: null,
+              }],
+            };
+          }
+        }
+
+        // Check for finish reason
+        const finishReason = candidate.finishReason as string | undefined;
+        if (finishReason && finishReason !== 'STOP') {
+          // Map Gemini finish reasons to OpenAI format
+          const finishMap: Record<string, string> = {
+            'STOP': 'stop',
+            'MAX_TOKENS': 'length',
+            'SAFETY': 'content_filter',
+            'RECITATION': 'content_filter',
+          };
+          const mappedReason = finishMap[finishReason] || 'stop';
+          yield {
+            id: `chatcmpl-gemini-${Date.now()}-${chunkIndex++}`,
+            object: 'chat.completion.chunk' as const,
+            created: Math.floor(Date.now() / 1000),
+            model,
+            choices: [{
+              index: 0,
+              delta: {},
+              finish_reason: mappedReason as 'stop' | 'tool_calls' | 'length' | 'content_filter' | null,
+            }],
+          };
+        }
+      }
+
+      // Final stop chunk
+      yield {
+        id: `chatcmpl-gemini-${Date.now()}-${chunkIndex}`,
+        object: 'chat.completion.chunk' as const,
+        created: Math.floor(Date.now() / 1000),
+        model,
+        choices: [{
+          index: 0,
+          delta: {},
+          finish_reason: 'stop',
+        }],
+      };
+    } catch (error) {
+      logger.warn('Gemini streaming error, falling back to non-streaming', {
+        source: 'CodeBuddyClient',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      yield* this.geminiChatStreamFallback(messages, tools, opts);
+    }
+  }
+
+  /**
+   * Fallback: non-streaming Gemini call emitted as synthetic chunks
+   */
+  private async *geminiChatStreamFallback(
+    messages: CodeBuddyMessage[],
+    tools?: CodeBuddyTool[],
+    opts?: ChatOptions
+  ): AsyncGenerator<ChatCompletionChunk, void, unknown> {
+    const response = await this.geminiChat(messages, tools, opts);
     const choice = response.choices[0];
 
-    // Emit content chunk
     if (choice.message.content) {
       yield {
         id: `chatcmpl-${Date.now()}`,
@@ -961,7 +1164,6 @@ export class CodeBuddyClient {
       };
     }
 
-    // Emit tool calls if present
     if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
       for (const toolCall of choice.message.tool_calls) {
         yield {
@@ -988,7 +1190,6 @@ export class CodeBuddyClient {
       }
     }
 
-    // Final chunk with finish_reason
     yield {
       id: `chatcmpl-${Date.now()}`,
       object: 'chat.completion.chunk' as const,

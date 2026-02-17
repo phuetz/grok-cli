@@ -186,14 +186,37 @@ export class SmartHookRunner {
 
     const renderedPrompt = this.renderTemplate(hook.prompt, input);
 
-    // Stub implementation: in production this would call the LLM
-    // For now, return the rendered prompt as output
-    logger.debug(`Prompt hook evaluated: ${renderedPrompt.substring(0, 100)}`, { source: 'SmartHookRunner' });
+    try {
+      const { CodeBuddyClient } = await import('../codebuddy/client.js');
+      const apiKey = process.env.GROK_API_KEY;
+      if (!apiKey) {
+        logger.warn('No GROK_API_KEY set, prompt hook returning rendered prompt', { source: 'SmartHookRunner' });
+        return { ok: true, output: renderedPrompt };
+      }
 
-    return {
-      ok: true,
-      output: renderedPrompt,
-    };
+      const client = new CodeBuddyClient(apiKey);
+      const response = await client.chat(
+        [{ role: 'user', content: renderedPrompt }],
+        [],
+        { model: hook.model }
+      );
+
+      const content = response.choices[0]?.message?.content || '';
+
+      // Check for explicit DENY in response
+      if (content.toUpperCase().includes('DENY')) {
+        return { ok: false, reason: content };
+      }
+
+      return { ok: true, output: content };
+    } catch (error) {
+      // Fail-open: if LLM call fails, allow with warning
+      logger.warn('Prompt hook LLM call failed, failing open', {
+        source: 'SmartHookRunner',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { ok: true, output: renderedPrompt };
+    }
   }
 
   /**
@@ -206,15 +229,52 @@ export class SmartHookRunner {
 
     const renderedPrompt = this.renderTemplate(hook.agentPrompt, input);
     const maxTurns = hook.maxTurns ?? 5;
-    const tools = hook.agentTools ?? [];
 
-    // Stub implementation: in production this would spawn a sub-agent
-    logger.debug(`Agent hook evaluated with ${tools.length} tools, max ${maxTurns} turns`, { source: 'SmartHookRunner' });
+    try {
+      const { CodeBuddyClient } = await import('../codebuddy/client.js');
+      const apiKey = process.env.GROK_API_KEY;
+      if (!apiKey) {
+        logger.warn('No GROK_API_KEY set, agent hook returning rendered prompt', { source: 'SmartHookRunner' });
+        return { ok: true, output: renderedPrompt };
+      }
 
-    return {
-      ok: true,
-      output: `Agent evaluated: ${renderedPrompt.substring(0, 200)}`,
-    };
+      const client = new CodeBuddyClient(apiKey);
+      const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+        { role: 'system', content: renderedPrompt },
+        { role: 'user', content: `Context:\n${JSON.stringify(input, null, 2)}\n\nEvaluate this context and respond with your decision. Include "ALLOW" or "DENY" in your response.` },
+      ];
+
+      let lastContent = '';
+
+      for (let turn = 0; turn < maxTurns; turn++) {
+        const response = await client.chat(messages, [], { model: hook.model });
+        const choice = response.choices[0];
+        lastContent = choice?.message?.content || '';
+
+        // No tool calls in hook agent — just use the text response
+        if (!choice?.message?.tool_calls || choice.message.tool_calls.length === 0) {
+          break;
+        }
+
+        // Add assistant response and continue
+        messages.push({ role: 'assistant', content: lastContent });
+        messages.push({ role: 'user', content: 'Continue your evaluation.' });
+      }
+
+      // Parse decision from final response
+      if (lastContent.toUpperCase().includes('DENY')) {
+        return { ok: false, reason: lastContent };
+      }
+
+      return { ok: true, output: lastContent };
+    } catch (error) {
+      // Fail-open on error
+      logger.warn('Agent hook LLM call failed, failing open', {
+        source: 'SmartHookRunner',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { ok: true };
+    }
   }
 
   /**

@@ -62,7 +62,27 @@ export type BrowserAction =
   | 'get_content'
   // Info
   | 'get_url'
-  | 'get_title';
+  | 'get_title'
+  // Drag & Drop
+  | 'drag'
+  // File Upload
+  | 'upload_files'
+  // Wait
+  | 'wait_for_navigation'
+  // Storage
+  | 'get_local_storage'
+  | 'set_local_storage'
+  | 'get_session_storage'
+  | 'set_session_storage'
+  // Route Interception
+  | 'add_route_rule'
+  | 'remove_route_rule'
+  | 'clear_route_rules'
+  // Timezone/Locale
+  | 'set_timezone'
+  | 'set_locale'
+  // Download
+  | 'download';
 
 export interface BrowserToolInput {
   action: BrowserAction;
@@ -124,6 +144,24 @@ export interface BrowserToolInput {
   expression?: string;
   // Timeout
   timeout?: number;
+  // Drag
+  sourceRef?: number;
+  targetRef?: number;
+  // Upload
+  files?: string[];
+  // Storage
+  storageData?: Record<string, string>;
+  // Route Rules
+  ruleId?: string;
+  rulePattern?: string;
+  ruleAction?: 'block' | 'mock' | 'redirect';
+  ruleResponse?: { status?: number; body?: string; contentType?: string };
+  ruleRedirectUrl?: string;
+  // Timezone/Locale
+  timezone?: string;
+  locale?: string;
+  // Download
+  downloadPath?: string;
 }
 
 // ============================================================================
@@ -242,6 +280,46 @@ export class BrowserTool {
           return this.getUrl();
         case 'get_title':
           return this.getTitle();
+
+        // Drag & Drop
+        case 'drag':
+          return this.drag(input);
+
+        // File Upload
+        case 'upload_files':
+          return this.uploadFiles(input);
+
+        // Wait
+        case 'wait_for_navigation':
+          return this.waitForNavigation(input);
+
+        // Storage
+        case 'get_local_storage':
+          return this.getLocalStorage();
+        case 'set_local_storage':
+          return this.setLocalStorage(input);
+        case 'get_session_storage':
+          return this.getSessionStorage();
+        case 'set_session_storage':
+          return this.setSessionStorage(input);
+
+        // Route Rules
+        case 'add_route_rule':
+          return this.addRouteRule(input);
+        case 'remove_route_rule':
+          return this.removeRouteRule(input);
+        case 'clear_route_rules':
+          return this.clearRouteRules();
+
+        // Timezone/Locale
+        case 'set_timezone':
+          return this.setTimezone(input);
+        case 'set_locale':
+          return this.setLocale(input);
+
+        // Download
+        case 'download':
+          return this.download(input);
 
         default:
           return { success: false, error: `Unknown action: ${action}` };
@@ -737,6 +815,178 @@ export class BrowserTool {
   private async getTitle(): Promise<ToolResult> {
     const title = await this.manager.getTitle();
     return { success: true, output: title };
+  }
+
+  // ============================================================================
+  // Drag & Drop
+  // ============================================================================
+
+  private async drag(input: BrowserToolInput): Promise<ToolResult> {
+    if (input.sourceRef === undefined || input.targetRef === undefined) {
+      return { success: false, error: 'Source ref and target ref are required' };
+    }
+
+    await this.manager.drag({ sourceRef: input.sourceRef, targetRef: input.targetRef });
+
+    return { success: true, output: `Dragged [${input.sourceRef}] to [${input.targetRef}]` };
+  }
+
+  // ============================================================================
+  // File Upload
+  // ============================================================================
+
+  private async uploadFiles(input: BrowserToolInput): Promise<ToolResult> {
+    if (input.ref === undefined) {
+      return { success: false, error: 'Element ref is required' };
+    }
+    if (!input.files || input.files.length === 0) {
+      return { success: false, error: 'Files array is required' };
+    }
+
+    await this.manager.uploadFiles({ ref: input.ref, files: input.files });
+
+    return { success: true, output: `Uploaded ${input.files.length} file(s) to [${input.ref}]` };
+  }
+
+  // ============================================================================
+  // Wait
+  // ============================================================================
+
+  private async waitForNavigation(input: BrowserToolInput): Promise<ToolResult> {
+    await this.manager.waitForNavigation({ timeout: input.timeout });
+
+    return { success: true, output: 'Navigation completed' };
+  }
+
+  // ============================================================================
+  // Storage
+  // ============================================================================
+
+  private async getLocalStorage(): Promise<ToolResult> {
+    const data = await this.manager.getLocalStorage();
+    const entries = Object.entries(data);
+
+    const output = entries.length === 0
+      ? 'localStorage is empty'
+      : entries.slice(0, 20).map(([k, v]) => `${k}: ${v.slice(0, 50)}${v.length > 50 ? '...' : ''}`).join('\n');
+
+    return { success: true, output: `${entries.length} localStorage entries:\n${output}`, data: { storage: data } };
+  }
+
+  private async setLocalStorage(input: BrowserToolInput): Promise<ToolResult> {
+    if (!input.storageData) {
+      return { success: false, error: 'Storage data object is required' };
+    }
+
+    await this.manager.setLocalStorage(input.storageData);
+
+    return { success: true, output: `Set ${Object.keys(input.storageData).length} localStorage entries` };
+  }
+
+  private async getSessionStorage(): Promise<ToolResult> {
+    const data = await this.manager.getSessionStorage();
+    const entries = Object.entries(data);
+
+    const output = entries.length === 0
+      ? 'sessionStorage is empty'
+      : entries.slice(0, 20).map(([k, v]) => `${k}: ${v.slice(0, 50)}${v.length > 50 ? '...' : ''}`).join('\n');
+
+    return { success: true, output: `${entries.length} sessionStorage entries:\n${output}`, data: { storage: data } };
+  }
+
+  private async setSessionStorage(input: BrowserToolInput): Promise<ToolResult> {
+    if (!input.storageData) {
+      return { success: false, error: 'Storage data object is required' };
+    }
+
+    await this.manager.setSessionStorage(input.storageData);
+
+    return { success: true, output: `Set ${Object.keys(input.storageData).length} sessionStorage entries` };
+  }
+
+  // ============================================================================
+  // Route Rules
+  // ============================================================================
+
+  private async addRouteRule(input: BrowserToolInput): Promise<ToolResult> {
+    if (!input.rulePattern) {
+      return { success: false, error: 'Rule pattern is required' };
+    }
+
+    const action = (input.ruleAction || 'block') as 'block' | 'mock' | 'modify' | 'log';
+    const rule: import('./types.js').RouteRule = {
+      id: input.ruleId || `rule-${Date.now()}`,
+      urlPattern: input.rulePattern,
+      action,
+      ...(input.ruleResponse ? {
+        mockResponse: {
+          status: input.ruleResponse.status || 200,
+          body: input.ruleResponse.body,
+          contentType: input.ruleResponse.contentType,
+        },
+      } : {}),
+    };
+
+    await this.manager.addRouteRule(rule);
+
+    return { success: true, output: `Route rule added: ${rule.id} (${rule.action} ${rule.urlPattern})` };
+  }
+
+  private async removeRouteRule(input: BrowserToolInput): Promise<ToolResult> {
+    if (!input.ruleId) {
+      return { success: false, error: 'Rule ID is required' };
+    }
+
+    await this.manager.removeRouteRule(input.ruleId);
+
+    return { success: true, output: `Route rule removed: ${input.ruleId}` };
+  }
+
+  private async clearRouteRules(): Promise<ToolResult> {
+    await this.manager.clearRouteRules();
+
+    return { success: true, output: 'All route rules cleared' };
+  }
+
+  // ============================================================================
+  // Timezone / Locale
+  // ============================================================================
+
+  private async setTimezone(input: BrowserToolInput): Promise<ToolResult> {
+    if (!input.timezone) {
+      return { success: false, error: 'Timezone is required (e.g., America/New_York)' };
+    }
+
+    await this.manager.setTimezone(input.timezone);
+
+    return { success: true, output: `Timezone set: ${input.timezone}` };
+  }
+
+  private async setLocale(input: BrowserToolInput): Promise<ToolResult> {
+    if (!input.locale) {
+      return { success: false, error: 'Locale is required (e.g., en-US)' };
+    }
+
+    await this.manager.setLocale(input.locale);
+
+    return { success: true, output: `Locale set: ${input.locale}` };
+  }
+
+  // ============================================================================
+  // Download
+  // ============================================================================
+
+  private async download(input: BrowserToolInput): Promise<ToolResult> {
+    const result = await this.manager.downloadFile({
+      ref: input.ref,
+      timeout: input.timeout,
+    });
+
+    return {
+      success: true,
+      output: `Downloaded: ${result.suggestedFilename} → ${result.path}`,
+      data: result,
+    };
   }
 }
 
