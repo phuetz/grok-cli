@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-02-21
+
+### Overview
+
+Workflow Orchestration Integration: structured self-improvement loop with lessons tracking, concrete workflow rules injected into system prompt, WorkflowGuardMiddleware for plan detection, and a verification contract via `task_verify`.
+
+---
+
+### Added
+
+#### Lessons Tracker — Self-Improvement Loop
+
+- **`LessonsTracker`** (`src/agent/lessons-tracker.ts`) — Persistent `.codebuddy/lessons.md` + `~/.codebuddy/lessons.md` (global). Categories: `PATTERN` / `RULE` / `CONTEXT` / `INSIGHT`. Merged on load (project overrides global). `getLessonsTracker(workDir?)` singleton factory.
+- **`buildContextBlock()`** — builds `<lessons_context>` block injected per-turn BEFORE the todo suffix (stable rules, higher recency priority than todos).
+
+#### Workflow Rules — System Prompt Injection
+
+- **`getWorkflowRulesBlock()`** (`src/prompts/workflow-rules.ts`) — Improved workflow rules with concrete plan triggers (measurable vs vague "non-trivial"), auto-correction protocol (stop + re-plan after 2 failures), verification contract, uncertainty protocol, elegance gate, and subagent triggers. Injected once into system prompt by `PromptBuilder.buildSystemPrompt()`.
+
+#### WorkflowGuardMiddleware — Plan Detection
+
+- **`WorkflowGuardMiddleware`** (`src/agent/middleware/workflow-guard.ts`) — Priority-45 middleware. On turn 0, counts distinct action verbs in the user message. If ≥3 verbs AND no `PLAN.md` exists → emits a `warn` steer suggesting `plan init`. Registered as the default pipeline for all agent sessions. Exported from `src/agent/middleware/index.ts`.
+
+#### Lessons Tools — Agent Self-Improvement
+
+- **`lessons_add`** — Capture a lesson immediately after a user correction. Format: `[what went wrong] → [correct behaviour]`.
+- **`lessons_search`** — Search lessons before starting similar tasks. Substring + category filter.
+- **`lessons_list`** — List all lessons with optional category filter.
+- **`task_verify`** — Verification Contract tool: runs `npx tsc --noEmit`, auto-detected test command, and `eslint`. Returns pass/fail per check with truncated output. Call before marking any task done.
+- Registered in `createLessonsTools()` factory → `createAllToolsAsync()` → tool registry.
+
+#### Lessons CLI — `buddy lessons`
+
+- **`buddy lessons list [--category CAT]`** — grouped display by category
+- **`buddy lessons add <content> --category <cat> [--context <ctx>]`** — manual lesson entry
+- **`buddy lessons search <query> [--category <cat>] [--limit N]`** — keyword search
+- **`buddy lessons clear [--category <cat>] --yes`** — remove lessons
+- **`buddy lessons context`** — preview the `<lessons_context>` block
+
+#### Per-Turn Injection Order
+
+Per-turn message injection order (end of context window):
+1. `<lessons_context>` — active lessons (stable rules, injected first)
+2. `<todo_context>` — current task list (recency bias, injected last)
+
+---
+
 ## [2.5.0] - 2026-02-21
 
 ### Overview

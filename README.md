@@ -60,6 +60,8 @@ It works as two things at once:
 - Knowledge base injection (Knowledge.md files loaded into agent system prompt)
 - Wide Research mode (parallel sub-agents decompose and research topics concurrently)
 - Todo.md attention bias (task list appended to end of every LLM context turn — Manus AI pattern)
+- Lessons.md self-improvement loop (PATTERN/RULE/CONTEXT/INSIGHT lessons injected before every turn — persists corrections across sessions)
+- Workflow orchestration rules in system prompt (concrete plan triggers, auto-correction protocol, verification contract)
 - Restorable context compression (identifiers preserved, full content recoverable on demand)
 - Pre-compaction memory flush (facts saved to MEMORY.md before context is compacted — OpenClaw pattern)
 - Anthropic prompt cache breakpoints (stable/dynamic split → 10× token cost savings)
@@ -205,6 +207,8 @@ Code Buddy operates as an autonomous coding agent. It reads your codebase, makes
 | **Knowledge** | `knowledge_search`, `knowledge_add` — search/add knowledge base entries |
 | **Human Input** | `ask_human` — pause execution for mid-task user clarification (120s timeout) |
 | **Self-Extension** | `create_skill` — write new SKILL.md files at runtime (self-authoring) |
+| **Self-Improvement** | `lessons_add`, `lessons_search`, `lessons_list` — persist and recall learned patterns across sessions |
+| **Verification** | `task_verify` — run tsc/tests/lint before marking tasks complete (Verification Contract) |
 
 **RAG-based tool selection** filters tools per query to reduce prompt tokens — only relevant tools are included in each API call.
 
@@ -251,6 +255,7 @@ Code Buddy implements the **Open Manus / CodeAct** architecture in a structured,
 *   **Restorable Compression** — When the context window is compressed, file paths and URLs are extracted as identifiers and the original content is stored. The agent can call `restore_context("src/agent/types.ts")` to retrieve the full content on demand, making compression lossless for structured identifiers.
 *   **Pre-compaction Memory Flush (NO_REPLY)** — Before compaction triggers, a silent background LLM turn extracts durable facts and saves them to `MEMORY.md`. If the model returns the `NO_REPLY` sentinel with no meaningful content, the output is suppressed entirely (no notification spam).
 *   **Inline Citations** — Web search results now include `[1]` `[2]` citation markers inline and a **Sources** block listing all referenced URLs.
+*   **Lessons.md Self-Improvement Loop** — After any user correction, the agent calls `lessons_add` to persist the lesson (category: PATTERN, RULE, CONTEXT, or INSIGHT) to `.codebuddy/lessons.md`. On every turn, active lessons are injected as a `<lessons_context>` block BEFORE the todo suffix so learned patterns are always visible. Use `buddy lessons add/search/list` or the `lessons_add`/`lessons_search` tools. The `task_verify` tool runs the **Verification Contract** (tsc + tests + lint) before any task completion.
 
 **Example Prompts:**
 
@@ -1246,6 +1251,13 @@ buddy todo update <id> [-s in_progress] [-t "new text"]
 buddy todo remove <id>              # Delete item
 buddy todo clear-done               # Remove all completed
 buddy todo context                  # Preview the block injected into the agent
+
+# Lessons (self-improvement loop — injected before every agent turn)
+buddy lessons list [--category PATTERN|RULE|CONTEXT|INSIGHT]
+buddy lessons add "what went wrong → correct approach" --category PATTERN
+buddy lessons search "tsc"                 # Find relevant lessons before a task
+buddy lessons clear [--category RULE] --yes
+buddy lessons context                      # Preview the <lessons_context> block
 
 # Setup
 buddy onboard          # Interactive setup wizard

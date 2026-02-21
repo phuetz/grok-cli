@@ -1738,4 +1738,15 @@ addLazyCommand(
   },
 );
 
+// Lessons — self-improvement loop (lessons learned injected per agent turn)
+addLazyCommand(
+  program,
+  'lessons',
+  'Manage lessons learned — self-improvement loop for recurring patterns (injected every turn)',
+  async () => {
+    const { createLessonsCommand } = await import('./commands/lessons.js');
+    return createLessonsCommand();
+  },
+);
+
 program.parse();

@@ -141,6 +141,15 @@ export class PromptBuilder {
         logger.warn("Failed to load bootstrap context", { error: getErrorMessage(err) });
       }
 
+      // Inject workflow orchestration rules (concrete plan triggers, verification contract, etc.)
+      try {
+        const { getWorkflowRulesBlock } = await import('../prompts/workflow-rules.js');
+        systemPrompt += '\n\n' + getWorkflowRulesBlock();
+        logger.debug('Injected workflow orchestration rules into system prompt');
+      } catch (err) {
+        logger.warn('Failed to inject workflow rules', { error: getErrorMessage(err) });
+      }
+
       // Manus AI structured variation — shuffle reminder blocks to prevent
       // the model from falling into brittle repetition patterns.
       // Only the footer guideline section is varied; the preamble/tools are left

@@ -23,6 +23,7 @@ import type { MiddlewarePipeline, MiddlewareContext } from "../middleware/index.
 import type { MessageQueue } from "../message-queue.js";
 import { semanticTruncate } from "../../utils/head-tail-truncation.js";
 import { getTodoTracker } from "../todo-tracker.js";
+import { getLessonsTracker } from "../lessons-tracker.js";
 import { getObservationVariator } from "../../context/observation-variator.js";
 import { getRestorableCompressor } from "../../context/restorable-compression.js";
 import { getResponseConstraintStack, resolveToolChoice } from "../response-constraint.js";
@@ -256,6 +257,12 @@ export class AgentExecutor {
 
       // Apply context management
       const preparedMessages = this.deps.contextManager.prepareMessages(messages);
+
+      // --- Lessons context: inject BEFORE todo suffix (stable rules, higher priority) ---
+      const lessonsBlock = getLessonsTracker(process.cwd()).buildContextBlock();
+      if (lessonsBlock) {
+        preparedMessages.push({ role: 'system', content: lessonsBlock });
+      }
 
       // --- Manus AI attention bias: append todo.md context at END of messages ---
       const todoSuffix = getTodoTracker(process.cwd()).buildContextSuffix();
@@ -543,6 +550,12 @@ export class AgentExecutor {
         if (toolRounds === 0) this.deps.toolSelectionStrategy.cacheTools(tools);
 
         const preparedMessages = this.deps.contextManager.prepareMessages(messages);
+
+        // --- Lessons context: inject BEFORE todo suffix (stable rules, higher priority) ---
+        const lessonsBlockStream = getLessonsTracker(process.cwd()).buildContextBlock();
+        if (lessonsBlockStream) {
+          preparedMessages.push({ role: 'system', content: lessonsBlockStream });
+        }
 
         // --- Manus AI attention bias: append todo.md context at END of messages ---
         const todoSuffixStream = getTodoTracker(process.cwd()).buildContextSuffix();

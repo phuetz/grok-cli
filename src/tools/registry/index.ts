@@ -117,6 +117,15 @@ export {
   createAttentionTools,
 } from './attention-tools.js';
 
+// Tool Adapters - Lessons (self-improvement loop + verification contract)
+export {
+  LessonsAddTool,
+  LessonsSearchTool,
+  LessonsListTool,
+  TaskVerifyTool,
+  createLessonsTools,
+} from './lessons-tools.js';
+
 // Tool Prefix Naming Convention — Codex-inspired canonical aliases
 export {
   createAliasTools,
@@ -173,6 +182,7 @@ export async function createAllToolsAsync(): Promise<ITool[]> {
   const { createPlanTools } = await import('./plan-tools.js');
   const { createAttentionTools } = await import('./attention-tools.js');
   const { createAliasTools } = await import('./tool-aliases.js');
+  const { createLessonsTools } = await import('./lessons-tools.js');
 
   const primaryTools: ITool[] = [
     ...createTextEditorTools(),
@@ -189,6 +199,7 @@ export async function createAllToolsAsync(): Promise<ITool[]> {
     ...createScriptTools(),
     ...createPlanTools(),
     ...createAttentionTools(),
+    ...createLessonsTools(),
   ];
 
   // Register backward-compat canonical-prefix aliases (shell_exec, file_read, etc.)

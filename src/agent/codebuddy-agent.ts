@@ -210,6 +210,18 @@ export class CodeBuddyAgent extends BaseAgent {
       getSessionCostLimit: this.getSessionCostLimit.bind(this),
     });
 
+    // Initialize default middleware pipeline with WorkflowGuardMiddleware
+    import('./middleware/index.js').then(({ MiddlewarePipeline, WorkflowGuardMiddleware }) => {
+      if (!this.executor.getMiddlewarePipeline()) {
+        const pipeline = new MiddlewarePipeline();
+        pipeline.use(new WorkflowGuardMiddleware());
+        this.executor.setMiddlewarePipeline(pipeline);
+        logger.debug('WorkflowGuardMiddleware registered in default pipeline');
+      }
+    }).catch(err => {
+      logger.debug('Failed to register WorkflowGuardMiddleware (non-critical)', err);
+    });
+
     // Initialize PromptBuilder with Moltbot hooks for intro injection
     this.promptBuilder = new PromptBuilder({
       yoloMode: this.yoloMode,

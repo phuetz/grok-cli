@@ -1,7 +1,7 @@
 # Architecture Documentation - Code Buddy
 
-> **Version**: 1.0.0
-> **Last Updated**: December 25, 2025
+> **Version**: 2.6.0
+> **Last Updated**: 2026-02-21
 
 This document provides a comprehensive overview of the Code Buddy architecture, design patterns, and technical decisions.
 
@@ -132,6 +132,9 @@ class CodeBuddyAgent {
 - Abort controller for cancellation
 - Token counting integration
 - Custom instructions support
+- WorkflowGuardMiddleware (priority-45 middleware, detects 3+ action verbs on turn 0, emits plan suggestion when no PLAN.md exists)
+- LessonsTracker per-turn injection (lessons before todos in every LLM context)
+- WorkflowRules system prompt block (plan triggers, auto-correction protocol, verification contract, elegance gate, subagent triggers)
 
 ### 3. API Layer (Grok Client)
 
@@ -332,6 +335,32 @@ interface Tool {
 - Stack trace capture
 - User-friendly formatting
 - Recovery suggestions
+
+### Context Injection Order (v2.6.0)
+
+Per-turn context is appended at the **end** of the prepared message list in the following order to maximize transformer recency bias:
+
+1. `<lessons_context>` — active lessons from `LessonsTracker` (`src/agent/lessons-tracker.ts`). Categories: PATTERN / RULE / CONTEXT / INSIGHT. Merged from `.codebuddy/lessons.md` (project) and `~/.codebuddy/lessons.md` (global). Injected **first** (before todos) so the most recent token slot is reserved for the task list.
+2. `<todo_context>` — current task list from `TodoTracker` (`src/agent/todo-tracker.ts`). Injected **last** to exploit recency bias for active objectives.
+
+**Singleton factories**: `getLessonsTracker(cwd)` / `getTodoTracker(cwd)` — both keyed per working directory.
+
+### WorkflowGuardMiddleware (`src/agent/middleware/workflow-guard.ts`)
+
+Priority-45 before-turn middleware registered as a default pipeline step in the `CodeBuddyAgent` constructor. On turn 0 it counts distinct action verbs in the user message. If 3 or more verbs are found and no `PLAN.md` exists in the project root, it emits a `warn` steer chunk suggesting the user run `plan init` before proceeding.
+
+### WorkflowRules (`src/prompts/workflow-rules.ts`)
+
+`getWorkflowRulesBlock()` is called once per session by `PromptBuilder.buildSystemPrompt()` and injected into the static system prompt. It encodes six concrete operating contracts:
+
+| Contract | Description |
+|:---------|:------------|
+| **Plan Triggers** | 3+ distinct action verbs, 3+ files, new module, or API change → create PLAN.md first |
+| **Auto-Correction Protocol** | Stop + re-plan after 2 consecutive failures on the same step |
+| **Verification Contract** | Run tsc + tests + diff + behaviour check before marking any task complete |
+| **Uncertainty Protocol** | Decide best path and document as `Assumption: X` rather than asking |
+| **Elegance Gate** | >50 LOC or 3+ files changed → pause for review; <=10 LOC → skip plan step |
+| **Subagent Triggers** | 5+ unknown files or >20% context used → delegate to subagent |
 
 ---
 
