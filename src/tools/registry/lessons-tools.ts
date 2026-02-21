@@ -90,26 +90,28 @@ export class LessonsAddTool implements ITool {
 
   validate(input: Record<string, unknown>): IValidationResult {
     if (!input.content) {
-      return { isValid: false, errors: ['content is required'] };
+      return { valid: false, errors: ['content is required'] };
     }
     const validCats = ['PATTERN', 'RULE', 'CONTEXT', 'INSIGHT'];
     if (input.category && !validCats.includes(input.category as string)) {
-      return { isValid: false, errors: [`category must be one of: ${validCats.join(', ')}`] };
+      return { valid: false, errors: [`category must be one of: ${validCats.join(', ')}`] };
     }
-    return { isValid: true, errors: [] };
+    return { valid: true, errors: [] };
   }
 
   getMetadata(): IToolMetadata {
     return {
       name: this.name,
+      description: this.description,
+      category: 'planning' as ToolCategoryType,
+      keywords: ['lessons', 'self-improvement', 'patterns', 'learning'],
+      priority: 80,
       version: '1.0.0',
       author: 'Code Buddy',
-      category: 'planning' as ToolCategoryType,
-      tags: ['lessons', 'self-improvement', 'patterns', 'learning'],
     };
   }
 
-  async isAvailable(): Promise<boolean> {
+  isAvailable(): boolean {
     return true;
   }
 }
@@ -179,22 +181,24 @@ export class LessonsSearchTool implements ITool {
 
   validate(input: Record<string, unknown>): IValidationResult {
     if (!input.query) {
-      return { isValid: false, errors: ['query is required'] };
+      return { valid: false, errors: ['query is required'] };
     }
-    return { isValid: true, errors: [] };
+    return { valid: true, errors: [] };
   }
 
   getMetadata(): IToolMetadata {
     return {
       name: this.name,
+      description: this.description,
+      category: 'planning' as ToolCategoryType,
+      keywords: ['lessons', 'search', 'self-improvement'],
+      priority: 80,
       version: '1.0.0',
       author: 'Code Buddy',
-      category: 'planning' as ToolCategoryType,
-      tags: ['lessons', 'search', 'self-improvement'],
     };
   }
 
-  async isAvailable(): Promise<boolean> {
+  isAvailable(): boolean {
     return true;
   }
 }
@@ -247,20 +251,22 @@ export class LessonsListTool implements ITool {
   }
 
   validate(_input: Record<string, unknown>): IValidationResult {
-    return { isValid: true, errors: [] };
+    return { valid: true, errors: [] };
   }
 
   getMetadata(): IToolMetadata {
     return {
       name: this.name,
+      description: this.description,
+      category: 'planning' as ToolCategoryType,
+      keywords: ['lessons', 'list', 'self-improvement'],
+      priority: 80,
       version: '1.0.0',
       author: 'Code Buddy',
-      category: 'planning' as ToolCategoryType,
-      tags: ['lessons', 'list', 'self-improvement'],
     };
   }
 
-  async isAvailable(): Promise<boolean> {
+  isAvailable(): boolean {
     return true;
   }
 }
@@ -377,20 +383,22 @@ export class TaskVerifyTool implements ITool {
   }
 
   validate(_input: Record<string, unknown>): IValidationResult {
-    return { isValid: true, errors: [] };
+    return { valid: true, errors: [] };
   }
 
   getMetadata(): IToolMetadata {
     return {
       name: this.name,
+      description: this.description,
+      category: 'testing' as ToolCategoryType,
+      keywords: ['verify', 'typescript', 'tests', 'lint', 'quality'],
+      priority: 90,
       version: '1.0.0',
       author: 'Code Buddy',
-      category: 'testing' as ToolCategoryType,
-      tags: ['verify', 'typescript', 'tests', 'lint', 'quality'],
     };
   }
 
-  async isAvailable(): Promise<boolean> {
+  isAvailable(): boolean {
     return true;
   }
 }
