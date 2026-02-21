@@ -1070,7 +1070,7 @@ describe('AgentExecutor', () => {
     });
 
     it('should not suppress context warning when pipeline is set', async () => {
-      // When pipeline exists, context warning in shouldWarn is skipped
+      // Context warnings from shouldWarn are always shown, even when pipeline is active
       (deps.contextManager.shouldWarn as jest.Mock).mockReturnValue({
         warn: true,
         message: 'Should not appear',
@@ -1083,9 +1083,9 @@ describe('AgentExecutor', () => {
         executor.processUserMessageStream('Hello', history, messages, null)
       );
 
-      // The shouldWarn result should NOT be yielded when pipeline is active
+      // The shouldWarn result SHOULD be yielded regardless of pipeline state
       const contextWarnChunk = chunks.find(c => c.content?.includes('Should not appear'));
-      expect(contextWarnChunk).toBeUndefined();
+      expect(contextWarnChunk).toBeDefined();
     });
 
     it('should show context warning when no pipeline is set', async () => {

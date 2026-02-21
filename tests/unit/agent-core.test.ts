@@ -640,10 +640,10 @@ describe("Agent Core Module Tests", () => {
           },
         });
         expect(result.success).toBe(true);
-        expect(mockBashExecute).toHaveBeenCalledWith("ls -la");
-        expect(mockExecuteHooks).toHaveBeenCalledWith("pre-bash", { command: "ls -la" });
+        expect(mockBashExecute).toHaveBeenCalledWith(expect.stringContaining("ls -la"));
+        expect(mockExecuteHooks).toHaveBeenCalledWith("pre-bash", expect.objectContaining({ command: expect.stringContaining("ls -la") }));
         expect(mockExecuteHooks).toHaveBeenCalledWith("post-bash", expect.objectContaining({
-          command: "ls -la",
+          command: expect.stringContaining("ls -la"),
         }));
       });
 

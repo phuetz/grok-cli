@@ -532,13 +532,29 @@ describe('MessageQueue', () => {
     });
 
     it('should handle rapid enqueue and drain cycles', () => {
+      const bigQueue = new MessageQueue({ cap: 200 });
+      for (let i = 0; i < 100; i++) {
+        bigQueue.enqueue(makeMessage(`msg-${i}`));
+      }
+      expect(bigQueue.length).toBe(100);
+
+      const drained = bigQueue.drain();
+      expect(drained).toHaveLength(100);
+      expect(bigQueue.length).toBe(0);
+
+      // Re-enqueue after drain
+      bigQueue.enqueue(makeMessage('after-drain'));
+      expect(bigQueue.length).toBe(1);
+    });
+
+    it('should cap messages at default cap when no cap option given', () => {
       for (let i = 0; i < 100; i++) {
         queue.enqueue(makeMessage(`msg-${i}`));
       }
-      expect(queue.length).toBe(100);
+      expect(queue.length).toBe(20); // default cap is 20
 
       const drained = queue.drain();
-      expect(drained).toHaveLength(100);
+      expect(drained).toHaveLength(20);
       expect(queue.length).toBe(0);
 
       // Re-enqueue after drain

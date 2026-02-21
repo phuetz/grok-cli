@@ -563,8 +563,8 @@ export class AgentExecutor {
           preparedMessages.push({ role: 'system', content: todoSuffixStream });
         }
 
-        // Context warning is now handled by middleware, but keep fallback for non-pipeline mode
-        if (!pipeline) {
+        // Context warning — always check regardless of pipeline state
+        {
           const contextWarning = this.deps.contextManager.shouldWarn(preparedMessages);
           if (contextWarning.warn) {
             yield { type: "content", content: `\n${contextWarning.message}\n` };

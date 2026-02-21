@@ -139,30 +139,32 @@ export class TodoAttentionTool implements ITool {
     const validActions = ['add', 'complete', 'update', 'remove', 'clear_done', 'list'];
     if (!input.action || !validActions.includes(input.action as string)) {
       return {
-        isValid: false,
+        valid: false,
         errors: [`action must be one of: ${validActions.join(', ')}`],
       };
     }
     if ((input.action === 'add') && !input.text) {
-      return { isValid: false, errors: ['text is required for add'] };
+      return { valid: false, errors: ['text is required for add'] };
     }
     if (['complete', 'update', 'remove'].includes(input.action as string) && !input.id) {
-      return { isValid: false, errors: ['id is required for this action'] };
+      return { valid: false, errors: ['id is required for this action'] };
     }
-    return { isValid: true, errors: [] };
+    return { valid: true, errors: [] };
   }
 
   getMetadata(): IToolMetadata {
     return {
       name: this.name,
+      description: this.description,
       version: '1.0.0',
       author: 'Code Buddy',
       category: 'planning' as ToolCategoryType,
-      tags: ['todo', 'tasks', 'planning', 'attention'],
+      keywords: ['todo', 'tasks', 'planning', 'attention'],
+      priority: 80,
     };
   }
 
-  async isAvailable(): Promise<boolean> {
+  isAvailable(): boolean {
     return true;
   }
 }
@@ -219,22 +221,24 @@ export class RestoreContextTool implements ITool {
 
   validate(input: Record<string, unknown>): IValidationResult {
     if (!input.identifier) {
-      return { isValid: false, errors: ['identifier is required'] };
+      return { valid: false, errors: ['identifier is required'] };
     }
-    return { isValid: true, errors: [] };
+    return { valid: true, errors: [] };
   }
 
   getMetadata(): IToolMetadata {
     return {
       name: this.name,
+      description: this.description,
       version: '1.0.0',
       author: 'Code Buddy',
       category: 'context' as ToolCategoryType,
-      tags: ['context', 'memory', 'compression', 'restore'],
+      keywords: ['context', 'memory', 'compression', 'restore'],
+      priority: 70,
     };
   }
 
-  async isAvailable(): Promise<boolean> {
+  isAvailable(): boolean {
     return true;
   }
 }

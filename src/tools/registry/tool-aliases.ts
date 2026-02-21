@@ -22,7 +22,8 @@
  * To add new aliases simply append to TOOL_ALIASES below.
  */
 
-import type { ITool, IToolMetadata, ToolSchema, IToolExecutionContext, IToolExecutionResult } from './types.js';
+import type { ITool, IToolMetadata, ToolSchema } from './types.js';
+import type { ToolResult } from '../../types/index.js';
 
 // ============================================================================
 // Alias map: canonical_name → legacy_name
@@ -77,36 +78,41 @@ export const CANONICAL_NAME: Record<string, string> = Object.fromEntries(
 
 class AliasITool implements ITool {
   readonly name: string;
+  readonly description: string;
   private primary: ITool;
 
   constructor(aliasName: string, primaryTool: ITool) {
     this.name = aliasName;
     this.primary = primaryTool;
+    this.description = `[alias → ${primaryTool.name}] ${primaryTool.description}`;
   }
 
-  get metadata(): IToolMetadata {
+  getMetadata(): IToolMetadata {
+    const meta = this.primary.getMetadata?.();
     return {
-      ...this.primary.metadata,
+      ...(meta ?? { name: this.name, description: this.description, category: 'utility' as const, keywords: [], priority: 50 }),
       name: this.name,
-      description: `[alias → ${this.primary.name}] ${this.primary.metadata.description}`,
-      tags: [...(this.primary.metadata.tags ?? []), 'alias'],
+      description: this.description,
+      keywords: [...(meta?.keywords ?? []), 'alias'],
     };
   }
 
-  get schema(): ToolSchema {
+  getSchema(): ToolSchema {
+    const schema = this.primary.getSchema();
     return {
-      ...this.primary.schema,
+      ...schema,
       name: this.name,
-      description: `[alias → ${this.primary.name}] ${this.primary.schema.description ?? ''}`,
+      description: this.description,
     };
   }
 
   validate(input: unknown): { valid: boolean; errors?: string[] } {
-    return this.primary.validate(input);
+    if (this.primary.validate) return this.primary.validate(input);
+    return { valid: true };
   }
 
-  async execute(input: unknown, context: IToolExecutionContext): Promise<IToolExecutionResult> {
-    return this.primary.execute(input, context);
+  async execute(input: Record<string, unknown>): Promise<ToolResult> {
+    return this.primary.execute(input);
   }
 }
 
