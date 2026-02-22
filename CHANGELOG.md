@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] — 2026-02-22
+
+### Added
+
+#### i18n — 4 new languages (German, Spanish, Japanese, Chinese)
+- **`de` (Deutsch)** — full translations for all 5 categories: common, cli, tools, errors, help
+- **`es` (Español)** — full translations for all 5 categories
+- **`ja` (日本語)** — full translations for all 5 categories
+- **`zh` (中文简体)** — full translations for all 5 categories
+- Replaces the previous English fallback stubs; auto-detected from `$LANG`/`$LC_ALL`
+- Exports `de`, `es`, `ja`, `zh` from `src/i18n/index.ts` for extension
+
+#### PersonaManager — hot-reload + `/persona` slash command
+- **Hot-reload** (`startWatcher()`) — `fs.watch` on `~/.codebuddy/personas/`; 150 ms debounce; new/modified personas are hot-reloaded, deleted ones removed from the in-memory map; active persona falls back to `default` on deletion; best-effort (non-fatal if FS watch unavailable)
+- **`dispose()`** — closes the FSWatcher before removing listeners (prevents resource leaks)
+- **`/persona` slash command** — `list`, `use <name>`, `info [name]`, `reset` subcommands
+  - `list`: shows all built-in (📦) and custom (✨) personas with active marker (`→`)
+  - `use <id|name>`: fuzzy match by id or display name (spaces → dash)
+  - `info [name]`: trait bar chart + style/expertise breakdown for active or named persona
+  - `reset`: reverts to Default Assistant
+- Wired in `builtin-commands.ts` (sentinel `__PERSONA__`), `enhanced-command-handler.ts`, and `client-dispatcher.ts` (Ink UI)
+
+#### ComputerSkills — real LLM execution in `llm` step type
+- **`executeLLMStep()`** — replaces stub; lazy `CodeBuddyClient` (via `GROK_API_KEY`); interpolates `content` and optional `systemPrompt` from template; returns `{ content, tokens }`
+- **`model` field** on `SkillStep` — optional per-step model override
+- **`systemPrompt` field** on `SkillStep` — optional system prompt override for LLM steps
+- **`llm-ask` built-in skill** — demonstrates the `llm` step type; accepts `prompt`, `systemPrompt`, and `model` params
+
+### Tests
+- `tests/i18n.test.ts` — 12 tests covering all 6 locales, interpolation, fallback, category access
+- `tests/persona-handler.test.ts` — 9 tests covering list/use/info/reset/unknown with async init flush
+- `tests/computer-skills-llm.test.ts` — 4 tests covering LLM step execution, built-in skill, missing API key
+
+---
+
 ## [2.8.0] — 2026-02-21
 
 ### Added

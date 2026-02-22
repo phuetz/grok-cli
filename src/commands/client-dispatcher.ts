@@ -181,6 +181,17 @@ export class ClientCommandDispatcher {
         return true;
       }
 
+      case "__PERSONA__": {
+        const { handlePersonaCommand } = await import("./handlers/persona-handler.js");
+        const personaArgs = originalInput.trim().split(/\s+/).slice(1).join(' ');
+        const personaResult = handlePersonaCommand(personaArgs);
+        if (personaResult.entry) {
+          context.setChatHistory((prev) => [...prev, personaResult.entry!]);
+        }
+        context.clearInput();
+        return true;
+      }
+
       case "__CONTEXT__": {
         // Intercept /context stats to provide agent context window stats
         const contextArgs = originalInput.trim().split(/\s+/).slice(1);

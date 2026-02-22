@@ -89,6 +89,7 @@ import {
   handleTest,
   handleFix,
   handleReview,
+  handlePersonaCommand,
 } from "./handlers/index.js";
 
 import type { CommandHandlerResult } from "./handlers/index.js";
@@ -360,6 +361,9 @@ export class EnhancedCommandHandler {
 
       case "__REVIEW__":
         return handleReview(args);
+
+      case "__PERSONA__":
+        return handlePersonaCommand(args.join(' '));
 
       default:
         return { handled: false };

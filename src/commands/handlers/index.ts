@@ -178,5 +178,10 @@ export {
   handleReview,
 } from './extra-handlers.js';
 
+// Persona handler
+export {
+  handlePersonaCommand,
+} from './persona-handler.js';
+
 // Re-export CommandHandlerResult type
 export type { CommandHandlerResult } from './branch-handlers.js';

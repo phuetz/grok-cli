@@ -583,6 +583,23 @@ const memoryCommands: SlashCommand[] = [
 ];
 
 // ============================================================================
+// Persona Commands
+// ============================================================================
+
+const personaCommands: SlashCommand[] = [
+  {
+    name: 'persona',
+    description: 'Switch or manage agent personas (list|use <name>|info [name]|reset)',
+    prompt: '__PERSONA__',
+    filePath: '',
+    isBuiltin: true,
+    arguments: [
+      { name: 'action', description: 'list, use <name>, info [name], reset', required: false }
+    ]
+  }
+];
+
+// ============================================================================
 // Autonomy & Permissions Commands
 // ============================================================================
 
@@ -1002,6 +1019,7 @@ export const builtinCommands: SlashCommand[] = [
   ...contextCommands,
   ...sessionCommands,
   ...memoryCommands,
+  ...personaCommands,
   ...autonomyCommands,
   ...toolCommands,
   ...statsCommands,
@@ -1027,6 +1045,7 @@ export function getCommandsByCategory(): Record<string, SlashCommand[]> {
     context: contextCommands,
     session: sessionCommands,
     memory: memoryCommands,
+    persona: personaCommands,
     autonomy: autonomyCommands,
     tools: toolCommands,
     stats: statsCommands,

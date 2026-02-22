@@ -335,6 +335,7 @@ export class PersonaManager extends EventEmitter {
   private personas: Map<string, Persona> = new Map();
   private activePersona: Persona | null = null;
   private dataDir: string;
+  private watcher: fs.FSWatcher | null = null;
 
   constructor(config: Partial<PersonaConfig> = {}) {
     super();
@@ -369,6 +370,49 @@ export class PersonaManager extends EventEmitter {
 
     // Set active persona
     this.setActivePersona(this.config.activePersonaId);
+
+    // Start hot-reload watcher
+    this.startWatcher();
+  }
+
+  /**
+   * Watch the custom personas directory for file changes (hot-reload)
+   */
+  private startWatcher(): void {
+    try {
+      let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+      this.watcher = fs.watch(this.dataDir, (_event, filename) => {
+        if (!filename || !filename.endsWith('.json')) return;
+
+        // Debounce rapid file-system events (e.g. editor writes)
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+          const personaPath = path.join(this.dataDir, filename);
+          const id = filename.replace(/\.json$/, '');
+
+          try {
+            if (await fs.pathExists(personaPath)) {
+              const persona = await fs.readJSON(personaPath);
+              persona.isBuiltin = false;
+              this.personas.set(persona.id ?? id, persona);
+              this.emit('persona:reloaded', { id: persona.id ?? id });
+            } else {
+              // File deleted
+              this.personas.delete(id);
+              if (this.activePersona?.id === id) {
+                this.setActivePersona('default');
+              }
+              this.emit('persona:removed', { id });
+            }
+          } catch {
+            // Ignore transient read errors (file being written)
+          }
+        }, 150);
+      });
+    } catch {
+      // Watching is best-effort — not fatal if unsupported
+    }
   }
 
   /**
@@ -785,9 +829,13 @@ export class PersonaManager extends EventEmitter {
   }
 
   /**
-   * Dispose
+   * Dispose — stop watcher and remove listeners
    */
   dispose(): void {
+    if (this.watcher) {
+      this.watcher.close();
+      this.watcher = null;
+    }
     this.removeAllListeners();
   }
 }

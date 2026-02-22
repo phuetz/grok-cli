@@ -56,6 +56,8 @@ export interface SkillStep {
   type: 'code' | 'shell' | 'llm' | 'condition' | 'loop' | 'skill';
   content: string;
   language?: string;
+  model?: string;
+  systemPrompt?: string;
   condition?: string;
   items?: string;
   skillId?: string;
@@ -327,6 +329,29 @@ const BUILTIN_SKILLS: Skill[] = [
     ],
   },
   {
+    id: 'llm-ask',
+    name: 'Ask LLM',
+    description: 'Ask the LLM a question and return the answer',
+    version: '1.0.0',
+    tags: ['llm', 'ai', 'question'],
+    builtin: true,
+    parameters: [
+      { name: 'prompt', type: 'string', description: 'The question or prompt to send', required: true },
+      { name: 'systemPrompt', type: 'string', description: 'Custom system prompt', default: 'You are a helpful assistant. Be concise.' },
+      { name: 'model', type: 'string', description: 'Model to use (optional)' },
+    ],
+    steps: [
+      {
+        type: 'llm',
+        content: '{{prompt}}',
+        systemPrompt: '{{systemPrompt}}',
+      },
+    ],
+    examples: [
+      { input: { prompt: 'What is the capital of France?' }, description: 'Ask a factual question' },
+    ],
+  },
+  {
     id: 'list-processes',
     name: 'List Processes',
     description: 'List running processes',
@@ -366,6 +391,7 @@ export class ComputerSkills extends EventEmitter {
   private config: SkillLibraryConfig;
   private skills: Map<string, Skill> = new Map();
   private loaded: boolean = false;
+  private llmClient: import('../../codebuddy/client.js').CodeBuddyClient | null = null;
 
   constructor(config: Partial<SkillLibraryConfig> = {}) {
     super();
@@ -678,16 +704,48 @@ export class ComputerSkills extends EventEmitter {
     return { stdout: stdout.trim(), stderr: stderr.trim() };
   }
 
+  private async getLLMClient(): Promise<import('../../codebuddy/client.js').CodeBuddyClient> {
+    if (this.llmClient) return this.llmClient;
+    const apiKey = process.env.GROK_API_KEY;
+    if (!apiKey) {
+      throw new Error('GROK_API_KEY is required for LLM skill steps.');
+    }
+    const { CodeBuddyClient } = await import('../../codebuddy/client.js');
+    this.llmClient = new CodeBuddyClient(apiKey);
+    return this.llmClient;
+  }
+
   private async executeLLMStep(
     step: SkillStep,
     context: { params: Record<string, unknown>; stepResults: unknown[] }
   ): Promise<unknown> {
-    // Interpolate template variables
-    const prompt = this.interpolate(step.content, context);
+    const client = await this.getLLMClient();
 
-    // TODO: Integrate with actual LLM client
-    // For now, return the prompt
-    return { prompt, note: 'LLM integration pending' };
+    const prompt = this.interpolate(step.content, context);
+    const systemPrompt = step.systemPrompt
+      ? this.interpolate(step.systemPrompt, context)
+      : 'You are a helpful assistant. Be concise and precise.';
+
+    const messages: Array<{ role: 'system' | 'user'; content: string }> = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: prompt },
+    ];
+
+    const response = await client.chat(messages, [], {
+      model: step.model,
+    });
+
+    const content = response.choices[0]?.message?.content ?? '';
+    const usage = response.usage;
+
+    return {
+      content,
+      tokens: {
+        input: usage?.prompt_tokens ?? 0,
+        output: usage?.completion_tokens ?? 0,
+        total: usage?.total_tokens ?? 0,
+      },
+    };
   }
 
   private async executeConditionStep(
