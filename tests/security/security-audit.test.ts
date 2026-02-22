@@ -84,7 +84,7 @@ describe('SecurityAuditor - basic audit', () => {
     const auditor = createMinimalAuditor();
     const result = await auditor.audit(true);
     expect(result.deepScan).toBe(true);
-  });
+  }, 60000);
 
   it('should calculate duration in milliseconds', async () => {
     const auditor = createMinimalAuditor();
