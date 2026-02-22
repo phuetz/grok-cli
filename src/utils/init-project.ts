@@ -18,52 +18,104 @@ export interface InitResult {
 }
 
 /**
- * Initialize .codebuddy directory with templates and configurations
- * Similar to Claude Code's project initialization
+ * Generate CODEBUDDY.md content tailored to the detected language/framework.
+ * Exported for unit testing.
  */
-export function initCodeBuddyProject(
-  workingDirectory: string = process.cwd(),
-  options: InitOptions = {}
-): InitResult {
-  const result: InitResult = {
-    success: true,
-    created: [],
-    skipped: [],
-    errors: []
-  };
+export function generateCODEBUDDYMdContent(profile: {
+  languages?: string[];
+  framework?: string;
+  commands?: { test?: string; lint?: string; build?: string; format?: string };
+  directories?: { src?: string; tests?: string };
+} | null): string {
+  const lang = profile?.languages?.[0]?.toLowerCase() ?? '';
+  const framework = profile?.framework ?? '';
+  const cmds = profile?.commands ?? {};
+  const dirs = profile?.directories ?? {};
 
-  const codebuddyDir = path.join(workingDirectory, '.codebuddy');
+  const testCmd = cmds.test ?? 'npm test';
+  const lintCmd = cmds.lint ?? 'npm run lint';
+  const buildCmd = cmds.build ?? 'npm run build';
+  const srcDir = dirs.src ?? 'src/';
+  const testsDir = dirs.tests ?? 'tests/';
 
-  // Create .codebuddy directory
-  if (!fs.existsSync(codebuddyDir)) {
-    fs.mkdirSync(codebuddyDir, { recursive: true });
-    result.created.push('.codebuddy/');
+  let styleSection: string;
+  let archSection: string;
+  let testSection: string;
+
+  if (lang === 'python') {
+    styleSection = `## Code Style Guidelines
+- Follow PEP 8 conventions
+- Use type annotations for all function signatures
+- Format with black or ruff
+- Add docstrings to public functions and classes`;
+    archSection = `## Architecture
+- ${srcDir} - Source code
+- ${testsDir} - Test files (pytest)`;
+    testSection = `## Testing
+- Write tests with pytest
+- Run: \`${testCmd}\`
+- Maintain coverage above 80%`;
+  } else if (lang === 'go') {
+    styleSection = `## Code Style Guidelines
+- Follow effective Go conventions
+- Run \`gofmt\` / \`goimports\` before committing
+- Prefer explicit error handling over panics
+- Add godoc comments to exported identifiers`;
+    archSection = `## Architecture
+- ${srcDir} - Source packages
+- ${testsDir} - Test files (*_test.go)`;
+    testSection = `## Testing
+- Use \`go test ./...\`
+- Run: \`${testCmd}\`
+- Table-driven tests are preferred`;
+  } else if (lang === 'rust') {
+    styleSection = `## Code Style Guidelines
+- Run \`cargo fmt\` before committing
+- Resolve all \`cargo clippy\` warnings
+- Prefer \`Result\`/\`Option\` over panics in library code`;
+    archSection = `## Architecture
+- src/ - Source crates
+- tests/ - Integration tests`;
+    testSection = `## Testing
+- Unit tests in \`#[cfg(test)]\` modules
+- Run: \`${testCmd}\`
+- Integration tests in tests/`;
+  } else {
+    // Default: TypeScript / JavaScript / unknown
+    const tsNote = lang === 'typescript' || lang === 'javascript'
+      ? '- Use TypeScript for all new files\n- Avoid `any`; use proper types'
+      : '- Follow the existing code style';
+    styleSection = `## Code Style Guidelines
+${tsNote}
+- Follow the existing code style
+- Add comments for complex logic
+- Use meaningful variable names`;
+    archSection = `## Architecture
+- ${srcDir} - Source code
+- ${testsDir} - Test files`;
+    testSection = `## Testing
+- Write tests for new features
+- Run: \`${testCmd}\`
+- Maintain test coverage above 80%`;
   }
 
-  // Create CODEBUDDY.md (custom instructions)
-  const codebuddyMdPath = path.join(codebuddyDir, 'CODEBUDDY.md');
-  if (!fs.existsSync(codebuddyMdPath) || options.force) {
-    const codebuddyMdContent = `# Custom Instructions for Code Buddy
+  const frameworkNote = framework ? `\n- Framework: ${framework}` : '';
+
+  return `# Custom Instructions for Code Buddy
 
 ## About This Project
 <!-- Describe your project here -->
-This project is...
+This project is...${frameworkNote}
 
-## Code Style Guidelines
-- Use TypeScript for all new files
-- Follow the existing code style
-- Add comments for complex logic
-- Use meaningful variable names
+${styleSection}
 
-## Architecture
-<!-- Describe your project architecture -->
-- src/ - Source code
-- tests/ - Test files
+${archSection}
 
-## Testing
-- Write tests for new features
-- Maintain test coverage above 80%
-- Use Jest/Vitest for testing
+${testSection}
+
+## Build
+- Build: \`${buildCmd}\`
+- Lint: \`${lintCmd}\`
 
 ## Git Conventions
 - Use conventional commits (feat:, fix:, docs:, etc.)
@@ -80,7 +132,123 @@ This project is...
 - Never expose API keys
 - Never delete production data
 `;
-    fs.writeFileSync(codebuddyMdPath, codebuddyMdContent);
+}
+
+/**
+ * Initialize .codebuddy directory with templates and configurations.
+ * Similar to Claude Code's project initialization.
+ */
+export async function initCodeBuddyProject(
+  workingDirectory: string = process.cwd(),
+  options: InitOptions = {}
+): Promise<InitResult> {
+  const result: InitResult = {
+    success: true,
+    created: [],
+    skipped: [],
+    errors: []
+  };
+
+  const codebuddyDir = path.join(workingDirectory, '.codebuddy');
+
+  // Create .codebuddy directory
+  if (!fs.existsSync(codebuddyDir)) {
+    fs.mkdirSync(codebuddyDir, { recursive: true });
+    result.created.push('.codebuddy/');
+  }
+
+  // Create runtime directories expected by the runtime
+  const runtimeDirs = ['sessions', 'runs', 'tool-results', 'knowledge'];
+  for (const dir of runtimeDirs) {
+    const dirPath = path.join(codebuddyDir, dir);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+      result.created.push(`.codebuddy/${dir}/`);
+    }
+  }
+
+  // Create .codebuddy/knowledge/README.md (explains frontmatter format)
+  const knowledgeReadmePath = path.join(codebuddyDir, 'knowledge', 'README.md');
+  if (!fs.existsSync(knowledgeReadmePath) || options.force) {
+    const knowledgeReadmeContent = `# Knowledge Directory
+
+Place \`.md\` files here to inject domain-specific knowledge into Code Buddy's context.
+
+## Frontmatter fields
+
+\`\`\`yaml
+---
+title: "Short descriptive title"
+tags: ["tag1", "tag2"]
+scope: "project"       # project | global
+priority: 1            # lower = higher priority
+---
+\`\`\`
+
+Files with lower \`priority\` values are injected first (higher precedence).
+`;
+    fs.writeFileSync(knowledgeReadmePath, knowledgeReadmeContent);
+    result.created.push('.codebuddy/knowledge/README.md');
+  }
+
+  // Detect project profile for smart template generation
+  let profile: {
+    languages?: string[];
+    framework?: string;
+    commands?: { test?: string; lint?: string; build?: string; format?: string };
+    directories?: { src?: string; tests?: string };
+  } | null = null;
+  try {
+    const { RepoProfiler } = await import('../agent/repo-profiler.js');
+    profile = await new RepoProfiler(workingDirectory).getProfile();
+  } catch {
+    // RepoProfiler unavailable — use generic template
+  }
+
+  // Create CONTEXT.md — priority 1 in context-files.ts (highest priority)
+  const contextMdPath = path.join(codebuddyDir, 'CONTEXT.md');
+  if (!fs.existsSync(contextMdPath) || options.force) {
+    try {
+      const { initContextFile } = await import('../context/context-files.js');
+      await initContextFile(workingDirectory);
+      result.created.push('.codebuddy/CONTEXT.md');
+    } catch {
+      // Fallback: write a minimal CONTEXT.md manually
+      const contextContent = `# Project Context
+
+This file is automatically loaded by Code Buddy (highest priority context source).
+
+## Project Overview
+
+<!-- Describe your project here -->
+
+## Architecture
+
+<!-- Key architectural decisions -->
+
+## Conventions
+
+<!-- Coding conventions and patterns -->
+
+## Important Files
+
+<!-- Key files and their purposes -->
+
+## Common Tasks
+
+<!-- How to build, test, deploy -->
+`;
+      fs.writeFileSync(contextMdPath, contextContent);
+      result.created.push('.codebuddy/CONTEXT.md');
+    }
+  } else {
+    result.skipped.push('.codebuddy/CONTEXT.md (already exists)');
+  }
+
+  // Create CODEBUDDY.md — priority 2 in context-files.ts (project-aware)
+  const codebuddyMdPath = path.join(codebuddyDir, 'CODEBUDDY.md');
+  if (!fs.existsSync(codebuddyMdPath) || options.force) {
+    fs.writeFileSync(codebuddyMdPath, generateCODEBUDDYMdContent(profile));
     result.created.push('.codebuddy/CODEBUDDY.md');
   } else {
     result.skipped.push('.codebuddy/CODEBUDDY.md (already exists)');
@@ -135,7 +303,6 @@ This project is...
         $schema: 'https://json-schema.org/draft/2020-12/schema',
         description: 'MCP server configuration. This file can be committed to share MCP servers with your team.',
         mcpServers: {
-          // Example configurations (disabled by default)
           'filesystem': {
             name: 'filesystem',
             type: 'stdio',
@@ -181,7 +348,7 @@ This project is...
     }
   }
 
-  // Create commands directory with example
+  // Create commands directory with examples
   if (options.includeCommands !== false) {
     const commandsDir = path.join(codebuddyDir, 'commands');
     if (!fs.existsSync(commandsDir)) {
@@ -189,7 +356,6 @@ This project is...
       result.created.push('.codebuddy/commands/');
     }
 
-    // Create example command
     const exampleCommandPath = path.join(commandsDir, 'example.md');
     if (!fs.existsSync(exampleCommandPath) || options.force) {
       const exampleCommandContent = `---
@@ -212,7 +378,6 @@ Example: Analyze the file $1 and suggest improvements.
       result.created.push('.codebuddy/commands/example.md');
     }
 
-    // Create deploy command template
     const deployCommandPath = path.join(commandsDir, 'deploy.md');
     if (!fs.existsSync(deployCommandPath) || options.force) {
       const deployCommandContent = `---
@@ -241,11 +406,11 @@ Safety checks:
     }
   }
 
-  // Create settings.json
+  // Create settings.json (model aligned with SettingsManager default)
   const settingsPath = path.join(codebuddyDir, 'settings.json');
   if (!fs.existsSync(settingsPath) || options.force) {
     const settingsContent = {
-      model: 'grok-3-fast',
+      model: 'grok-code-fast-1',
       maxToolRounds: 400,
       theme: 'default'
     };
@@ -255,13 +420,16 @@ Safety checks:
     result.skipped.push('.codebuddy/settings.json (already exists)');
   }
 
-  // Update .gitignore if it exists
+  // Update .gitignore
   if (options.includeGitignore !== false) {
     const gitignorePath = path.join(workingDirectory, '.gitignore');
     const codebuddyIgnoreEntries = `
 # Code Buddy
 .codebuddy/sessions/
 .codebuddy/history/
+.codebuddy/runs/
+.codebuddy/tool-results/
+.codebuddy/cache/
 .codebuddy/user-settings.json
 `;
 
@@ -288,12 +456,25 @@ This directory contains configuration and customization files for [Code Buddy](h
 
 ## Files
 
+- **CONTEXT.md** - Primary context file (highest priority, loaded first by the runtime)
 - **CODEBUDDY.md** - Custom instructions that Code Buddy follows when working in this project
 - **settings.json** - Project-specific settings
 - **hooks.json** - Automated hooks (pre-commit, post-edit, etc.)
 - **mcp.json** - MCP server configurations (committable, shared with team)
 - **security.json** - Security mode configuration
 - **commands/** - Custom slash commands
+- **knowledge/** - Domain knowledge files (frontmatter: title, tags, scope, priority)
+- **sessions/** - Saved sessions (gitignored)
+- **runs/** - Run observability logs (gitignored)
+- **tool-results/** - Cached tool outputs (gitignored)
+
+## Context Priority
+
+The runtime loads context in this order (lower number = higher priority):
+1. \`.codebuddy/CONTEXT.md\` — edit this first
+2. \`CODEBUDDY.md\` (project root)
+3. \`.codebuddy/context.md\`
+4. \`CLAUDE.md\`
 
 ## Custom Commands
 
@@ -343,38 +524,41 @@ See the [Code Buddy documentation](https://github.com/phuetz/code-buddy) for mor
 }
 
 /**
- * Format init result for display
+ * Format init result for display (ASCII markers, no emojis)
  */
 export function formatInitResult(result: InitResult): string {
-  let output = '🚀 Code Buddy Project Initialization\n' + '═'.repeat(50) + '\n\n';
+  let output = 'Code Buddy Project Initialization\n' + '='.repeat(50) + '\n\n';
 
   if (result.created.length > 0) {
-    output += '✅ Created:\n';
+    output += '[+] Created:\n';
     for (const item of result.created) {
-      output += `   • ${item}\n`;
+      output += `    ${item}\n`;
     }
     output += '\n';
   }
 
   if (result.skipped.length > 0) {
-    output += '⏭️  Skipped:\n';
+    output += '[=] Skipped (already exists):\n';
     for (const item of result.skipped) {
-      output += `   • ${item}\n`;
+      output += `    ${item}\n`;
     }
     output += '\n';
   }
 
   if (result.errors.length > 0) {
-    output += '❌ Errors:\n';
+    output += '[!] Errors:\n';
     for (const item of result.errors) {
-      output += `   • ${item}\n`;
+      output += `    ${item}\n`;
     }
     output += '\n';
   }
 
-  output += '─'.repeat(50) + '\n';
-  output += '💡 Edit .codebuddy/CODEBUDDY.md to customize Code Buddy for this project\n';
-  output += '📚 See .codebuddy/README.md for documentation';
+  output += '-'.repeat(50) + '\n';
+  output += 'Next steps:\n';
+  output += '  1. Edit .codebuddy/CONTEXT.md  -- primary context (loaded first by the runtime)\n';
+  output += '  2. Edit .codebuddy/CODEBUDDY.md -- additional custom instructions\n';
+  output += '  3. Run \'buddy doctor\' to verify your environment\n';
+  output += '  4. Add files to .codebuddy/knowledge/ for domain-specific context\n';
 
   return output;
 }

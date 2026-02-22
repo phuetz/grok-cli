@@ -8,15 +8,12 @@
  * - __COLAB__ - /colab
  * - __DIFF_CHECKPOINTS__ - /diff
  * - __FEATURES__ - /features
- * - __INIT_GROK__ - /init
  * - __LIST_CHECKPOINTS__ - /checkpoints
  * - __RESTORE_CHECKPOINT__ - /restore
  */
 
 import type { CommandHandlerResult } from './branch-handlers.js';
 import { handleColabCommand } from './colab-handler.js';
-import fs from 'fs-extra';
-import path from 'path';
 
 // ============================================================================
 // /model - Change Model
@@ -458,136 +455,6 @@ Use /help to see all available commands.
     entry: {
       type: 'assistant',
       content: features,
-      timestamp: new Date(),
-    },
-  };
-}
-
-// ============================================================================
-// /init - Initialize .grok Directory
-// ============================================================================
-
-export async function handleInitGrok(_args: string[]): Promise<CommandHandlerResult> {
-  const cwd = process.cwd();
-  const grokDir = path.join(cwd, '.grok');
-  const codebuddyDir = path.join(cwd, '.codebuddy');
-
-  const lines: string[] = [];
-  lines.push('Initializing Code Buddy Configuration');
-  lines.push('='.repeat(50));
-  lines.push('');
-
-  try {
-    // Create .grok directory
-    if (!await fs.pathExists(grokDir)) {
-      await fs.ensureDir(grokDir);
-      lines.push('[+] Created .grok/ directory');
-    } else {
-      lines.push('[=] .grok/ directory already exists');
-    }
-
-    // Create .codebuddy directory for compatibility
-    if (!await fs.pathExists(codebuddyDir)) {
-      await fs.ensureDir(codebuddyDir);
-      lines.push('[+] Created .codebuddy/ directory');
-    } else {
-      lines.push('[=] .codebuddy/ directory already exists');
-    }
-
-    // Create commands directory
-    const commandsDir = path.join(codebuddyDir, 'commands');
-    if (!await fs.pathExists(commandsDir)) {
-      await fs.ensureDir(commandsDir);
-      lines.push('[+] Created .codebuddy/commands/ directory');
-    }
-
-    // Create CODEBUDDY.md if it doesn't exist
-    const codebuddyMd = path.join(cwd, 'CODEBUDDY.md');
-    const legacyGrokMd = path.join(cwd, 'GROK.md');
-    if (!await fs.pathExists(codebuddyMd) && !await fs.pathExists(legacyGrokMd)) {
-      const codebuddyMdContent = `# CODEBUDDY.md
-
-This file provides custom instructions for Code Buddy when working in this repository.
-
-## Project Overview
-
-[Describe your project here]
-
-## Coding Conventions
-
-- [Add your coding standards]
-- [File naming conventions]
-- [Testing requirements]
-
-## Important Notes
-
-- [Add any important context for the AI]
-- [Specific patterns or architectures to follow]
-
-## Custom Commands
-
-You can create custom slash commands by adding .md files to \`.codebuddy/commands/\`.
-
-Example: Create \`.codebuddy/commands/deploy.md\` with:
-
-\`\`\`
----
-description: Deploy the application
----
-
-Deploy the application using the following steps:
-1. Run tests
-2. Build the project
-3. Deploy to production
-\`\`\`
-
-Then use \`/deploy\` to run it.
-`;
-      await fs.writeFile(codebuddyMd, codebuddyMdContent);
-      lines.push('[+] Created CODEBUDDY.md template');
-    } else {
-      lines.push('[=] CODEBUDDY.md already exists');
-    }
-
-    // Create .gitignore additions
-    const gitignore = path.join(cwd, '.gitignore');
-    let gitignoreContent = '';
-    if (await fs.pathExists(gitignore)) {
-      gitignoreContent = await fs.readFile(gitignore, 'utf-8');
-    }
-
-    const grokIgnores = ['.codebuddy/cache/', '.codebuddy/sessions/', '.grok/cache/'];
-    const newIgnores: string[] = [];
-
-    for (const ignore of grokIgnores) {
-      if (!gitignoreContent.includes(ignore)) {
-        newIgnores.push(ignore);
-      }
-    }
-
-    if (newIgnores.length > 0) {
-      const addition = `\n# Code Buddy\n${newIgnores.join('\n')}\n`;
-      await fs.appendFile(gitignore, addition);
-      lines.push('[+] Added Code Buddy paths to .gitignore');
-    }
-
-    lines.push('');
-    lines.push('Initialization complete!');
-    lines.push('');
-    lines.push('Next steps:');
-    lines.push('  1. Edit CODEBUDDY.md to add project-specific instructions');
-    lines.push('  2. Create custom commands in .codebuddy/commands/');
-    lines.push('  3. Use /help to see all available commands');
-
-  } catch (error) {
-    lines.push(`[ERROR] ${error instanceof Error ? error.message : String(error)}`);
-  }
-
-  return {
-    handled: true,
-    entry: {
-      type: 'assistant',
-      content: lines.join('\n'),
       timestamp: new Date(),
     },
   };

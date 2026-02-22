@@ -873,7 +873,7 @@ program
     // Handle --init flag
     if (options.init) {
       const { initCodeBuddyProject, formatInitResult } = await lazyImport.initProject();
-      const result = initCodeBuddyProject();
+      const result = await initCodeBuddyProject();
       console.log(formatInitResult(result));
       process.exit(result.success ? 0 : 1);
     }

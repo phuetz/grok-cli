@@ -149,7 +149,7 @@ export {
   handleColabCommand,
 } from './colab-handler.js';
 
-// Missing handlers (model, mode, clear, colab, diff, features, init, checkpoints, restore)
+// Missing handlers (model, mode, clear, colab, diff, features, checkpoints, restore)
 export {
   handleChangeModel,
   handleChangeMode,
@@ -157,7 +157,6 @@ export {
   handleColab,
   handleDiffCheckpoints,
   handleFeatures,
-  handleInitGrok,
   handleListCheckpoints,
   handleRestoreCheckpoint,
 } from './missing-handlers.js';

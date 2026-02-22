@@ -155,7 +155,7 @@ export class ClientCommandDispatcher {
         return true;
 
       case "__INIT_GROK__":
-        this.handleInitGrok(context);
+        await this.handleInitGrok(context);
         return true;
       
       case "__FEATURES__": {
@@ -323,8 +323,8 @@ export class ClientCommandDispatcher {
       context.clearInput();
   }
 
-  private static handleInitGrok(context: ClientCommandContext) {
-      const initResult = initCodeBuddyProject();
+  private static async handleInitGrok(context: ClientCommandContext) {
+      const initResult = await initCodeBuddyProject();
       const entry: ChatEntry = {
         type: "assistant",
         content: formatInitResult(initResult),
